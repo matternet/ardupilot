@@ -697,6 +697,15 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
 #endif
         break;
 
+    case MSG_LANDING_TARGET:
+#if PRECISION_LANDING == ENABLED
+        CHECK_PAYLOAD_SIZE(LANDING_TARGET);
+        if (copter.precland.enabled()) {
+            copter.precland.send_landing_target(chan);
+        }
+#endif
+        break;
+
     case MSG_GIMBAL_REPORT:
 #if MOUNT == ENABLED
         CHECK_PAYLOAD_SIZE(GIMBAL_REPORT);
@@ -932,6 +941,7 @@ GCS_MAVLINK_Copter::data_stream_send(void)
         send_message(MSG_EKF_STATUS_REPORT);
         send_message(MSG_VIBRATION);
         send_message(MSG_RPM);
+        send_message(MSG_LANDING_TARGET);
     }
 }
 
