@@ -6,7 +6,11 @@
 
 #include "ap_version.h"
 
-#define THISFIRMWARE "ArduCopter V3.6.9-rc2"
+#ifdef GIT_TAG
+#define THISFIRMWARE "APM:Copter " GIT_TAG
+#else
+#define THISFIRMWARE "ArduCopter V3.6.7"
+#endif
 
 // the following line is parsed by the autotest scripts
 #define FIRMWARE_VERSION 3,6,9,FIRMWARE_VERSION_TYPE_RC
