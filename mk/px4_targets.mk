@@ -127,6 +127,8 @@ px4-cleandep: clean
 	$(v) find $(UAVCAN_DIRECTORY) -type f -name '*.d' | xargs rm -f
 	$(v) find $(SKETCHBOOK)/$(SKETCH) -type f -name '*.d' | xargs rm -f
 
+px4-v2-mttr-m2: px4-v2
+
 px4-v2-upload-solo: px4-v2
 	scp $(SKETCH)-v2.px4 root@10.1.1.10:/tmp/
 	ssh root@10.1.1.10 PYTHONUNBUFFERED=1 loadPixhawk.py /tmp/ArduCopter-v2.px4
