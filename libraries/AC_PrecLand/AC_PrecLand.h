@@ -70,6 +70,9 @@ public:
     // accessors for logging
     bool enabled() const { return _enabled; }
 
+    // send GCS_MAVLink message
+    void send_landing_target(mavlink_channel_t chan) const;
+
     // parameter var table
     static const struct AP_Param::GroupInfo var_info[];
 

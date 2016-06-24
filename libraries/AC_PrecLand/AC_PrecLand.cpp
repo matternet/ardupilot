@@ -198,3 +198,14 @@ void AC_PrecLand::handle_msg(mavlink_message_t* msg)
         _backend->handle_msg(msg);
     }
 }
+
+// send landing target mavlink message to ground station
+void AC_PrecLand::send_landing_target(mavlink_channel_t chan) const
+{
+    mavlink_msg_landing_target_send(chan,
+        _last_update_ms,
+        target_acquired(),
+        MAV_FRAME_GLOBAL_TERRAIN_ALT,
+        _ekf_x.getPos()*100.0f, _ekf_y.getPos()*100.0f, 0.0f, 0.0f, 0.0f);
+
+}
