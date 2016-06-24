@@ -271,6 +271,16 @@ bool AC_PrecLand::get_target_velocity_relative_cms(Vector2f& ret)
     return true;
 }
 
+bool AC_PrecLand::get_target_position_relative_measured_cm(Vector2f& ret)
+{
+    if (!target_acquired()) {
+        return false;
+    }
+    ret.x = _target_pos_rel_meas_NED.x*100.0f;
+    ret.y = _target_pos_rel_meas_NED.y*100.0f;
+    return true;
+}
+
 // handle_msg - Process a LANDING_TARGET mavlink message
 void AC_PrecLand::handle_msg(const mavlink_landing_target_t &packet, uint32_t timestamp_ms)
 {
@@ -528,5 +538,20 @@ void AC_PrecLand::Write_Precland()
         estimator       : (uint8_t)_estimator_type
     };
     AP::logger().WriteBlock(&pkt, sizeof(pkt));
+}
+
+// send landing target mavlink message to ground station
+void AC_PrecLand::send_landing_target(mavlink_channel_t chan)
+{
+    Quaternion q;
+    mavlink_msg_landing_target_send(chan,
+                                    _last_update_ms,
+                                    target_acquired(),
+                                    MAV_FRAME_GLOBAL_TERRAIN_ALT,
+                                    _ekf_x.getPos()*100.0f, _ekf_y.getPos()*100.0f, 0.0f, 0.0f, 0.0f,
+                                    0,0,0,
+                                    &q.q1,
+                                    0, false);
+
 }
 
