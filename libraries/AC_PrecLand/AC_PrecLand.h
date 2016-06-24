@@ -74,6 +74,9 @@ public:
     const Vector2f& last_ef_angle_to_target() const { return _ef_angle_to_target; }
     const Vector3f& last_target_pos_offset() const { return _target_pos_rel; }
 
+    // send GCS_MAVLink message
+    void send_landing_target(mavlink_channel_t chan) const;
+
     // parameter var table
     static const struct AP_Param::GroupInfo var_info[];
 
