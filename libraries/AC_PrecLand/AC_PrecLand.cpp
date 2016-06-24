@@ -250,6 +250,16 @@ bool AC_PrecLand::get_target_velocity_relative_cms(Vector2f& ret)
     return true;
 }
 
+bool AC_PrecLand::get_target_position_relative_measured_cm(Vector2f& ret)
+{
+    if (!target_acquired()) {
+        return false;
+    }
+    ret.x = _target_pos_rel_meas_NED.x*100.0f;
+    ret.y = _target_pos_rel_meas_NED.y*100.0f;
+    return true;
+}
+
 // handle_msg - Process a LANDING_TARGET mavlink message
 void AC_PrecLand::handle_msg(const mavlink_message_t &msg)
 {
@@ -447,4 +457,15 @@ void AC_PrecLand::run_output_prediction()
     Vector3f land_ofs_ned_m = _ahrs.get_rotation_body_to_ned() * Vector3f(_land_ofs_cm_x,_land_ofs_cm_y,0) * 0.01f;
     _target_pos_rel_out_NE.x += land_ofs_ned_m.x;
     _target_pos_rel_out_NE.y += land_ofs_ned_m.y;
+}
+
+// send landing target mavlink message to ground station
+void AC_PrecLand::send_landing_target(mavlink_channel_t chan)
+{
+    mavlink_msg_landing_target_send(chan,
+        _last_update_ms,
+        target_acquired(),
+        MAV_FRAME_GLOBAL_TERRAIN_ALT,
+        _ekf_x.getPos()*100.0f, _ekf_y.getPos()*100.0f, 0.0f, 0.0f, 0.0f);
+
 }
