@@ -79,6 +79,9 @@ public:
     // returns target position relative to vehicle
     bool get_target_position_relative_cm(Vector2f& ret);
 
+    // get measured position of target if available
+    bool get_target_position_relative_measured_cm(Vector2f& ret);
+
     // returns target velocity relative to vehicle
     bool get_target_velocity_relative_cms(Vector2f& ret);
 
@@ -87,6 +90,9 @@ public:
 
     // process a LANDING_TARGET mavlink message
     void handle_msg(const mavlink_message_t &msg);
+
+    // send GCS_MAVLink message
+    void send_landing_target(mavlink_channel_t chan);
 
     // parameter var table
     static const struct AP_Param::GroupInfo var_info[];
