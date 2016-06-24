@@ -80,6 +80,7 @@ enum ap_message {
     MSG_AOA_SSA,
     MSG_LANDING,
     MSG_NAMED_FLOAT,
+    MSG_LANDING_TARGET,
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };
 
