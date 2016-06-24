@@ -57,6 +57,9 @@ public:
     const Vector2f& last_ef_angle_to_target() const { return _ef_angle_to_target; }
     const Vector3f& last_target_pos_offset() const { return _target_pos_offset; }
 
+    // send GCS_MAVLink message
+    void send_landing_target(mavlink_channel_t chan) const;
+
     // parameter var table
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -86,6 +89,8 @@ private:
     // output from controller
     bool                        _have_estimate;     // true if we have a recent estimated position offset
     Vector3f                    _target_pos_offset; // estimate target position offset from vehicle in earth-frame
+
+    uint32_t                    _last_update_ms;
 
     // backend state
     struct precland_state {
