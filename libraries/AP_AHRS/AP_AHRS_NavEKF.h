@@ -42,11 +42,8 @@
   it. Leave it enabled on V4 for now as that has sufficient flash
   space
  */
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4 && (defined(CONFIG_ARCH_BOARD_PX4FMU_V1) || defined(CONFIG_ARCH_BOARD_PX4FMU_V2))
-#define AP_AHRS_WITH_EKF1 0
-#else
+
 #define AP_AHRS_WITH_EKF1 1
-#endif
 
 class AP_AHRS_NavEKF : public AP_AHRS_DCM
 {
