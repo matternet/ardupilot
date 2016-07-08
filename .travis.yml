@@ -20,6 +20,8 @@ addons:
       - g++-4.9
       - cmake
       - cmake-data
+      - gcc-4.9-arm-linux-gnueabihf
+      - g++-4.9-arm-linux-gnueabihf
 #      - clang-3.7
 #      - llvm-3.7
 
@@ -44,10 +46,10 @@ deploy:
   provider: releases
   api_key: "$GITHUB_DEPLOY_API_KEY"
   file:
-    - "$HOME/deploy_files/ArduCopter-v2.px4"
+    - "$HOME/deploy_files/arducopter-quad.px4"
     - "$HOME/deploy_files/fmu.elf"
-    - "$HOME/deploy_files/io.elf"
     - "$HOME/deploy_files/sitl.elf"
+    - "$HOME/deploy_files/sitl-armhf.elf"
     - "$HOME/deploy_files/apm.pdef.xml"
   on:
     tags: true
