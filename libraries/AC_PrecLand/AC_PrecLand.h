@@ -7,6 +7,7 @@
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <stdint.h>
 #include "VelEKF.h"
+#include <AP_Buffer/AP_Buffer.h>
 
 // declare backend classes
 class AC_PrecLand_Backend;
@@ -110,6 +111,8 @@ private:
     Vector3f                    _target_vel_rel;    // estimate target velocity relative to vehicle in NEU cm/s
 
     VelEKF                      _vel_ekf_x, _vel_ekf_y;
+    
+    AP_Buffer<Matrix3f,8>       _attitude_history;
 
     // backend state
     struct precland_state {
