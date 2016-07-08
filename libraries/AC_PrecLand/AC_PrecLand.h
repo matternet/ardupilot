@@ -6,6 +6,7 @@
 #include <AP_InertialNav/AP_InertialNav.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <stdint.h>
+#include <AP_Buffer/AP_Buffer.h>
 
 // declare backend classes
 class AC_PrecLand_Backend;
@@ -109,6 +110,8 @@ private:
     // estimator output
     Vector3f                    _target_pos_rel;    // estimate target position relative to vehicle in NEU cm
     Vector3f                    _target_pos;        // estimate target position in NEU cm
+    
+    AP_Buffer<Matrix3f,8>       _attitude_history;
 
     // backend state
     struct precland_state {
