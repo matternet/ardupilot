@@ -16,6 +16,8 @@
  *  COAX_FRAME
  */
 
+#define GNDEFFECT_COMPENSATION ENABLED            // enable ground effect compensation for barometer (if propwash interferes with the barometer on the ground)
+
 // uncomment the lines below to disable features (flash sizes listed are for APM2 boards and will underestimate savings on Pixhawk and other boards)
 //#define LOGGING_ENABLED       DISABLED            // disable dataflash logging to save 11K of flash space
 //#define MOUNT                 DISABLED            // disable the camera gimbal to save 8K of flash space
