@@ -98,6 +98,24 @@ void AC_PrecLand::update(float alt_above_terrain_cm)
             
             calc_angles_and_pos(target_vec_unit_body, alt_above_terrain_cm);
         }
+
+        if (target_acquired()) {
+            Vector3f targetDelVel;
+            _ahrs.get_ins().get_delta_velocity(targetDelVel);
+            float dt = _ahrs.get_ins().get_delta_velocity_dt();
+            targetDelVel = _ahrs.get_rotation_body_to_ned()*targetDelVel;
+            targetDelVel.z += GRAVITY_MSS*dt;
+            targetDelVel = -targetDelVel;
+
+            _target_vel_rel *= 0.01f;
+            Vector3f last_target_vel_rel = _target_vel_rel;
+            _target_vel_rel = (_target_pos_rel*0.01f - _comp_filt_element) * 2.0f;
+            _comp_filt_element += (_target_vel_rel + last_target_vel_rel + targetDelVel*2.0f) * (dt*0.5f);
+            _target_vel_rel *= 100.0f;
+        } else {
+            _target_vel_rel.zero();
+            _comp_filt_element.zero();
+        }
     }
 }
 
@@ -128,7 +146,14 @@ bool AC_PrecLand::get_target_position_relative(Vector3f& ret)
 
 bool AC_PrecLand::get_target_velocity_relative(Vector3f& ret)
 {
-    return false;
+    if (!target_acquired()) {
+        return false;
+    }
+
+    // fade in the complementary filtered differentiated velocity between 5m and 2m
+    float inertial_weight = constrain_float((_target_pos.z - 200.0f)/300.0f, 0.0f, 1.0f);
+    ret = -_inav.get_velocity()*inertial_weight + _target_vel_rel*(1.0f-inertial_weight);
+    return true;
 }
 
 // converts sensor's body-frame angles to earth-frame angles and position estimate

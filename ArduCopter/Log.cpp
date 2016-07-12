@@ -655,6 +655,8 @@ struct PACKED log_Precland {
     float ef_angle_y;
     float pos_x;
     float pos_y;
+    float vel_x;
+    float vel_y;
 };
 
 // Write an optical flow packet
@@ -669,6 +671,8 @@ void Copter::Log_Write_Precland()
     const Vector2f &bf_angle = precland.last_bf_angle_to_target();
     const Vector2f &ef_angle = precland.last_ef_angle_to_target();
     const Vector3f &target_pos_ofs = precland.last_target_pos_offset();
+    Vector3f target_vel_rel = Vector3f(0.0f,0.0f,0.0f);
+    precland.get_target_velocity_relative(target_vel_rel);
     struct log_Precland pkt = {
         LOG_PACKET_HEADER_INIT(LOG_PRECLAND_MSG),
         time_us         : AP_HAL::micros64(),
@@ -678,7 +682,9 @@ void Copter::Log_Write_Precland()
         ef_angle_x      : degrees(ef_angle.x),
         ef_angle_y      : degrees(ef_angle.y),
         pos_x           : target_pos_ofs.x,
-        pos_y           : target_pos_ofs.y
+        pos_y           : target_pos_ofs.y,
+        vel_x           : target_vel_rel.x,
+        vel_y           : target_vel_rel.y
     };
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
  #endif     // PRECISION_LANDING == ENABLED
@@ -751,7 +757,7 @@ const struct LogStructure Copter::log_structure[] = {
     { LOG_HELI_MSG, sizeof(log_Heli),
       "HELI",  "Qff",         "TimeUS,DRRPM,ERRPM" },
     { LOG_PRECLAND_MSG, sizeof(log_Precland),
-      "PL",    "QBffffff",    "TimeUS,Heal,bX,bY,eX,eY,pX,pY" },
+      "PL",    "QBffffffff",    "TimeUS,Heal,bX,bY,eX,eY,pX,pY,vX,vY" },
     { LOG_GUIDEDTARGET_MSG, sizeof(log_GuidedTarget),
       "GUID",  "QBffffff",    "TimeUS,Type,pX,pY,pZ,vX,vY,vZ" },
 };
