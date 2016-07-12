@@ -110,6 +110,8 @@ private:
     // estimator output
     Vector3f                    _target_pos_rel;    // estimate target position relative to vehicle in NEU cm
     Vector3f                    _target_pos;        // estimate target position in NEU cm
+    Vector3f                    _target_vel_rel;    // estimate target velocity relative to vehicle in NEU cm/s
+    Vector3f                    _comp_filt_element;
     
     AP_Buffer<Matrix3f,8>       _attitude_history;
 

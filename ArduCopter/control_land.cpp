@@ -243,9 +243,12 @@ void Copter::land_run_horizontal_control()
     bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired();
     // run precision landing
     if (doing_precision_landing && precland_last_update_ms != precland.last_update_ms()) {
-        Vector3f target_pos;
+        Vector3f target_pos, target_vel, vehicle_vel;
         precland.get_target_position(target_pos);
+        precland.get_target_velocity_relative(target_vel);
+        vehicle_vel = inertial_nav.get_velocity();
         pos_control.set_xy_target(target_pos.x, target_pos.y);
+        pos_control.set_desired_velocity_xy(target_vel.x+vehicle_vel.x, target_vel.y+vehicle_vel.y);
         pos_control.freeze_ff_xy();
         precland_last_update_ms = precland.last_update_ms();
     }
