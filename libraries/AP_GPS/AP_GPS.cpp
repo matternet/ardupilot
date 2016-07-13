@@ -213,6 +213,7 @@ AP_GPS::detect_instance(uint8_t instance)
     state[instance].instance = instance;
     state[instance].status = NO_GPS;
     state[instance].hdop = 9999;
+    state[instance].vdop = 9999;
 
     // record the time when we started detection. This is used to try
     // to avoid initialising a uBlox as a NMEA GPS
@@ -371,6 +372,7 @@ AP_GPS::update_instance(uint8_t instance)
             state[instance].instance = instance;
             state[instance].status = NO_GPS;
             state[instance].hdop = 9999;
+            state[instance].vdop = 9999;
             timing[instance].last_message_time_ms = tnow;
         }
     } else {
@@ -542,7 +544,7 @@ AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
         loc.lng,        // in 1E7 degrees
         loc.alt * 10UL, // in mm
         get_hdop(0),
-        65535,
+        get_vdop(0),
         ground_speed(0)*100,  // cm/s
         ground_course_cd(0), // 1/100 degrees,
         num_sats(0));
@@ -571,7 +573,7 @@ AP_GPS::send_mavlink_gps2_raw(mavlink_channel_t chan)
         loc.lng,
         loc.alt * 10UL,
         get_hdop(1),
-        65535,
+        get_vdop(1),
         ground_speed(1)*100,  // cm/s
         ground_course_cd(1), // 1/100 degrees,
         num_sats(1),
