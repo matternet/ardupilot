@@ -86,6 +86,27 @@ void AC_PrecLand::update(float alt_above_terrain_cm)
     if (_backend != NULL && _enabled) {
         // read from sensor
         _backend->update();
+
+        bool prev_target_acquired = target_acquired();
+        float xy_pos_var = sq(_target_pos_rel.z*0.01f*0.01f);
+
+        if (target_acquired()) {
+            // EKF prediction step
+            float dt = _ahrs.get_ins().get_delta_velocity_dt();
+            Vector3f targetDelVel;
+            _ahrs.get_ins().get_delta_velocity(targetDelVel);
+            targetDelVel = _ahrs.get_rotation_body_to_ned()*targetDelVel;
+            targetDelVel.z += GRAVITY_MSS*dt;
+            targetDelVel = -targetDelVel;
+
+            _vel_ekf_x.predict(dt, targetDelVel.x, 0.5f*dt);
+            _vel_ekf_y.predict(dt, targetDelVel.y, 0.5f*dt);
+
+            if (_inav.get_filter_status().flags.horiz_pos_rel) {
+                _vel_ekf_x.fuseVel(-_inav.get_velocity().x*0.01f, sq(0.5f));
+                _vel_ekf_y.fuseVel(-_inav.get_velocity().y*0.01f, sq(0.5f));
+            }
+        }
         
         if (_backend->have_los_meas() && _backend->los_meas_time_ms() != _last_backend_los_meas_ms) {
             // we have a new, unique los measurement
@@ -95,6 +116,26 @@ void AC_PrecLand::update(float alt_above_terrain_cm)
             _backend->get_los_body(target_vec_unit_body);
             
             calc_angles_and_pos(target_vec_unit_body, alt_above_terrain_cm);
+
+            _vel_ekf_x.fusePos(_target_pos_rel.x*0.01f, xy_pos_var);
+            _vel_ekf_y.fusePos(_target_pos_rel.y*0.01f, xy_pos_var);
+        }
+
+        if (target_acquired()) {
+            if (!prev_target_acquired) {
+                // reset filter state
+                if (_inav.get_filter_status().flags.horiz_pos_rel) {
+                    _vel_ekf_x.init(_target_pos_rel.x*0.01f, xy_pos_var, -_inav.get_velocity().x*0.01f, sq(0.5f));
+                    _vel_ekf_y.init(_target_pos_rel.y*0.01f, xy_pos_var, -_inav.get_velocity().y*0.01f, sq(0.5f));
+                } else {
+                    _vel_ekf_x.init(_target_pos_rel.x*0.01f, xy_pos_var, 0.0f, sq(10.0f));
+                    _vel_ekf_y.init(_target_pos_rel.y*0.01f, xy_pos_var, 0.0f, sq(10.0f));
+                }
+            }
+
+            _target_vel_rel.x = _vel_ekf_x.getVel()*100.0f;
+            _target_vel_rel.y = _vel_ekf_y.getVel()*100.0f;
+            _target_vel_rel.z = -_inav.get_velocity().z;
         }
     }
 }
@@ -126,7 +167,11 @@ bool AC_PrecLand::get_target_position_relative(Vector3f& ret)
 
 bool AC_PrecLand::get_target_velocity_relative(Vector3f& ret)
 {
-    return false;
+    if (!target_acquired()) {
+        return false;
+    }
+    ret = _target_vel_rel;
+    return true;
 }
 
 // converts sensor's body-frame angles to earth-frame angles and position estimate
