@@ -243,9 +243,16 @@ void Copter::land_run_horizontal_control()
     bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired();
     // run precision landing
     if (doing_precision_landing && precland_last_update_ms != precland.last_update_ms()) {
-        Vector3f target_pos;
-        precland.get_target_position(target_pos);
+        Vector3f target_pos, target_vel_rel;
+        if (!precland.get_target_position(target_pos)) {
+            target_pos = inertial_nav.get_position();
+        }
+        if (!precland.get_target_velocity_relative(target_vel_rel)) {
+            target_vel_rel = -inertial_nav.get_velocity();
+        }
         pos_control.set_xy_target(target_pos.x, target_pos.y);
+        // NOTE: This effectively sets the AC_PosControl velocity process variable to -target_vel_rel
+        pos_control.set_desired_velocity_xy(target_vel_rel.x+inertial_nav.get_velocity().x, target_vel_rel.y+inertial_nav.get_velocity().y);
         pos_control.freeze_ff_xy();
         precland_last_update_ms = precland.last_update_ms();
     }
