@@ -24,6 +24,6 @@ void Copter::update_precland()
         current_loc.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_TERRAIN, height_above_ground_cm);
     }
 
-    copter.precland.update(height_above_ground_cm);
+    copter.precland.update(height_above_ground_cm, rangefinder_alt_ok());
 }
 #endif
