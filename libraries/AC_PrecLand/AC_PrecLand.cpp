@@ -97,7 +97,7 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
             float dt = _ahrs.get_ins().get_delta_velocity_dt();
             Vector3f targetDelVel;
             _ahrs.get_ins().get_delta_velocity(targetDelVel);
-            targetDelVel = _ahrs.get_rotation_body_to_ned()*targetDelVel;
+            targetDelVel = _ahrs.get_rotation_body_to_ned() * _ahrs.get_rotation_autopilot_body_to_vehicle_body() * targetDelVel;
             targetDelVel.z += GRAVITY_MSS*dt;
             targetDelVel = -targetDelVel;
 
