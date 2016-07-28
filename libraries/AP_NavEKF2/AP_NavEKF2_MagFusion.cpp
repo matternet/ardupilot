@@ -149,7 +149,7 @@ void NavEKF2_core::controlMagYawReset()
                 if (finalResetRequest) {
                     gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u in-flight yaw alignment complete",(unsigned)imu_index);
                 } else if (interimResetRequest) {
-                    gcs().send_text(MAV_SEVERITY_WARNING, "EKF2 IMU%u ground mag anomaly, yaw re-aligned",(unsigned)imu_index);
+                    gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u ground mag anomaly, yaw re-aligned",(unsigned)imu_index);
                 }
 
                 // update the yaw reset completed status
