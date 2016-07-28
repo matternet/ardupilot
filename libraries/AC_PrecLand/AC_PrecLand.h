@@ -64,6 +64,9 @@ public:
     // returns true when the landing target has been detected
     bool target_acquired() const;
 
+    // returns true if the target is within the field of view of the sensor
+    bool target_in_fov() const;
+
     // process a LANDING_TARGET mavlink message
     void handle_msg(mavlink_message_t* msg);
 
