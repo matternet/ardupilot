@@ -14,6 +14,6 @@ public:
     float getPosNIS(float pos, float posVar);
 
 private:
-    float _state[2];
-    float _cov[3];
+    float _state[3];
+    float _cov[6];
 };
