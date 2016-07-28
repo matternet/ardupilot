@@ -164,15 +164,9 @@ void Copter::land_run_vertical_control(bool pause_descent)
 {
     bool navigating = pos_control.is_active_xy();
 
-#if PRECISION_LANDING == ENABLED
-    bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired() && navigating;
-#else
-    bool doing_precision_landing = false;
-#endif
-
     // compute desired velocity
     const float precland_acceptable_error = 15.0f;
-    const float precland_min_descent_speed = 10.0f;
+    const float precland_go_alt = 30.0f;
     int32_t alt_above_ground;
     if (rangefinder_alt_ok()) {
         alt_above_ground = rangefinder_state.alt_cm_filt.get();
@@ -187,11 +181,22 @@ void Copter::land_run_vertical_control(bool pause_descent)
         cmb_rate = AC_AttitudeControl::sqrt_controller(LAND_START_ALT-alt_above_ground, g.p_alt_hold.kP(), pos_control.get_accel_z());
         cmb_rate = constrain_float(cmb_rate, pos_control.get_speed_down(), -abs(g.land_speed));
 
-        if (doing_precision_landing && alt_above_ground < 200.0f) {
-            float max_descent_speed = abs(g.land_speed)/2.0f;
-            float land_slowdown = MAX(0.0f, pos_control.get_horizontal_error()*(max_descent_speed/precland_acceptable_error));
-            cmb_rate = MIN(-precland_min_descent_speed, -max_descent_speed+land_slowdown);
+#if PRECISION_LANDING == ENABLED
+        bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired() && navigating;
+        if (doing_precision_landing && rangefinder_state.alt_cm > precland_go_alt) {
+            if (!precland.target_in_fov()) {
+                // ascend to ensure that the target does not get lost. NOTE: this condition will only persist until precland de-asserts target_acquired
+                cmb_rate = pos_control.get_speed_up();
+            } else if (rangefinder_state.alt_cm < 200.0f) {
+                // when we get low, slow the descent rate to half land speed, and stop if the error becomes unacceptable
+                if (pos_control.get_horizontal_error() > precland_acceptable_error) {
+                    cmb_rate = 0;
+                } else {
+                    cmb_rate = -abs(g.land_speed)*0.5f;
+                }
+            }
         }
+#endif
     }
 
     // record desired climb rate for logging

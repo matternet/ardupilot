@@ -155,7 +155,12 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
 
 bool AC_PrecLand::target_acquired() const
 {
-    return (AP_HAL::millis()-_last_update_ms) < 2000;
+    return (AP_HAL::millis()-_last_update_ms) < 3000;
+}
+
+bool AC_PrecLand::target_in_fov() const
+{
+    return (AP_HAL::millis()-_last_update_ms) < 500;
 }
 
 bool AC_PrecLand::get_target_position_cm(Vector2f& ret) const
