@@ -22,6 +22,15 @@ const AP_Param::GroupInfo AC_PrecLand::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("TYPE",    1, AC_PrecLand, _type, 0),
 
+    // @Param: YAW_ALIGN
+    // @DisplayName: Sensor yaw alignment
+    // @Description: Angle from body x-axis to sensor x-axis.
+    // @Range: 0 360
+    // @Increment: 1
+    // @User: Advanced
+    // @Units: Centi-degrees
+    AP_GROUPINFO("YAW_ALIGN",    2, AC_PrecLand, _yaw_align, 0),
+
     AP_GROUPEND
 };
 
@@ -114,8 +123,13 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
             // we have a new, unique los measurement
             _last_backend_los_meas_ms = _backend->los_meas_time_ms();
 
-            Vector3f target_vec_unit_body;
-            _backend->get_los_body(target_vec_unit_body);
+            Vector3f target_vec_unit_sensor;
+            _backend->get_los_body(target_vec_unit_sensor);
+
+            float sin_theta = sinf(radians(_yaw_align*0.01f));
+            float cos_theta = cosf(radians(_yaw_align*0.01f));
+            Vector3f target_vec_unit_body = Vector3f(cos_theta*target_vec_unit_sensor.x - sin_theta*target_vec_unit_sensor.y, sin_theta*target_vec_unit_sensor.x + cos_theta*target_vec_unit_sensor.y, target_vec_unit_sensor.z);
+
             Vector3f target_vec_unit_ned = _attitude_history.front()*target_vec_unit_body;
 
             bool target_vec_valid = target_vec_unit_ned.z > 0.0f;
