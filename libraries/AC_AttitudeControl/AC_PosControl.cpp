@@ -907,7 +907,7 @@ void AC_PosControl::rate_to_accel_xy(float dt, float ekfNavVelGainScaler)
     vel_xy_p = _pi_vel_xy.get_p();
 
     // update i term if we have not hit the accel or throttle limits OR the i term will reduce
-    if ((!_limit.accel_xy && !_motors.limit.throttle_upper)) {
+    if ((!_limit.accel_xy && !_motors.limit.throttle_upper && !_limit.jerk_xy)) {
         vel_xy_i = _pi_vel_xy.get_i();
     } else {
         vel_xy_i = _pi_vel_xy.get_i_shrink();
@@ -937,7 +937,7 @@ void AC_PosControl::accel_to_lean_angles(float dt, float ekfNavVelGainScaler, bo
     if (accel_total > accel_max && accel_total > 0.0f) {
         _accel_target.x = accel_max * _accel_target.x/accel_total;
         _accel_target.y = accel_max * _accel_target.y/accel_total;
-        _limit.accel_xy = true;     // unused
+        _limit.accel_xy = true;
     } else {
         // reset accel limit flag
         _limit.accel_xy = false;
@@ -960,6 +960,9 @@ void AC_PosControl::accel_to_lean_angles(float dt, float ekfNavVelGainScaler, bo
 
     if(accel_change_length > max_delta_accel) {
         accel_change *= max_delta_accel/accel_change_length;
+        _limit.jerk_xy = true;
+    } else {
+        _limit.jerk_xy = false;
     }
     _accel_target_jerk_limited += accel_change;
 

@@ -315,6 +315,7 @@ private:
         uint8_t vel_up      : 1;    // 1 if we have hit the vertical velocity limit going up
         uint8_t vel_down    : 1;    // 1 if we have hit the vertical velocity limit going down
         uint8_t accel_xy    : 1;    // 1 if we have hit the horizontal accel limit
+        uint8_t jerk_xy     : 1;
     } _limit;
 
     ///
