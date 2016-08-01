@@ -289,7 +289,7 @@ private:
         void set_surface(Surface new_surface);
 
     private:
-        Surface surface = Surface::GROUND;
+        Surface surface = Surface::NONE;
         uint32_t last_update_ms;    // system time of last update to target_alt_cm
         uint32_t last_glitch_cleared_ms;    // system time of last handle glitch recovery
         bool valid_for_logging;     // true if we have a desired target altitude
