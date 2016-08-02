@@ -195,7 +195,9 @@ void AP_BattMonitor_Backend::check_failsafe_types(bool &low_voltage, bool &low_c
     }
 
     // check critical battery levels
-    if ((voltage_used > 0) && (_params._critical_voltage > 0) && (voltage_used < _params._critical_voltage)) {
+    if ((voltage_used > 0) && (_params._critical_voltage > 0) &&
+        (voltage_used < _params._critical_voltage) &&
+        (voltage_used > _params._critical_voltage*0.25)) {
         critical_voltage = true;
     } else {
         critical_voltage = false;
@@ -209,7 +211,9 @@ void AP_BattMonitor_Backend::check_failsafe_types(bool &low_voltage, bool &low_c
         critical_capacity = false;
     }
 
-    if ((voltage_used > 0) && (_params._low_voltage > 0) && (voltage_used < _params._low_voltage)) {
+    if ((voltage_used > 0) && (_params._low_voltage > 0) &&
+        (voltage_used < _params._low_voltage) &&
+        (voltage_used > _params._low_voltage*0.25)) {
         low_voltage = true;
     } else {
         low_voltage = false;
