@@ -287,7 +287,7 @@ bool AP_BattMonitor::exhausted(uint8_t instance, float low_voltage, float min_ca
     }
 
     // check voltage
-    if ((state[instance].voltage > 0) && (low_voltage > 0) && (state[instance].voltage < low_voltage)) {
+    if ((state[instance].voltage > 0) && (low_voltage > 0) && (state[instance].voltage < low_voltage) && (state[instance].voltage > low_voltage*0.25f)) {
         // this is the first time our voltage has dropped below minimum so start timer
         if (state[instance].low_voltage_start_ms == 0) {
             state[instance].low_voltage_start_ms = AP_HAL::millis();
