@@ -243,7 +243,7 @@ void Copter::land_run_horizontal_control()
 #if PRECISION_LANDING == ENABLED
     bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired();
     // run precision landing
-    if (doing_precision_landing && precland_last_update_ms != precland.last_update_ms()) {
+    if (doing_precision_landing) {
         Vector2f target_pos, target_vel_rel;
         if (!precland.get_target_position_cm(target_pos)) {
             target_pos.x = inertial_nav.get_position().x;
