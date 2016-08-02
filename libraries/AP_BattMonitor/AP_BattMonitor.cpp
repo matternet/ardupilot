@@ -403,7 +403,7 @@ AP_BattMonitor::BatteryFailsafe AP_BattMonitor::check_failsafe(const uint8_t ins
         return BatteryFailsafe_Critical;
     }
 
-    if ((voltage_used > 0) && (_params[instance]._low_voltage > 0) && (voltage_used < _params[instance]._low_voltage)) {
+    if ((voltage_used > 0) && (_params[instance]._low_voltage > 0) && (voltage_used < _params[instance]._low_voltage) && (voltage_used > _params[instance]._low_voltage*0.25f)) {
         // this is the first time our voltage has dropped below minimum so start timer
         if (state[instance].low_voltage_start_ms == 0) {
             state[instance].low_voltage_start_ms = now;
