@@ -137,7 +137,11 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
             if (target_vec_valid && rangefinder_alt_valid && rangefinder_alt_cm > 0.0f) {
                 float alt = MAX(rangefinder_alt_cm*0.01f, 0.0f);
                 float dist = alt/target_vec_unit_ned.z;
-                Vector3f targetPosRelMeasNED = Vector3f(target_vec_unit_ned.x*dist, target_vec_unit_ned.y*dist, alt);
+
+                Vector2f cameraOffsetBody = Vector2f(.075f,-.028f);
+                Vector2f cameraOffsetNE = Vector2f(_ahrs.cos_yaw()*cameraOffsetBody.x - _ahrs.sin_yaw()*cameraOffsetBody.y, _ahrs.sin_yaw()*cameraOffsetBody.x + _ahrs.cos_yaw()*cameraOffsetBody.y);
+
+                Vector3f targetPosRelMeasNED = Vector3f(target_vec_unit_ned.x*dist+cameraOffsetNE.x, target_vec_unit_ned.y*dist+cameraOffsetNE.y, alt);
 
                 float xy_pos_var = sq(targetPosRelMeasNED.z*(0.01f + 0.01f*_ahrs.get_gyro().length()) + 0.02f);
                 if (!target_acquired()) {
