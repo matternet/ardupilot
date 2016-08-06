@@ -61,6 +61,9 @@ public:
     // returns target velocity relative to vehicle
     bool get_target_velocity_relative_cms(Vector2f& ret) const;
 
+    // returns last measured target position
+    bool get_target_position_relative_measured_cm(Vector2f& ret) const;
+
     // returns true when the landing target has been detected
     bool target_acquired() const;
 
@@ -96,6 +99,7 @@ private:
 
     PosVelEKF                   _ekf_x, _ekf_y;
     uint32_t                    _outlier_reject_count;
+    Vector3f                    _targetPosRelMeasNED;
     
     AP_Buffer<Matrix3f,8>       _attitude_history;
 
