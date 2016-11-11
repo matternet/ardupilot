@@ -89,6 +89,10 @@
 #define AP_SERIALMANAGER_SLCAN_BUFSIZE_RX       128
 #define AP_SERIALMANAGER_SLCAN_BUFSIZE_TX       128
 
+#define AP_SERIALMANAGER_MATTERNET_FTS_BAUD       115200
+#define AP_SERIALMANAGER_MATTERNET_FTS_BUFSIZE_RX     64
+#define AP_SERIALMANAGER_MATTERNET_FTS_BUFSIZE_TX     64
+
 class AP_SerialManager {
 public:
     AP_SerialManager();
@@ -124,6 +128,7 @@ public:
         SerialProtocol_SLCAN = 22,
         SerialProtocol_RCIN = 23,
         SerialProtocol_Hott = 27,
+        SerialProtocol_Matternet_FTS = 100,
     };
 
     // get singleton instance

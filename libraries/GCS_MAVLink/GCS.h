@@ -230,6 +230,9 @@ public:
     // don't get broadcast packets or forwarded packets
     static void set_channel_private(mavlink_channel_t chan);
 
+    // send a message to all active MAVLink connections
+    static void send_on_all_channels(const mavlink_message_t* msg);
+
     // return true if channel is private
     static bool is_private(mavlink_channel_t _chan) {
         return (mavlink_private & (1U<<(unsigned)_chan)) != 0;
