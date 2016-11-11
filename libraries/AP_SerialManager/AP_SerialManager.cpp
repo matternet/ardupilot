@@ -211,6 +211,11 @@ void AP_SerialManager::init()
                     state[i].uart->begin(map_baudrate(state[i].baud),
                                          AP_SERIALMANAGER_ULANDING_BUFSIZE_RX,
                                          AP_SERIALMANAGER_ULANDING_BUFSIZE_TX);
+                case SerialProtocol_Matternet_FTS:
+                    state[i].baud = AP_SERIALMANAGER_MATTERNET_FTS_BAUD / 1000;   // update baud param in case user looks at it
+                    state[i].uart->begin(map_baudrate(state[i].baud),
+                                         AP_SERIALMANAGER_MATTERNET_FTS_BUFSIZE_RX,
+                                         AP_SERIALMANAGER_MATTERNET_FTS_BUFSIZE_TX);
                     break;
             }
         }
