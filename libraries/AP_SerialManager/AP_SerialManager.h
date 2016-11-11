@@ -73,6 +73,11 @@
 #define AP_SERIALMANAGER_SBUS1_BUFSIZE_RX     16
 #define AP_SERIALMANAGER_SBUS1_BUFSIZE_TX     32
 
+
+#define AP_SERIALMANAGER_MATTERNET_FTS_BAUD       115200
+#define AP_SERIALMANAGER_MATTERNET_FTS_BUFSIZE_RX     64
+#define AP_SERIALMANAGER_MATTERNET_FTS_BUFSIZE_TX     64
+
 class AP_SerialManager {
 public:
     AP_SerialManager();
@@ -101,6 +106,7 @@ public:
         SerialProtocol_Sbus1 = 15,
         SerialProtocol_ESCTelemetry = 16,
         SerialProtocol_Devo_Telem = 17,
+        SerialProtocol_Matternet_FTS = 100
     };
 
     // get singleton instance
