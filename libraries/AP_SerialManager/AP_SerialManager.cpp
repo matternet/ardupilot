@@ -454,6 +454,13 @@ void AP_SerialManager::init()
                     state[i].uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
                     break;
 
+                case SerialProtocol_Matternet_FTS:
+                    state[i].baud = AP_SERIALMANAGER_MATTERNET_FTS_BAUD / 1000;   // update baud param in case user looks at it
+                    state[i].uart->begin(map_baudrate(state[i].baud),
+                                         AP_SERIALMANAGER_MATTERNET_FTS_BUFSIZE_RX,
+                                         AP_SERIALMANAGER_MATTERNET_FTS_BUFSIZE_TX);
+                    break;
+
                 case SerialProtocol_Robotis:
                     state[i].uart->begin(map_baudrate(state[i].baud),
                                          AP_SERIALMANAGER_ROBOTIS_BUFSIZE_RX,

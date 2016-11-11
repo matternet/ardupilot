@@ -1848,6 +1848,18 @@ void GCS::service_statustext(void)
     }
 }
 
+void GCS_MAVLINK::send_on_all_channels(const mavlink_message_t* msg)
+{
+    for (uint8_t i=0; i<MAVLINK_COMM_NUM_BUFFERS; i++) {
+        if ((1U<<i) & mavlink_active) {
+            mavlink_channel_t chan = (mavlink_channel_t)(MAVLINK_COMM_0+i);
+            if (comm_get_txspace(chan) >= ((uint16_t)msg->len) + GCS_MAVLINK::packet_overhead_chan(chan)) {
+                _mavlink_resend_uart(chan, msg);
+            }
+        }
+    }
+}
+
 void GCS::send_message(enum ap_message id)
 {
     for (uint8_t i=0; i<num_gcs(); i++) {
