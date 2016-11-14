@@ -5,12 +5,14 @@
 #include <AP_Param/AP_Param.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Relay/AP_Relay.h>
+#include <AP_SerialManager/AP_SerialManager.h>
 
 #define AP_PARACHUTE_TRIGGER_TYPE_RELAY_0       0
 #define AP_PARACHUTE_TRIGGER_TYPE_RELAY_1       1
 #define AP_PARACHUTE_TRIGGER_TYPE_RELAY_2       2
 #define AP_PARACHUTE_TRIGGER_TYPE_RELAY_3       3
 #define AP_PARACHUTE_TRIGGER_TYPE_SERVO         10
+#define AP_PARACHUTE_TRIGGER_TYPE_MATTERNET_FTS 11
 
 #define AP_PARACHUTE_RELEASE_DELAY_MS           500    // delay in milliseconds between call to release() and when servo or relay actually moves.  Allows for warning to user
 #define AP_PARACHUTE_RELEASE_DURATION_MS       2000    // when parachute is released, servo or relay stay at their released position/value for 2000ms (2seconds)
@@ -30,6 +32,7 @@ public:
     /// Constructor
     AP_Parachute(AP_Relay &relay)
         : _relay(relay)
+        , _mttr_fuse_pass(true)
     {
         // setup parameter defaults
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
@@ -39,11 +42,17 @@ public:
 #endif
         _singleton = this;
         AP_Param::setup_object_defaults(this, var_info);
+
+        strcpy(_mttr_fts_version, "UNKNOWN");
     }
 
     /* Do not allow copies */
     AP_Parachute(const AP_Parachute &other) = delete;
     AP_Parachute &operator=(const AP_Parachute&) = delete;
+
+    void init(AP_SerialManager& serial_manager) {
+        _mttr_uart = serial_manager.find_serial(AP_SerialManager::SerialProtocol_Matternet_FTS, 0);
+    }
 
     /// enabled - enable or disable parachute release
     void enabled(bool on_off);
@@ -79,6 +88,9 @@ public:
     // set_sink_rate - set vehicle sink rate
     void set_sink_rate(float sink_rate) { _sink_rate = sink_rate; }
 
+    const char* mttr_get_fts_version() { return _mttr_fts_version; }
+    bool get_mttr_prearm_pass() { return _mttr_status_pass && _mttr_fuse_pass; }
+
     static const struct AP_Param::GroupInfo        var_info[];
 
     // get singleton instance
@@ -104,6 +116,17 @@ private:
     bool        _is_flying:1;            // true if the vehicle is flying
     float       _sink_rate;              // vehicle sink rate in m/s
     uint32_t    _sink_time;              // time that the vehicle exceeded critical sink rate
+
+    // Matternet FTS
+    uint32_t _mttr_last_loop_ms;
+    uint32_t _mttr_last_status_recv_ms;
+    bool _mttr_status_pass;
+    bool _mttr_fuse_pass;
+    AP_HAL::UARTDriver *_mttr_uart = nullptr;
+    char _mttr_fts_version[16];
+    void send_debug_message(uint32_t tnow_ms, uint8_t ind, float value);
+    void mttr_fts_transmit(uint8_t msg_len, uint8_t* msg_buf);
+    void mttr_fts_update();
 };
 
 namespace AP {
