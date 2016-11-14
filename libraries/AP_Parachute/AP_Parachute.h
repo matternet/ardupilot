@@ -5,12 +5,14 @@
 #include <AP_Param/AP_Param.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Relay/AP_Relay.h>
+#include <AP_SerialManager/AP_SerialManager.h>
 
 #define AP_PARACHUTE_TRIGGER_TYPE_RELAY_0       0
 #define AP_PARACHUTE_TRIGGER_TYPE_RELAY_1       1
 #define AP_PARACHUTE_TRIGGER_TYPE_RELAY_2       2
 #define AP_PARACHUTE_TRIGGER_TYPE_RELAY_3       3
 #define AP_PARACHUTE_TRIGGER_TYPE_SERVO         10
+#define AP_PARACHUTE_TRIGGER_TYPE_MATTERNET_FTS 11
 
 #define AP_PARACHUTE_RELEASE_DELAY_MS           500    // delay in milliseconds between call to release() and when servo or relay actually moves.  Allows for warning to user
 #define AP_PARACHUTE_RELEASE_DURATION_MS       2000    // when parachute is released, servo or relay stay at their released position/value for 2000ms (2seconds)
@@ -40,6 +42,10 @@ public:
     /* Do not allow copies */
     AP_Parachute(const AP_Parachute &other) = delete;
     AP_Parachute &operator=(const AP_Parachute&) = delete;
+
+    void init(AP_SerialManager& serial_manager) {
+        _mttr_uart = serial_manager.find_serial(AP_SerialManager::SerialProtocol_Matternet_FTS, 0);
+    }
 
     /// enabled - enable or disable parachute release
     void enabled(bool on_off);
@@ -83,4 +89,12 @@ private:
     bool        _release_initiated:1;    // true if the parachute release initiated (may still be waiting for engine to be suppressed etc.)
     bool        _release_in_progress:1;  // true if the parachute release is in progress
     bool        _released:1;             // true if the parachute has been released
+
+    // Matternet FTS
+    uint32_t _mttr_last_loop_ms;
+    uint32_t _mttr_last_log_ms;
+    AP_HAL::UARTDriver *_mttr_uart = nullptr;
+    void send_debug_message(uint32_t tnow_ms, uint8_t ind, float value);
+    void mttr_fts_transmit(uint8_t msg_len, uint8_t* msg_buf);
+    void mttr_fts_update();
 };
