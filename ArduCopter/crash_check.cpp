@@ -262,12 +262,14 @@ void Copter::parachute_manual_release()
     }
 
     // do not release if we are landed or below the minimum altitude above home
+#if 0
     if ((parachute.alt_min() != 0 && (current_loc.alt < (int32_t)parachute.alt_min() * 100))) {
         // warn user of reason for failure
         gcs().send_text(MAV_SEVERITY_ALERT,"Parachute: Too low");
         AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_TOO_LOW);
         return;
     }
+#endif
 
     // if we get this far release parachute
     parachute_release();
