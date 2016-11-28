@@ -187,6 +187,9 @@ public:
     static void send_statustext(MAV_SEVERITY severity, uint8_t dest_bitmask, const char *text);
     static void service_statustext(void);
 
+    // send a message to all active MAVLink connections
+    static void send_on_all_channels(const mavlink_message_t* msg);
+
     // send a PARAM_VALUE message to all active MAVLink connections.
     static void send_parameter_value_all(const char *param_name, ap_var_type param_type, float param_value);
     
