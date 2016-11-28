@@ -205,6 +205,9 @@ public:
     // return a bitmap of streaming channels
     static uint8_t streaming_channel_mask(void) { return chan_is_streaming; }
 
+    // send a message to all active MAVLink connections
+    static void send_on_all_channels(const mavlink_message_t* msg);
+
     // send queued parameters if needed
     void send_queued_parameters(void);
 
