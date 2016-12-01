@@ -207,7 +207,6 @@ void AP_Parachute::mttr_fts_update()
         uint8_t msg_len = fts_protocol_rx_byte(byte, 32, msg_buf);
         if (msg_len > 0) {
             enum fts_msg_id_t msg_id = fts_protocol_identify_message(msg_len, msg_buf);
-            hal.console->printf("! %u\n", msg_id);
             if (msg_id == FTS_MSGID_STATUS) {
                 if (tnow_ms-_mttr_last_log_ms >= 180) {
                     _mttr_last_log_ms = tnow_ms;
