@@ -21,6 +21,7 @@
  *       Sensor is initialized in Continuos mode (10Hz)
  *
  */
+
 #include <AP_HAL/AP_HAL.h>
 
 #ifdef HAL_COMPASS_HMC5843_I2C_ADDR
@@ -36,6 +37,7 @@
 #include "AP_Compass_HMC5843.h"
 #include <AP_InertialSensor/AP_InertialSensor.h>
 #include <AP_InertialSensor/AuxiliaryBus.h>
+#include <DataFlash/DataFlash.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -227,12 +229,14 @@ errout:
  */
 bool AP_Compass_HMC5843::_timer()
 {
+    _timer_count++;
     bool result = _read_sample();
 
     // always ask for a new sample
     _take_sample();
     
     if (!result) {
+        _sample_fail_count++;
         return true;
     }
 
@@ -284,21 +288,31 @@ bool AP_Compass_HMC5843::_timer()
  *
  * bus semaphore must not be locked
  */
+
 void AP_Compass_HMC5843::read()
 {
+    uint8_t accum_count = _accum_count;
+    uint8_t timer_count = _timer_count;
+    uint8_t sample_fail_count = _sample_fail_count;
+    _timer_count = 0;
+    _sample_fail_count = 0;
+
     if (!_initialised) {
         // someone has tried to enable a compass for the first time
         // mid-flight .... we can't do that yet (especially as we won't
         // have the right orientation!)
+        DataFlash_Class::instance()->Log_Write("HMCD", "TimeUS,TCnt,ACnt,SFail,FRsn", "QBBBB", AP_HAL::micros64(), timer_count, accum_count, sample_fail_count, 1);
         return;
     }
 
     if (!_sem->take_nonblocking()) {
+        DataFlash_Class::instance()->Log_Write("HMCD", "TimeUS,TCnt,ACnt,SFail,FRsn", "QBBBB", AP_HAL::micros64(), timer_count, accum_count, sample_fail_count, 2);
         return;
     }
     
     if (_accum_count == 0) {
         _sem->give();
+        DataFlash_Class::instance()->Log_Write("HMCD", "TimeUS,TCnt,ACnt,SFail,FRsn", "QBBBB", AP_HAL::micros64(), timer_count, accum_count, sample_fail_count, 3);
         return;
     }
 
@@ -313,6 +327,8 @@ void AP_Compass_HMC5843::read()
     _sem->give();
     
     publish_filtered_field(field, _compass_instance);
+
+    DataFlash_Class::instance()->Log_Write("HMCD", "TimeUS,TCnt,ACnt,SFail,FRsn", "QBBBB", AP_HAL::micros64(), timer_count, accum_count, sample_fail_count, 0);
 }
 
 bool AP_Compass_HMC5843::_setup_sampling_mode()

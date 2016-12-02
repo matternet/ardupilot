@@ -59,6 +59,8 @@ private:
     int16_t _mag_y_accum;
     int16_t _mag_z_accum;
     uint8_t _accum_count;
+    uint8_t _timer_count;
+    uint8_t _sample_fail_count;
 
     uint8_t _compass_instance;
 
