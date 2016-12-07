@@ -21,6 +21,7 @@
 bool Copter::auto_init(bool ignore_checks)
 {
     if ((position_ok() && mission.num_commands() > 1) || ignore_checks) {
+        gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_Loiter");
         auto_mode = Auto_Loiter;
 
         // reject switching to auto mode if landed with motors armed but first command is not a takeoff (reduce chance of flips)
@@ -102,6 +103,7 @@ void Copter::auto_run()
 void Copter::auto_takeoff_start(const Location& dest_loc)
 {
     auto_mode = Auto_TakeOff;
+    gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_TakeOff");
 
     // convert location to class
     Location_Class dest(dest_loc);
@@ -203,6 +205,7 @@ void Copter::auto_takeoff_run()
 void Copter::auto_wp_start(const Vector3f& destination)
 {
     auto_mode = Auto_WP;
+    gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_WP");
 
     // initialise wpnav (no need to check return status because terrain data is not used)
     wp_nav->set_wp_destination(destination, false);
@@ -218,6 +221,7 @@ void Copter::auto_wp_start(const Vector3f& destination)
 void Copter::auto_wp_start(const Location_Class& dest_loc)
 {
     auto_mode = Auto_WP;
+    gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_WP");
 
     // send target to waypoint controller
     if (!wp_nav->set_wp_destination(dest_loc)) {
@@ -290,6 +294,7 @@ void Copter::auto_spline_start(const Location_Class& destination, bool stopped_a
                                const Location_Class& next_destination)
 {
     auto_mode = Auto_Spline;
+    gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_Spline");
 
     // initialise wpnav
     if (!wp_nav->set_spline_destination(destination, stopped_at_start, seg_end_type, next_destination)) {
@@ -370,6 +375,7 @@ void Copter::auto_land_start()
 void Copter::auto_land_start(const Vector3f& destination)
 {
     auto_mode = Auto_Land;
+    gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_Land");
 
     // initialise loiter target destination
     wp_nav->init_loiter_target(destination);
@@ -415,6 +421,7 @@ void Copter::auto_land_run()
 void Copter::auto_rtl_start()
 {
     auto_mode = Auto_RTL;
+    gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_RTL");
 
     // call regular rtl flight mode initialisation and ask it to ignore checks
     rtl_init(true);
@@ -455,6 +462,7 @@ void Copter::auto_circle_movetoedge_start(const Location_Class &circle_center, f
     if (dist_to_edge > 300.0f) {
         // set the state to move to the edge of the circle
         auto_mode = Auto_CircleMoveToEdge;
+        gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_CircleMoveToEdge");
 
         // convert circle_edge_neu to Location_Class
         Location_Class circle_edge(circle_edge_neu);
@@ -487,6 +495,7 @@ void Copter::auto_circle_movetoedge_start(const Location_Class &circle_center, f
 void Copter::auto_circle_start()
 {
     auto_mode = Auto_Circle;
+    gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_Circle");
 
     // initialise circle controller
     circle_nav->init(circle_nav->get_center());
@@ -511,6 +520,7 @@ void Copter::auto_circle_run()
 void Copter::auto_nav_guided_start()
 {
     auto_mode = Auto_NavGuided;
+    gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_NavGuided");
 
     // call regular guided flight mode initialisation
     guided_init(true);
@@ -537,6 +547,7 @@ bool Copter::auto_loiter_start()
         return false;
     }
     auto_mode = Auto_Loiter;
+    gcs().send_text(MAV_SEVERITY_INFO,"auto_mode = Auto_Loiter");
 
     // calculate stopping point
     Vector3f stopping_point;
