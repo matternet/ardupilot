@@ -527,6 +527,7 @@ bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
 // exit_mission - function that is called once the mission completes
 void ModeAuto::exit_mission()
 {
+    gcs().send_text(MAV_SEVERITY_INFO,"Mission completed");
     // play a tone
     AP_Notify::events.mission_complete = 1;
     // if we are not on the ground switch to loiter or land
@@ -1161,6 +1162,7 @@ void ModeAuto::do_land(const AP_Mission::Mission_Command& cmd)
     if (cmd.content.location.lat != 0 || cmd.content.location.lng != 0) {
         // set state to fly to location
         land_state = LandStateType_FlyToLocation;
+        gcs().send_text(MAV_SEVERITY_INFO,"Flying to land location");
 
         const Location target_loc = terrain_adjusted_location(cmd);
 
@@ -1168,6 +1170,7 @@ void ModeAuto::do_land(const AP_Mission::Mission_Command& cmd)
     } else {
         // set landing state
         land_state = LandStateType_Descending;
+        gcs().send_text(MAV_SEVERITY_INFO,"Landing");
 
         // initialise landing controller
         land_start();
@@ -1525,12 +1528,14 @@ bool ModeAuto::verify_land()
 
                 // advance to next state
                 land_state = LandStateType_Descending;
+                gcs().send_text(MAV_SEVERITY_INFO,"Landing");
             }
             break;
 
         case LandStateType_Descending:
             // rely on THROTTLE_LAND mode to correctly update landing status
             retval = copter.ap.land_complete && (motors->get_spool_state() == AP_Motors::SpoolState::GROUND_IDLE);
+            gcs().send_text(MAV_SEVERITY_INFO,"Landed");
             break;
 
         default:
