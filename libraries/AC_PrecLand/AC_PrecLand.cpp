@@ -25,7 +25,7 @@ const AP_Param::GroupInfo AC_PrecLand::var_info[] = {
 
     // @Param: YAW_ALIGN
     // @DisplayName: Sensor yaw alignment
-    // @Description: Yaw angle from body x-axis to sensor x-axis.
+    // @Description: Yaw angle of sensor relative to vehicle
     // @Range: 0 360
     // @Increment: 1
     // @User: Advanced
@@ -49,6 +49,24 @@ const AP_Param::GroupInfo AC_PrecLand::var_info[] = {
     // @User: Advanced
     // @Units: Centimeters
     AP_GROUPINFO("LAND_OFS_Y",    4, AC_PrecLand, _land_ofs_cm_y, 0),
+
+    // @Param: ROLL_ALIGN
+    // @DisplayName: Sensor roll alignment
+    // @Description: Roll angle of sensor relative to vehicle
+    // @Range: 0 360
+    // @Increment: 1
+    // @User: Advanced
+    // @Units: Centi-degrees
+    AP_GROUPINFO("ROLL_ALIGN",    7, AC_PrecLand, _roll_align, 0),
+
+    // @Param: PITCH_ALIGN
+    // @DisplayName: Sensor pitch alignment
+    // @Description: Pitch angle of sensor relative to vehicle
+    // @Range: 0 360
+    // @Increment: 1
+    // @User: Advanced
+    // @Units: Centi-degrees
+    AP_GROUPINFO("PITCH_ALIGN",   8, AC_PrecLand, _pitch_align, 0),
 
     AP_GROUPEND
 };
@@ -148,15 +166,10 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
             _backend->get_los_body(target_vec_unit_body);
 
             // Apply sensor yaw alignment rotation
-            float sin_yaw_align = sinf(radians(_yaw_align*0.01f));
-            float cos_yaw_align = cosf(radians(_yaw_align*0.01f));
-            Matrix3f Rz = Matrix3f(
-                cos_yaw_align, -sin_yaw_align, 0,
-                sin_yaw_align, cos_yaw_align, 0,
-                0, 0, 1
-            );
+            Matrix3f R;
+            R.from_euler(radians(_roll_align*0.01f), radians(_pitch_align*0.01f), radians(_yaw_align*0.01f));
 
-            Vector3f target_vec_unit_ned = _attitude_history.front() * Rz * target_vec_unit_body;
+            Vector3f target_vec_unit_ned = _attitude_history.front() * R * target_vec_unit_body;
 
             bool target_vec_valid = target_vec_unit_ned.z > 0.0f;
 

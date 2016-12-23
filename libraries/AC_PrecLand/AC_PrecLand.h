@@ -95,6 +95,8 @@ private:
     // parameters
     AP_Int8                     _enabled;           // enabled/disabled and behaviour
     AP_Int8                     _type;              // precision landing controller type
+    AP_Float                    _pitch_align;       // Pitch angle of sensor relative to vehicle
+    AP_Float                    _roll_align;        // Roll angle of sensor relative to vehicle
     AP_Float                    _yaw_align;         // Yaw angle from body x-axis to sensor x-axis.
     AP_Float                    _land_ofs_cm_x;     // Desired landing position of the camera forward of the target in vehicle body frame
     AP_Float                    _land_ofs_cm_y;     // Desired landing position of the camera right of the target in vehicle body frame
