@@ -122,6 +122,12 @@ void AP_MotorsMatrix::output_to_motors()
             break;
     }
 
+    for (i=0; i<AP_MOTORS_MAX_NUM_MOTORS; i++) {
+        if (motor_enabled[i] && cut_motor[i]) {
+            motor_out[i] = get_pwm_output_min();
+        }
+    }
+
     // send output to each motor
     hal.rcout->cork();
     for (i=0; i<AP_MOTORS_MAX_NUM_MOTORS; i++) {

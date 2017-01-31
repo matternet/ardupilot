@@ -69,6 +69,8 @@ enum aux_sw_func {
     AUXSW_THROW =               37,  // change to THROW flight mode
     AUXSW_AVOID_ADSB =          38,  // enable AP_Avoidance library
     AUXSW_PRECISION_LOITER =    39,  // enable precision loiter
+    AUXSW_CUT_MOTOR =           41,
+    AUXSW_CUT_ALL_MOTORS =      42,
     AUXSW_SWITCH_MAX,
 };
 

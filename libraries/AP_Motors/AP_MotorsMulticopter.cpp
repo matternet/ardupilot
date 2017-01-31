@@ -165,6 +165,7 @@ AP_MotorsMulticopter::AP_MotorsMulticopter(uint16_t loop_rate, uint16_t speed_hz
 
     // disable all motors by default
     memset(motor_enabled, false, sizeof(motor_enabled));
+    memset(cut_motor, false, sizeof(cut_motor));
 
     // setup battery voltage filtering
     _batt_voltage_filt.set_cutoff_frequency(AP_MOTORS_BATT_VOLT_FILT_HZ);
