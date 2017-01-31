@@ -587,6 +587,24 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
             }
 #endif
             break;
+        case AUXSW_CUT_MOTOR:
+            if (ch_flag == AUX_SWITCH_HIGH) {
+                motors->cut_motor[0] = true;
+            } else {
+                motors->cut_motor[0] = false;
+            }
+            break;
+        case AUXSW_CUT_ALL_MOTORS:
+            if (ch_flag == AUX_SWITCH_HIGH) {
+                for (uint8_t i=0; i<4; i++) {
+                    motors->cut_motor[i] = true;
+                }
+            } else {
+                for (uint8_t i=0; i<4; i++) {
+                    motors->cut_motor[i] = false;
+                }
+            }
+            break;
     }
 }
 

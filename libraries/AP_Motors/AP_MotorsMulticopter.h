@@ -98,6 +98,8 @@ public:
     void                set_thrust_compensation_callback(thrust_compensation_fn_t callback) {
         _thrust_compensation_callback = callback;
     }
+
+    bool cut_motor[AP_MOTORS_MAX_NUM_MOTORS];
     
     // var_info for holding Parameter information
     static const struct AP_Param::GroupInfo        var_info[];

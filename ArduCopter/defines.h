@@ -70,6 +70,8 @@ enum aux_sw_func {
     AUXSW_AVOID_ADSB =          38,  // enable AP_Avoidance library
     AUXSW_PRECISION_LOITER =    39,  // enable precision loiter
     AUXSW_AVOID_PROXIMITY =     40,  // enable object avoidance using proximity sensors (ie. horizontal lidar)
+    AUXSW_CUT_MOTOR =           41,
+    AUXSW_CUT_ALL_MOTORS =      42,
     AUXSW_SWITCH_MAX,
 };
 
