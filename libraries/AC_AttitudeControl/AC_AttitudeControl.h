@@ -236,6 +236,9 @@ public:
     // Calculates the body frame angular velocities to follow the target attitude
     void attitude_controller_run_quat();
 
+    // Return the tilt angle limit in radians
+    float get_tilt_limit_rad() { return radians(_aparm.angle_max*0.01f); }
+
     // sanity check parameters.  should be called once before take-off
     virtual void parameter_sanity_check() {}
 
@@ -292,9 +295,6 @@ protected:
 
     // Return the yaw slew rate limit in radians/s
     float get_slew_yaw_rads() { return radians(_slew_yaw*0.01f); }
-
-    // Return the tilt angle limit in radians
-    float get_tilt_limit_rad() { return radians(_aparm.angle_max*0.01f); }
 
     // Maximum rate the yaw target can be updated in Loiter, RTL, Auto flight modes
     AP_Float            _slew_yaw;
