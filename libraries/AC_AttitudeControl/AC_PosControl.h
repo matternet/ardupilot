@@ -80,6 +80,9 @@ public:
     ///     leash length will be recalculated
     void set_max_accel_z(float accel_cmss);
 
+    /// get_vel_error_z - returns current vertical speed error in cm/s
+    float get_vel_error_z() const { return _vel_error.z; }
+
     /// get_max_accel_z - returns current maximum vertical acceleration in cm/s/s
     float get_max_accel_z() const { return _accel_z_cms; }
 
