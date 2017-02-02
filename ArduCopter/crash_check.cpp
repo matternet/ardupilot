@@ -145,19 +145,23 @@ void Copter::thrust_loss_check()
 #if PARACHUTE == ENABLED
 
 // Code to detect a crash main ArduCopter code
-#define PARACHUTE_CHECK_TRIGGER_SEC         1       // 1 second of loss of control triggers the parachute
-#define PARACHUTE_CHECK_ANGLE_DEVIATION_CD  3000    // 30 degrees off from target indicates a loss of control
+#define PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG  30.0f
+#define PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC 0.5f
+#define PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS 3.0f
+#define PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_TIMEOUT_SEC 0.5f
 
-// parachute_check - disarms motors and triggers the parachute if serious loss of control has been detected
-// vehicle is considered to have a "serious loss of control" by the vehicle being more than 30 degrees off from the target roll and pitch angles continuously for 1 second
+// parachute_check - checks whether the parachute should be deployed. There are several criteria for parachute deployment. The parachute will deploy when:
+// - Attitude error is greater than PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG for PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC seconds
+// - Attitude error is greater than PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG *AND* tilt angle is greater than ANGLE_MAX + PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG
+// - Height control is active *AND* vertical velocity error is above PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS *AND* abs(vertical velocity) is above PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS *AND* all of these conditions are true for PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_TIMEOUT_SEC
+// - Flight mode is STABILIZE *AND* throttle is zero *AND* downward velocity is greater than 5 m/s
 // called at MAIN_LOOP_RATE
+
 void Copter::parachute_check()
 {
-    static uint16_t control_loss_count;	// number of iterations we have been out of control
-    static int32_t baro_alt_start;
-
-    // exit immediately if parachute is not enabled
+    // Return immediately if parachute is not enabled
     if (!parachute.enabled()) {
+        parachute_check_state.angle_error_excessive = false;
         return;
     }
 
@@ -184,45 +188,55 @@ void Copter::parachute_check()
     // ensure we are flying
     if (ap.land_complete) {
         control_loss_count = 0;
+        parachute_check_state.angle_error_excessive = false;
         return;
     }
 
-    // ensure the first control_loss event is from above the min altitude
-    if (control_loss_count == 0 && parachute.alt_min() != 0 && (current_loc.alt < (int32_t)parachute.alt_min() * 100)) {
-        return;
-    }
-
-    // check for angle error over 30 degrees
+    // Retrieve useful values
     const float angle_error = attitude_control->get_att_error_angle_deg();
-    if (angle_error <= CRASH_CHECK_ANGLE_DEVIATION_DEG) {
-        if (control_loss_count > 0) {
-            control_loss_count--;
-        }
-        return;
+    const float tilt_angle = acosf(ahrs.get_rotation_body_to_ned().c.z);
+    const float tilt_angle_limit = attitude_control->get_tilt_limit_rad() + radians(PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG);
+    const float vel_z = -inertial_nav.get_velocity_z()*0.01f; // Convert cm/s to m/s and convert NEU to NED
+    const float vel_z_error = -pos_control->get_vel_error_z()*0.01f; // Convert cm/s to m/s and convert NEU to NED
+
+    // Start attitude error timer
+    bool new_angle_error_excessive = angle_error > PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG;
+    if (new_angle_error_excessive && !parachute_check_state.angle_error_excessive) {
+        parachute_check_state.angle_error_excessive_begin_ms = millis();
     }
+    parachute_check_state.angle_error_excessive = new_angle_error_excessive;
 
-    // increment counter
-    if (control_loss_count < (PARACHUTE_CHECK_TRIGGER_SEC*scheduler.get_loop_rate_hz())) {
-        control_loss_count++;
+    // Start vertical velocity error timer
+    bool new_vel_z_error_excessive = pos_control->is_active_z() && fabsf(vel_z) > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS && fabsf(vel_z_error) > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS;
+    if (new_vel_z_error_excessive && !parachute_check_state.vel_z_error_excessive) {
+        parachute_check_state.vel_z_error_excessive_begin_ms = millis();
     }
+    parachute_check_state.vel_z_error_excessive = new_vel_z_error_excessive;
 
-    // record baro alt if we have just started losing control
-    if (control_loss_count == 1) {
-        baro_alt_start = baro_alt;
+    // Check for criterion: "Attitude error is greater than PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG for PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC seconds"
+    bool angle_error_excessive_timeout = parachute_check_state.angle_error_excessive && (millis()-parachute_check_state.angle_error_excessive_begin_ms)*1e-3f > PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC;
 
-    // exit if baro altitude change indicates we are not falling
-    } else if (baro_alt >= baro_alt_start) {
-        control_loss_count = 0;
-        return;
+    // Check for criterion: "Attitude error is greater than PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG *AND* tilt angle is greater than ANGLE_MAX + PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG"
+    bool tilt_angle_excessive = parachute_check_state.angle_error_excessive && tilt_angle > tilt_angle_limit;
 
-    // To-Do: add check that the vehicle is actually falling
+    // Check for criterion: "Height control is active *AND* vertical velocity error is above PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS *AND* abs(vertical velocity) is above PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS *AND* all of these conditions are true for PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_TIMEOUT_SEC"
+    bool vel_z_error_excessive_timeout = parachute_check_state.vel_z_error_excessive && (millis()-parachute_check_state.vel_z_error_excessive_begin_ms)*1e-3f > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_TIMEOUT_SEC;
 
-    // check if loss of control for at least 1 second
-    } else if (control_loss_count >= (PARACHUTE_CHECK_TRIGGER_SEC*scheduler.get_loop_rate_hz())) {
-        // reset control loss counter
-        control_loss_count = 0;
-        AP::logger().Write_Error(LogErrorSubsystem::CRASH_CHECK, LogErrorCode::CRASH_CHECK_LOSS_OF_CONTROL);
-        // release parachute
+    // Check for criterion: "Flight mode is STABILIZE *AND* throttle is zero *AND* downward velocity is greater than 5 m/s"
+    bool stabilize_throttle_cut = control_mode == STABILIZE && ap.throttle_zero && vel_z > 5.0f;
+
+    // Deploy the parachute if a criterion is met
+    if (angle_error_excessive_timeout) {
+        Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_ANGLE_ERROR_EXCESSIVE_TIMEOUT);
+        parachute_release();
+    } else if (tilt_angle_excessive) {
+        Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_TILT_ANGLE_EXCESSIVE);
+        parachute_release();
+    } else if (vel_z_error_excessive_timeout) {
+        Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_VEL_Z_ERROR_EXCESSIVE_TIMEOUT);
+        parachute_release();
+    } else if (stabilize_throttle_cut) {
+        Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_STABILIZE_THROTTLE_CUT);
         parachute_release();
     }
 

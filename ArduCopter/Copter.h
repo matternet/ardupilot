@@ -590,6 +590,13 @@ private:
     int16_t hover_roll_trim_scalar_slew;
 #endif
 
+    struct {
+        bool angle_error_excessive;
+        bool vel_z_error_excessive;
+        uint32_t angle_error_excessive_begin_ms;
+        uint32_t vel_z_error_excessive_begin_ms;
+    } parachute_check_state;
+
     // ground effect detector
     struct {
         bool takeoff_expected;
