@@ -295,6 +295,9 @@ public:
     // Calculates the body frame angular velocities to follow the target attitude
     void attitude_controller_run_quat();
 
+    // Return the tilt angle limit in radians
+    float get_tilt_limit_rad() { return radians(_aparm.angle_max*0.01f); }
+
     // sanity check parameters.  should be called once before take-off
     virtual void parameter_sanity_check() {}
 
