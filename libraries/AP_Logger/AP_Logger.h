@@ -157,9 +157,14 @@ enum class LogErrorCode : uint8_t {
     FAILED_CIRCLE_INIT = 4,
     DEST_OUTSIDE_FENCE = 5,
 
-// parachute failed to deploy because of low altitude or landed
+// parachute reasons
     PARACHUTE_TOO_LOW = 2,
     PARACHUTE_LANDED = 3,
+    PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT = 5,
+    PARACHUTE_TILT_ANGLE_EXCESSIVE = 6,
+    PARACHUTE_VEL_Z_ERROR_EXCESSIVE_TIMEOUT = 7,
+    PARACHUTE_STABILIZE_THROTTLE_CUT = 8,
+
 // EKF check definitions
     EKFCHECK_BAD_VARIANCE = 2,
     EKFCHECK_VARIANCE_CLEARED = 0,
