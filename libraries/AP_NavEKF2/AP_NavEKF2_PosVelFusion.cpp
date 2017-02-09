@@ -812,7 +812,7 @@ void NavEKF2_core::FuseVelPosNED()
                     R_OBS[obsIndex] *= sq(gpsNoiseScaler);
                 } else if (obsIndex == 5) {
                     innovVelPos[obsIndex] = stateStruct.position[obsIndex-3] - velPosObs[obsIndex];
-                    const ftype gndMaxBaroErr = 4.0f;
+                    const ftype gndMaxBaroErr = 8.0f;
                     const ftype gndBaroInnovFloor = -0.5f;
 
                     if(dal.get_touchdown_expected() && activeHgtSource == HGT_SOURCE_BARO) {
