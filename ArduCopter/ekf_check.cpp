@@ -155,6 +155,11 @@ void Copter::failsafe_ekf_event()
                 set_mode_land_with_pause(MODE_REASON_EKF_FAILSAFE);
             }
             break;
+
+        case FS_EKF_ACTION_PARACHUTE:
+            Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_EKF_FAILSAFE);
+            parachute_release();
+            break;
         case FS_EKF_ACTION_LAND:
         case FS_EKF_ACTION_LAND_EVEN_STABILIZE:
         default:
