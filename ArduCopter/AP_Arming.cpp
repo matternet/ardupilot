@@ -621,6 +621,14 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, AP_Arming::ArmingMethod 
         return false;
     }
 
+    // check that logging is working
+    if (copter.DataFlash.logging_failed()) {
+        if (display_failure) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: logging failed");
+        }
+        return false;
+    }
+
     // superclass method should always be the last thing called; it
     // has side-effects which would need to be cleaned up if one of
     // our arm checks failed
