@@ -863,6 +863,14 @@ bool Copter::arm_checks(bool display_failure, bool arming_from_gcs)
         return false;
     }
 
+    // check that logging is working
+    if (copter.DataFlash.logging_failed()) {
+        if (display_failure) {
+            gcs_send_text(MAV_SEVERITY_CRITICAL,"Arm: logging failed");
+        }
+        return false;
+    }
+
     // if we've gotten this far all is ok
     return true;
 }
