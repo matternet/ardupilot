@@ -144,6 +144,13 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("SAFE_DISARM", 23, AP_MotorsMulticopter, _disarm_disable_pwm, 0),
 
+    // @Param: THST_SLEWMAX
+    // @DisplayName: Throttle slew limit
+    // @Description: Slew rate limit on throttle increases
+    // @Range: 0 20
+    // @User: Advanced
+    AP_GROUPINFO("THST_SLEWMAX", 24, AP_MotorsMulticopter, _throttle_slew_max, 0),
+
     AP_GROUPEND
 };
 
@@ -211,13 +218,21 @@ void AP_MotorsMulticopter::output_min()
 void AP_MotorsMulticopter::update_throttle_filter()
 {
     if (armed()) {
+        float prev_throttle_filter = _throttle_filter.get();
         _throttle_filter.apply(_throttle_in, 1.0f/_loop_rate);
+
+        float thr_max = 1.0f;
+        if (_throttle_slew_max > 0) {
+            // apply slew rate limiter
+            thr_max = MIN(prev_throttle_filter + _throttle_slew_max/_loop_rate, 1.0f);
+        }
+
         // constrain filtered throttle
         if (_throttle_filter.get() < 0.0f) {
             _throttle_filter.reset(0.0f);
         }
-        if (_throttle_filter.get() > 1.0f) {
-            _throttle_filter.reset(1.0f);
+        if (_throttle_filter.get() > thr_max) {
+            _throttle_filter.reset(thr_max);
         }
     } else {
         _throttle_filter.reset(0.0f);
