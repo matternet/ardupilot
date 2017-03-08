@@ -17,7 +17,7 @@
  */
 
 #define GNDEFFECT_COMPENSATION ENABLED            // enable ground effect compensation for barometer (if propwash interferes with the barometer on the ground)
-#define ARMING_DELAY_SEC 2.5f
+#define ARMING_DELAY_SEC 3.0f
 
 // uncomment the lines below to disable features (flash sizes listed are for APM2 boards and will underestimate savings on Pixhawk and other boards)
 //#define LOGGING_ENABLED       DISABLED            // disable dataflash logging to save 11K of flash space
