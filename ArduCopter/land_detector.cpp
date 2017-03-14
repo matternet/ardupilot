@@ -159,6 +159,22 @@ void Copter::update_throttle_mix()
     } else {
         // autopilot controlled throttle
 
+        float xy_des_speed_cms = 0.0f;
+        float xy_speed_cms = 0.0f;
+        float des_climb_rate_cms = pos_control->get_desired_velocity().z;
+
+        if (pos_control->is_active_xy()) {
+            Vector3f vel_target = pos_control->get_vel_target();
+            vel_target.z = 0.0f;
+            xy_des_speed_cms = vel_target.length();
+        }
+
+        if (position_ok() || optflow_position_ok()) {
+            Vector3f vel = inertial_nav.get_velocity();
+            vel.z = 0.0f;
+            xy_speed_cms = vel.length();
+        }
+
         // check for aggressive flight requests - requested roll or pitch angle below 15 degrees
         const Vector3f angle_target = attitude_control->get_att_target_euler_cd();
         bool large_angle_request = (norm(angle_target.x, angle_target.y) > LAND_CHECK_LARGE_ANGLE_CD);
@@ -173,10 +189,16 @@ void Copter::update_throttle_mix()
         // check for requested decent
         bool descent_not_demanded = pos_control->get_desired_velocity().z >= 0.0f;
 
-        if (large_angle_request || large_angle_error || accel_moving || descent_not_demanded) {
-            attitude_control->set_throttle_mix_max(pos_control->get_vel_z_control_ratio());
-        } else {
+        bool xy_speed_low = (position_ok() || optflow_position_ok()) && xy_speed_cms <= 125.0f;
+        bool xy_speed_demand_low = pos_control->is_active_xy() && xy_des_speed_cms <= 125.0f;
+        bool slow_descent_demanded = pos_control->is_active_z() && des_climb_rate_cms < 0.0f && des_climb_rate_cms >= -100.0f;
+
+        bool slow_auto_descent = xy_speed_demand_low && xy_speed_low && slow_descent_demanded;
+
+        if ( slow_auto_descent || !(large_angle_request || large_angle_error || accel_moving || descent_not_demanded) ) {
             attitude_control->set_throttle_mix_min();
+        } else {
+            attitude_control->set_throttle_mix_max(pos_control->get_vel_z_control_ratio());
         }
     }
 #endif
