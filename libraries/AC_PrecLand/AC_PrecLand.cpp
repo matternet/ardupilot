@@ -53,6 +53,8 @@ const AP_Param::GroupInfo AC_PrecLand::var_info[] = {
     AP_GROUPEND
 };
 
+static const Vector3f cam_ofs_body = Vector3f(0.24f, -0.026f, 0.21f);
+
 // Default constructor.
 // Note that the Vector/Matrix constructors already implicitly zero
 // their values.
@@ -156,14 +158,15 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
                 0, 0, 1
             );
 
-            Vector3f target_vec_unit_ned = _attitude_history.front() * Rz * target_vec_unit_body;
+            const Matrix3f& Tbn = _attitude_history.front();
+            Vector3f target_vec_unit_ned = Tbn * Rz * target_vec_unit_body;
 
             bool target_vec_valid = target_vec_unit_ned.z > 0.0f;
 
             if (target_vec_valid && rangefinder_alt_valid && rangefinder_alt_cm > 0.0f) {
                 float alt = MAX(rangefinder_alt_cm*0.01f, 0.0f);
                 float dist = alt/target_vec_unit_ned.z;
-                _targetPosRelMeasNED = Vector3f(target_vec_unit_ned.x*dist, target_vec_unit_ned.y*dist, alt);
+                _targetPosRelMeasNED = Vector3f(target_vec_unit_ned.x*dist, target_vec_unit_ned.y*dist, alt) + Tbn*cam_ofs_body;
 
                 float xy_pos_var = sq(_targetPosRelMeasNED.z*(0.01f + 0.01f*_ahrs.get_gyro().length()) + 0.02f);
                 if (!target_acquired()) {
@@ -204,7 +207,7 @@ bool AC_PrecLand::get_target_position_cm(Vector2f& ret) const
         return false;
     }
 
-    Vector3f land_ofs_ned_cm = _ahrs.get_rotation_body_to_ned() * Vector3f(_land_ofs_cm_x,_land_ofs_cm_y,0);
+    Vector3f land_ofs_ned_cm = _ahrs.get_rotation_body_to_ned() * (Vector3f(_land_ofs_cm_x,_land_ofs_cm_y,0)-cam_ofs_body*100);
 
     ret.x = _ekf_x.getPos()*100.0f + _inav.get_position().x + land_ofs_ned_cm.x;
     ret.y = _ekf_y.getPos()*100.0f + _inav.get_position().y + land_ofs_ned_cm.y;
@@ -217,7 +220,7 @@ bool AC_PrecLand::get_target_position_relative_cm(Vector2f& ret) const
         return false;
     }
 
-    Vector3f land_ofs_ned_cm = _ahrs.get_rotation_body_to_ned() * Vector3f(_land_ofs_cm_x,_land_ofs_cm_y,0);
+    Vector3f land_ofs_ned_cm = _ahrs.get_rotation_body_to_ned() * (Vector3f(_land_ofs_cm_x,_land_ofs_cm_y,0)-cam_ofs_body*100);
 
     ret.x = _ekf_x.getPos()*100.0f + land_ofs_ned_cm.x;
     ret.y = _ekf_y.getPos()*100.0f + land_ofs_ned_cm.y;
