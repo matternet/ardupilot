@@ -241,12 +241,11 @@ private:
     RangeFinder rangefinder{serial_manager, ROTATION_PITCH_270};
     struct {
         bool enabled:1;
-        bool alt_healthy:1; // true if we can trust the altitude from the rangefinder
-        int16_t alt_cm;     // tilt compensated altitude (in cm) from rangefinder
+        bool terrain_height_healthy:1; // true if we can trust the altitude from the rangefinder
         uint32_t last_healthy_ms;
-        LowPassFilterFloat alt_cm_filt; // altitude filter
+        LowPassFilterFloat terrain_height_filt_cm; // terrain height relative to origin, filtered
         int8_t glitch_count;
-    } rangefinder_state = { false, false, 0, 0 };
+    } rangefinder_state = { false, false, 0};
 
 #if RPM_ENABLED == ENABLED
     AP_RPM rpm_sensor;
@@ -878,6 +877,7 @@ private:
     void read_barometer(void);
     void init_rangefinder(void);
     void read_rangefinder(void);
+    bool get_rangefinder_height_above_terrain(int32_t& ret);
     bool rangefinder_alt_ok();
     void rpm_update();
     void init_compass();
