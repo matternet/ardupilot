@@ -389,16 +389,16 @@ void Copter::Mode::zero_throttle_and_relax_ac()
  */
 int32_t Copter::Mode::get_alt_above_ground(void)
 {
-    int32_t alt_above_ground;
-    if (copter.rangefinder_alt_ok()) {
-        alt_above_ground = copter.rangefinder_state.alt_cm_filt.get();
+    int32_t height_above_terrain_cm;
+    bool rangefinder_height_above_terrain_cm_valid = get_rangefinder_height_above_terrain(height_above_terrain_cm);
+
+    if (rangefinder_height_above_terrain_cm_valid) {
+        return height_above_terrain_cm;
+    } else if (pos_control->is_active_xy() && current_loc.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_TERRAIN, height_above_terrain_cm)) {
+        return height_above_terrain_cm;
     } else {
-        bool navigating = pos_control->is_active_xy();
-        if (!navigating || !copter.current_loc.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_TERRAIN, alt_above_ground)) {
-            alt_above_ground = copter.current_loc.alt;
-        }
+        return current_loc.alt;
     }
-    return alt_above_ground;
 }
 
 void Copter::Mode::land_run_vertical_control(bool pause_descent)
