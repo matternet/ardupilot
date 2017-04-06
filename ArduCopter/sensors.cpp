@@ -28,7 +28,7 @@ void Copter::init_rangefinder(void)
 {
 #if RANGEFINDER_ENABLED == ENABLED
    rangefinder.init();
-   rangefinder_state.alt_cm_filt.set_cutoff_frequency(RANGEFINDER_WPNAV_FILT_HZ);
+   rangefinder_state.terrain_height_filt_cm.set_cutoff_frequency(RANGEFINDER_WPNAV_FILT_HZ);
    rangefinder_state.enabled = rangefinder.has_orientation(ROTATION_PITCH_270);
 #endif
 }
@@ -44,44 +44,62 @@ void Copter::read_rangefinder(void)
         DataFlash.Log_Write_RFND(rangefinder);
     }
 
-    rangefinder_state.alt_healthy = ((rangefinder.status_orient(ROTATION_PITCH_270) == RangeFinder::RangeFinder_Good) && (rangefinder.range_valid_count_orient(ROTATION_PITCH_270) >= RANGEFINDER_HEALTH_MAX));
+    int32_t height_above_origin_cm;
+    bool height_above_origin_cm_valid = current_loc.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_ORIGIN, height_above_origin_cm);
 
-    int16_t temp_alt = rangefinder.distance_cm_orient(ROTATION_PITCH_270);
+
+    rangefinder_state.terrain_height_healthy = ((rangefinder.status_orient(ROTATION_PITCH_270) == RangeFinder::RangeFinder_Good) && (rangefinder.range_valid_count_orient(ROTATION_PITCH_270) >= RANGEFINDER_HEALTH_MAX)) && height_above_origin_cm_valid;
+
+    float rangefinder_alt_meas = rangefinder.distance_cm_orient(ROTATION_PITCH_270);
 
  #if RANGEFINDER_TILT_CORRECTION == ENABLED
     // correct alt for angle of the rangefinder
-    temp_alt = (float)temp_alt * MAX(0.707f, ahrs.get_rotation_body_to_ned().c.z);
+    rangefinder_alt_meas = rangefinder_alt_meas * MAX(0.707f, ahrs.get_rotation_body_to_ned().c.z);
  #endif
 
-    rangefinder_state.alt_cm = temp_alt;
+    float terrain_height_meas = height_above_origin_cm - rangefinder_alt_meas;
 
     // filter rangefinder for use by AC_WPNav
     uint32_t now = AP_HAL::millis();
 
-    if (rangefinder_state.alt_healthy) {
+    if (rangefinder_state.terrain_height_healthy) {
         if (now - rangefinder_state.last_healthy_ms > RANGEFINDER_TIMEOUT_MS) {
             // reset filter if we haven't used it within the last second
-            rangefinder_state.alt_cm_filt.reset(rangefinder_state.alt_cm);
+            rangefinder_state.terrain_height_filt_cm.reset(terrain_height_meas);
         } else {
-            rangefinder_state.alt_cm_filt.apply(rangefinder_state.alt_cm, 0.05f);
+            rangefinder_state.terrain_height_filt_cm.apply(terrain_height_meas, 0.05f);
         }
         rangefinder_state.last_healthy_ms = now;
     }
 
     // send rangefinder altitude and health to waypoint navigation library
-    wp_nav->set_rangefinder_alt(rangefinder_state.enabled, rangefinder_state.alt_healthy, rangefinder_state.alt_cm_filt.get());
+    int32_t rangefinder_height_above_terrain_cm = 0;
+    bool rangefinder_height_above_terrain_cm_valid = get_rangefinder_height_above_terrain(rangefinder_height_above_terrain_cm);
+    wp_nav->set_rangefinder_alt(rangefinder_state.enabled, rangefinder_height_above_terrain_cm_valid, rangefinder_height_above_terrain_cm);
 
 #else
     rangefinder_state.enabled = false;
-    rangefinder_state.alt_healthy = false;
-    rangefinder_state.alt_cm = 0;
+    rangefinder_state.terrain_height_healthy = false;
 #endif
 }
 
 // return true if rangefinder_alt can be used
 bool Copter::rangefinder_alt_ok()
 {
-    return (rangefinder_state.enabled && rangefinder_state.alt_healthy);
+    int32_t temp;
+    return get_rangefinder_height_above_terrain(temp);
+}
+
+bool Copter::get_rangefinder_height_above_terrain(int32_t& ret)
+{
+    int32_t height_above_origin_cm;
+
+    if (!rangefinder_state.enabled || !rangefinder_state.terrain_height_healthy || !current_loc.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_ORIGIN, height_above_origin_cm)) {
+        return false;
+    }
+
+    ret = MAX(0, height_above_origin_cm-rangefinder_state.terrain_height_filt_cm.get());
+    return true;
 }
 
 /*
