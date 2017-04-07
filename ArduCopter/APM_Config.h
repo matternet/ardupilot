@@ -5,6 +5,8 @@
 
 #define ARMING_DELAY_SEC 3.0f
 
+#define RANGEFINDER_WPNAV_FILT_HZ 3.0f
+
 // uncomment the lines below to disable features (flash sizes listed are for APM2 boards and will underestimate savings on Pixhawk and other boards)
 //#define LOGGING_ENABLED       DISABLED            // disable logging to save 11K of flash space
 //#define MOUNT                 DISABLED            // disable the camera gimbal to save 8K of flash space
