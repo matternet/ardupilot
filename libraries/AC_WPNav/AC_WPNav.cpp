@@ -196,6 +196,7 @@ bool AC_WPNav::set_wp_destination(const Vector3f& destination, bool terrain_alt)
         origin = _pos_control.get_pos_target();
     } else {
         // if waypoint controller is not active, set origin to reasonable stopping point (using curr pos and velocity)
+        _pos_control.set_desired_velocity_z(0);
         _pos_control.get_stopping_point_xy(origin);
         _pos_control.get_stopping_point_z(origin);
     }
