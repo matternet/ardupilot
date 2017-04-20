@@ -203,7 +203,7 @@ private:
         bool enabled:1;
         bool terrain_height_healthy:1; // true if we can trust the altitude from the rangefinder
         uint32_t last_healthy_ms;
-        LowPassFilterFloat terrain_height_filt_cm; // terrain height relative to origin, filtered
+        float terrain_height_filt_cm; // terrain height relative to origin, filtered
         int8_t glitch_count;
     } rangefinder_state = { false, false, 0};
 
