@@ -103,9 +103,6 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(three_hz_loop,          3,     75),
     SCHED_TASK(compass_accumulate,   100,    100),
     SCHED_TASK(barometer_accumulate,  50,     90),
-#if PRECISION_LANDING == ENABLED
-    SCHED_TASK(update_precland,      400,     50),
-#endif
 #if FRAME_CONFIG == HELI_FRAME
     SCHED_TASK(check_dynamic_flight,  50,     75),
 #endif
@@ -258,6 +255,11 @@ void Copter::fast_loop()
     // run EKF state estimator (expensive)
     // --------------------
     read_AHRS();
+
+    // update precision landing estimator
+#if PRECISION_LANDING == ENABLED
+    update_precland();
+#endif
 
 #if FRAME_CONFIG == HELI_FRAME
     update_heli_control_dynamics();
