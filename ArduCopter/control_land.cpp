@@ -81,8 +81,8 @@ void Copter::land_gps_run()
         land_pause = false;
     }
     
-    land_run_horizontal_control();
-    land_run_vertical_control(land_pause);
+    land_run_horizontal_control(false);
+    land_run_vertical_control(false, land_pause);
 }
 
 // land_nogps_run - runs the land controller
@@ -143,7 +143,7 @@ void Copter::land_nogps_run()
         land_pause = false;
     }
 
-    land_run_vertical_control(land_pause);
+    land_run_vertical_control(false, land_pause);
 }
 
 /*
@@ -163,12 +163,12 @@ int32_t Copter::land_get_alt_above_ground(void)
     }
 }
 
-void Copter::land_run_vertical_control(bool pause_descent)
+void Copter::land_run_vertical_control(bool do_precision, bool pause_descent)
 {
     bool navigating = pos_control->is_active_xy();
 
 #if PRECISION_LANDING == ENABLED
-    bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired() && navigating;
+    bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired() && navigating && do_precision;
 #else
     bool doing_precision_landing = false;
 #endif
@@ -211,7 +211,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
     pos_control->update_z_controller();
 }
 
-void Copter::land_run_horizontal_control()
+void Copter::land_run_horizontal_control(bool do_precision)
 {
     int16_t roll_control = 0, pitch_control = 0;
     float target_yaw_rate = 0;
@@ -250,7 +250,7 @@ void Copter::land_run_horizontal_control()
     }
 
 #if PRECISION_LANDING == ENABLED
-    bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired();
+    bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired() && do_precision;
     // run precision landing
     if (doing_precision_landing) {
         Vector2f target_pos, target_vel_rel;

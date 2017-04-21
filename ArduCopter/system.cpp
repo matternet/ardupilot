@@ -238,7 +238,7 @@ void Copter::init_ardupilot()
 
 #if PRECISION_LANDING == ENABLED
     // initialise precision landing
-    init_precland();
+    precision_land_init();
 #endif
 
 #ifdef USERHOOK_INIT

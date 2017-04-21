@@ -267,7 +267,7 @@ void Copter::fast_loop()
 
     // update precision landing estimator
 #if PRECISION_LANDING == ENABLED
-    update_precland();
+    precision_land_update_estimator();
 #endif
 
 #if FRAME_CONFIG == HELI_FRAME
