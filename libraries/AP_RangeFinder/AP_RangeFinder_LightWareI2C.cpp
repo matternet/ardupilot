@@ -21,6 +21,11 @@
 
 extern const AP_HAL::HAL& hal;
 
+#define LIGHTWARE_DISTANCE_READ_REG 0
+#define LIGHTWARE_LOST_SIGNAL_TIMEOUT_READ_REG 22
+#define LIGHTWARE_LOST_SIGNAL_TIMEOUT_WRITE_REG 23
+#define LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE 5
+
 /*
    The constructor also initializes the rangefinder. Note that this
    constructor is not called until detect() returns true, so we
@@ -41,30 +46,53 @@ AP_RangeFinder_Backend *AP_RangeFinder_LightWareI2C::detect(RangeFinder::RangeFi
         = new AP_RangeFinder_LightWareI2C(_state, std::move(dev));
 
     if (!sensor) {
-        delete sensor;
-        return nullptr;
+        goto fail;
     }
 
     if (sensor->_dev->get_semaphore()->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
-        uint16_t reading_cm;
-        if (!sensor->get_reading(reading_cm)) {
+        if (!sensor->init()) {
             sensor->_dev->get_semaphore()->give();
-            delete sensor;
-            return nullptr;
+            goto fail;
         }
+
         sensor->_dev->get_semaphore()->give();
+        return sensor;
+    } else {
+        goto fail;
     }
 
-    sensor->init();
-
-    return sensor;
+fail:
+    delete sensor;
+    return nullptr;
 }
 
-void AP_RangeFinder_LightWareI2C::init()
+bool AP_RangeFinder_LightWareI2C::init()
 {
+    union {
+        be16_t be16_val;
+        uint8_t bytes[2];
+    } timeout;
+
+    // Retreive lost signal timeout register
+    const uint8_t read_reg = LIGHTWARE_LOST_SIGNAL_TIMEOUT_READ_REG;
+    if (!_dev->transfer(&read_reg, 1, timeout.bytes, 2)) {
+        return false;
+    }
+
+    // Check lost signal timeout register against desired value and write it if it does not match
+    if (be16toh(timeout.be16_val) != LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE) {
+        timeout.be16_val = htobe16(LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE);
+        const uint8_t send_buf[3] = {LIGHTWARE_LOST_SIGNAL_TIMEOUT_WRITE_REG, timeout.bytes[0], timeout.bytes[1]};
+        if (!_dev->transfer(send_buf, sizeof(send_buf), nullptr, 0)) {
+            return false;
+        }
+    }
+
     // call timer() at 20Hz
     _dev->register_periodic_callback(50000,
                                      FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::timer, void));
+
+    return true;
 }
 
 // read - return last value measured by sensor
@@ -76,14 +104,15 @@ bool AP_RangeFinder_LightWareI2C::get_reading(uint16_t &reading_cm)
         return false;
     }
 
+    const uint8_t read_reg = LIGHTWARE_DISTANCE_READ_REG;
+
     // read the high and low byte distance registers
-    bool ret = _dev->read((uint8_t *) &val, sizeof(val));
-    if (ret) {
+    if (_dev->transfer(&read_reg, 1, (uint8_t *)&val, sizeof(val))) {
         // combine results into distance
         reading_cm = be16toh(val);
+        return true;
     }
-
-    return ret;
+    return false;
 }
 
 /*
