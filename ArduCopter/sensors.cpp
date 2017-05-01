@@ -59,7 +59,7 @@ void Copter::read_rangefinder(void)
     if (rangefinder_alt_meas_valid) {
         if (rangefinder_state.terrain_height_healthy) {
             // Bias towards higher measurements
-            const float tc = (terrain_height_meas > rangefinder_state.terrain_height_filt_cm) ? 0.1f : 1.0f;
+            const float tc = (terrain_height_meas > rangefinder_state.terrain_height_filt_cm) ? 0.1f : 0.2f;
             rangefinder_state.terrain_height_filt_cm += (terrain_height_meas-rangefinder_state.terrain_height_filt_cm)*0.05f/(0.05f+tc);
         } else {
             rangefinder_state.terrain_height_filt_cm = terrain_height_meas;
