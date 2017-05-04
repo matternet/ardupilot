@@ -33,6 +33,8 @@ public:
     {
         // setup parameter defaults
         AP_Param::setup_object_defaults(this, var_info);
+
+        strcpy(_mttr_fts_version, "UNKNOWN");
     }
 
     /* Do not allow copies */
@@ -68,6 +70,8 @@ public:
     ///   0 = altitude check disabled
     int16_t alt_min() const { return _alt_min; }
 
+    const char* mttr_get_fts_version() { return _mttr_fts_version; }
+
     static const struct AP_Param::GroupInfo        var_info[];
 
 private:
@@ -90,6 +94,7 @@ private:
     uint32_t _mttr_last_loop_ms;
     uint32_t _mttr_last_log_ms;
     AP_HAL::UARTDriver *_mttr_uart = nullptr;
+    char _mttr_fts_version[16];
     void send_debug_message(uint32_t tnow_ms, uint8_t ind, float value);
     void mttr_fts_transmit(uint8_t msg_len, uint8_t* msg_buf);
     void mttr_fts_update();
