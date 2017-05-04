@@ -2152,6 +2152,11 @@ void GCS_MAVLINK::send_autopilot_version() const
         uid,
         uid2
     );
+
+
+    char mttr_fts_text[50];
+    snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", copter.parachute.mttr_get_fts_version());
+    send_text(MAV_SEVERITY_INFO, mttr_fts_text);
 }
 
 
