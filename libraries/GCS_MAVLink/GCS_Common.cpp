@@ -47,6 +47,7 @@
 #include <AP_Winch/AP_Winch.h>
 #include <AP_OSD/AP_OSD.h>
 #include <AP_RCTelemetry/AP_CRSF_Telem.h>
+#include <AP_Parachute/AP_Parachute.h>
 
 #include <stdio.h>
 
@@ -2389,6 +2390,8 @@ void GCS_MAVLINK::send_autopilot_version() const
         uid,
         uid2
     );
+
+    send_matternet_FTS_version();
 }
 
 
@@ -3936,6 +3939,17 @@ MAV_RESULT GCS_MAVLINK::handle_command_request_autopilot_capabilities(const mavl
     send_message(MSG_AUTOPILOT_VERSION);
 
     return MAV_RESULT_ACCEPTED;
+}
+
+/*
+  send Matternet FTS version string
+ */
+void GCS_MAVLINK::send_matternet_FTS_version(void) const
+{
+    AP_Parachute *parachute = AP::parachute();
+    if (parachute) {
+        gcs().send_text(MAV_SEVERITY_INFO, "MTTR_FTS_VER: %s", parachute->mttr_get_fts_version());
+    }
 }
 
 
