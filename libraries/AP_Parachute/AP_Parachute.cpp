@@ -227,10 +227,9 @@ void AP_Parachute::mttr_fts_update()
 
             } else if (msg_id == FTS_MSGID_VERSION) {
                 struct fts_msg_version_s* msg = (struct fts_msg_version_s*)msg_buf;
-                char git_hash[16];
-                memset(git_hash, 0, sizeof(git_hash));
-                memcpy(git_hash, msg->git_hash, sizeof(msg->git_hash));
-                DataFlash_Class::instance()->Log_Write("FTSV", "TimeUS,Hash", "QN", AP_HAL::micros64(), git_hash);
+                memset(_mttr_fts_version, 0, sizeof(_mttr_fts_version));
+                memcpy(_mttr_fts_version, msg->git_hash, sizeof(msg->git_hash));
+                DataFlash_Class::instance()->Log_Write("FTSV", "TimeUS,Hash", "QN", AP_HAL::micros64(), _mttr_fts_version);
             }
         }
     }
