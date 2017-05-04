@@ -1162,6 +1162,11 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: {
             if (is_equal(packet.param1,1.0f)) {
                 send_autopilot_version(FIRMWARE_VERSION);
+
+                char mttr_fts_text[50];
+                snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", copter.parachute.mttr_get_fts_version());
+                send_text(MAV_SEVERITY_INFO, mttr_fts_text);
+
                 result = MAV_RESULT_ACCEPTED;
             }
             break;
@@ -1603,6 +1608,11 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
 
     case MAVLINK_MSG_ID_AUTOPILOT_VERSION_REQUEST:
         send_autopilot_version(FIRMWARE_VERSION);
+
+        char mttr_fts_text[50];
+        snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", copter.parachute.mttr_get_fts_version());
+        send_text(MAV_SEVERITY_INFO, mttr_fts_text);
+
         break;
 
     case MAVLINK_MSG_ID_SET_HOME_POSITION:
