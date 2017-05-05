@@ -447,7 +447,7 @@ void Copter::Mode::land_run_vertical_control(bool pause_descent)
     pos_control->update_z_controller();
 }
 
-void Copter::Mode::land_run_horizontal_control()
+void Copter::Mode::land_run_horizontal_control(bool fixed_yaw, float yaw_command_cd)
 {
     LowPassFilterFloat &rc_throttle_control_in_filter = copter.rc_throttle_control_in_filter;
     AP_Vehicle::MultiCopter &aparm = copter.aparm;
@@ -539,7 +539,11 @@ void Copter::Mode::land_run_horizontal_control()
 
 
     // call attitude controller
-    attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(nav_roll, nav_pitch, target_yaw_rate);
+    if (fixed_yaw) {
+        attitude_control->input_euler_angle_roll_pitch_yaw(wp_nav->get_roll(), wp_nav->get_pitch(), yaw_command_cd, true, get_smoothing_gain());
+    } else {
+        attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(nav_roll, nav_pitch, target_yaw_rate, get_smoothing_gain());
+    }
 }
 
 // pass-through functions to reduce code churn on conversion;
