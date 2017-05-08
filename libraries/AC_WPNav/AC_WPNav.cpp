@@ -359,19 +359,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     // calculate the horizontal error
     _track_error_xy = norm(track_error.x, track_error.y);
 
-    // calculate the vertical error
-    float track_error_z = fabsf(track_error.z);
-
-    // get up leash if we are moving up, down leash if we are moving down
-    float leash_z = track_error.z >= 0 ? _pos_control.get_leash_up_z() : _pos_control.get_leash_down_z();
-
-    // use pythagoras's theorem calculate how far along the track we could move the intermediate target before reaching the end of the leash
-    //   track_desired_max is the distance from the vehicle to our target point along the track.  It is the "hypotenuse" which we want to be no longer than our leash (aka _track_leash_length)
-    //   track_error is the line from the vehicle to the closest point on the track.  It is the "opposite" side
-    //   track_leash_slack is the line from the closest point on the track to the target point.  It is the "adjacent" side.  We adjust this so the track_desired_max is no longer than the leash
-    float track_leash_length_abs = fabsf(_track_leash_length);
-    float track_error_max_abs = MAX(_track_leash_length*track_error_z/leash_z, _track_leash_length*_track_error_xy/_pos_control.get_leash_xy());
-    track_leash_slack = (track_leash_length_abs > track_error_max_abs) ? safe_sqrt(sq(_track_leash_length) - sq(track_error_max_abs)) : 0;
+    track_leash_slack = (_track_leash_length > _track_error_xy) ? safe_sqrt(sq(_track_leash_length) - sq(_track_error_xy)) : 0;
     track_desired_max = track_covered + track_leash_slack;
 
     // check if target is already beyond the leash
@@ -549,33 +537,34 @@ void AC_WPNav::calculate_wp_leash_length()
     float pos_delta_unit_z = fabsf(_pos_delta_unit.z);
 
     float speed_z;
-    float leash_z;
     if (_pos_delta_unit.z >= 0.0f) {
         speed_z = _wp_speed_up_cms;
-        leash_z = _pos_control.get_leash_up_z();
     }else{
         speed_z = _wp_speed_down_cms;
-        leash_z = _pos_control.get_leash_down_z();
     }
 
     // calculate the maximum acceleration, maximum velocity, and leash length in the direction of travel
     if(is_zero(pos_delta_unit_z) && is_zero(pos_delta_unit_xy)){
         _track_accel = 0;
         _track_speed = 0;
-        _track_leash_length = WPNAV_LEASH_LENGTH_MIN;
     }else if(is_zero(_pos_delta_unit.z)){
         _track_accel = _wp_accel_cmss/pos_delta_unit_xy;
         _track_speed = _wp_speed_cms/pos_delta_unit_xy;
-        _track_leash_length = _pos_control.get_leash_xy()/pos_delta_unit_xy;
     }else if(is_zero(pos_delta_unit_xy)){
         _track_accel = _wp_accel_z_cmss/pos_delta_unit_z;
         _track_speed = speed_z/pos_delta_unit_z;
-        _track_leash_length = leash_z/pos_delta_unit_z;
     }else{
         _track_accel = MIN(_wp_accel_z_cmss/pos_delta_unit_z, _wp_accel_cmss/pos_delta_unit_xy);
         _track_speed = MIN(speed_z/pos_delta_unit_z, _wp_speed_cms/pos_delta_unit_xy);
-        _track_leash_length = MIN(leash_z/pos_delta_unit_z, _pos_control.get_leash_xy()/pos_delta_unit_xy);
     }
+
+    float track_speed_xy = _track_speed*pos_delta_unit_xy;
+    float track_speed_z = _track_speed*pos_delta_unit_z;
+
+    float leash_length_xy = _pos_control.calc_leash_length(track_speed_xy, _pos_control.get_accel_xy(), _pos_control.get_pos_xy_p().kP());
+    float leash_length_z = _pos_control.calc_leash_length(track_speed_z, _pos_control.get_accel_z(), _pos_control.get_pos_z_p().kP());
+
+    _track_leash_length = sqrtf(sq(leash_length_xy)+sq(leash_length_z)) + WPNAV_LEASH_LENGTH_MIN;
 
     // calculate slow down distance (the distance from the destination when the target point should begin to slow down)
     calc_slow_down_distance(_track_speed, _track_accel);
