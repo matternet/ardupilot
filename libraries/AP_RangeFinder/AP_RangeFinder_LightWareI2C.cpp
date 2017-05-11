@@ -100,10 +100,6 @@ bool AP_RangeFinder_LightWareI2C::get_reading(uint16_t &reading_cm)
 {
     be16_t val;
 
-    if (state.address == 0) {
-        return false;
-    }
-
     const uint8_t read_reg = LIGHTWARE_DISTANCE_READ_REG;
 
     // read the high and low byte distance registers
