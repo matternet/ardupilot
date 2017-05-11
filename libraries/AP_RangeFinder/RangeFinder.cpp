@@ -640,7 +640,9 @@ void RangeFinder::detect_instance(uint8_t instance)
         }
         break;
     case RangeFinder_TYPE_MBI2C:
-        _add_backend(instance, AP_RangeFinder_MaxsonarI2CXL::detect(state[instance]));
+        if (state[instance].address) {
+            _add_backend(instance, AP_RangeFinder_MaxsonarI2CXL::detect(state[instance], hal.i2c_mgr->get_device(state[instance].bus, state[instance].address)));
+        }
         break;
     case RangeFinder_TYPE_LWI2C:
         if (state[instance].address) {
