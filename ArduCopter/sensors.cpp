@@ -1,4 +1,5 @@
 #include "Copter.h"
+#include <AP_RangeFinder/RangeFinder_Backend.h>
 
 void Copter::init_barometer(bool full_calibration)
 {
@@ -43,8 +44,18 @@ void Copter::read_rangefinder(void)
         DataFlash.Log_Write_RFND(rangefinder);
     }
 
-    bool rangefinder_alt_meas_valid = ((rangefinder.status_orient(ROTATION_PITCH_270) == RangeFinder::RangeFinder_Good) && (rangefinder.range_valid_count_orient(ROTATION_PITCH_270) >= RANGEFINDER_HEALTH_MAX));
-    float rangefinder_alt_meas = rangefinder.distance_cm_orient(ROTATION_PITCH_270);
+    bool rangefinder_alt_meas_valid = false;
+    float rangefinder_alt_meas = 0;
+
+
+    for (uint8_t i=0; i<RANGEFINDER_MAX_INSTANCES; i++) {
+        AP_RangeFinder_Backend *sensor = rangefinder.get_backend(i);
+        if (sensor != nullptr && sensor->orientation() == ROTATION_PITCH_270 && sensor->status() == RangeFinder::RangeFinder_Good && sensor->range_valid_count() >= RANGEFINDER_HEALTH_MAX) {
+            rangefinder_alt_meas_valid = true;
+            rangefinder_alt_meas = sensor->distance_cm();
+            break;
+        }
+    }
 
  #if RANGEFINDER_TILT_CORRECTION == ENABLED
     // correct alt for angle of the rangefinder
