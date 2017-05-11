@@ -93,6 +93,7 @@ public:
         AP_Int16 min_distance_cm;
         AP_Int16 max_distance_cm;
         AP_Int8  ground_clearance_cm;
+        AP_Int8  bus;
         AP_Int8  address;
         AP_Vector3f pos_offset; // position offset in body frame
         AP_Int8  orientation;
