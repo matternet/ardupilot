@@ -39,7 +39,7 @@ void AP_Proximity_RangeFinder::update(void)
     }
 
     // look through all rangefinders
-    for (uint8_t i=0; i<rngfnd->num_sensors(); i++) {
+    for (uint8_t i=0; i<RANGEFINDER_MAX_INSTANCES; i++) {
         AP_RangeFinder_Backend *sensor = rngfnd->get_backend(i);
         if (sensor == nullptr) {
             continue;
