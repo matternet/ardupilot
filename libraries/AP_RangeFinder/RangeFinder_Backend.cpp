@@ -27,7 +27,7 @@ extern const AP_HAL::HAL& hal;
 AP_RangeFinder_Backend::AP_RangeFinder_Backend(RangeFinder::RangeFinder_State &_state) :
         state(_state)
 {
-    _sem = hal.util->new_semaphore();    
+    _sem = hal.util->new_semaphore();
 }
 
 // update status based on distance measurement

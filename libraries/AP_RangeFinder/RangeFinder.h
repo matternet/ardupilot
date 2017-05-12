@@ -102,10 +102,10 @@ public:
 
     // parameters for each instance
     static const struct AP_Param::GroupInfo var_info[];
-    
+
     // Return the number of range finder instances
     uint8_t num_sensors(void) const {
-        return num_instances;
+        return _num_instances;
     }
 
     // detect and initialise any available rangefinders
@@ -129,6 +129,7 @@ public:
     // methods to return a distance on a particular orientation from
     // any sensor which can current supply it
     uint16_t distance_cm_orient(enum Rotation orientation) const;
+
     uint16_t voltage_mv_orient(enum Rotation orientation) const;
     int16_t max_distance_cm_orient(enum Rotation orientation) const;
     int16_t min_distance_cm_orient(enum Rotation orientation) const;
@@ -136,6 +137,7 @@ public:
     MAV_DISTANCE_SENSOR get_mav_distance_sensor_type_orient(enum Rotation orientation) const;
     RangeFinder_Status status_orient(enum Rotation orientation) const;
     bool has_data_orient(enum Rotation orientation) const;
+
     uint8_t range_valid_count_orient(enum Rotation orientation) const;
     const Vector3f &get_pos_offset_orient(enum Rotation orientation) const;
 
@@ -158,7 +160,8 @@ public:
 private:
     RangeFinder_State state[RANGEFINDER_MAX_INSTANCES];
     AP_RangeFinder_Backend *drivers[RANGEFINDER_MAX_INSTANCES];
-    uint8_t num_instances:3;
+
+    uint8_t _num_instances;
     float estimated_terrain_height;
     AP_SerialManager &serial_manager;
     Vector3f pos_offset_zero;   // allows returning position offsets of zero for invalid requests
@@ -166,5 +169,5 @@ private:
     void detect_instance(uint8_t instance);
     void update_instance(uint8_t instance);  
 
-    bool _add_backend(AP_RangeFinder_Backend *driver);
+    bool _add_backend(uint8_t instance, AP_RangeFinder_Backend *driver);
 };
