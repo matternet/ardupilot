@@ -1,6 +1,7 @@
 #include "AC_AttitudeControl_Multi.h"
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
+#include <DataFlash/DataFlash.h>
 
 // table of user settable parameters
 const AP_Param::GroupInfo AC_AttitudeControl_Multi::var_info[] = {
@@ -190,6 +191,8 @@ void AC_AttitudeControl_Multi::update_althold_lean_angle_max(float throttle_in)
 
     float althold_lean_angle_max = acos(constrain_float(_throttle_in/(AC_ATTITUDE_CONTROL_ANGLE_LIMIT_THROTTLE_MAX * thr_max), 0.0f, 1.0f));
     _althold_lean_angle_max = _althold_lean_angle_max + (_dt/(_dt+_angle_limit_tc))*(althold_lean_angle_max-_althold_lean_angle_max);
+
+    DataFlash_Class::instance()->Log_Write("ALIM", "TimeUS,Limit,FLimit,ThMax,ThIn", "Qffff", AP_HAL::micros64(), althold_lean_angle_max, _althold_lean_angle_max, thr_max, _throttle_in);
 }
 
 void AC_AttitudeControl_Multi::set_throttle_out(float throttle_in, bool apply_angle_boost, float filter_cutoff)
