@@ -265,8 +265,8 @@ float AP_MotorsMulticopter::get_current_limit_max_throttle()
     float loop_interval = 1.0f/_loop_rate;
     _throttle_limit += (loop_interval/(loop_interval+_batt_current_time_constant))*(1.0f - batt_current_ratio);
 
-    // throttle limit drops to 20% between hover and full throttle
-    _throttle_limit = constrain_float(_throttle_limit, 0.2f, 1.0f);
+    // throttle limit drops to 5% between hover and full throttle
+    _throttle_limit = constrain_float(_throttle_limit, 0.05f, 1.0f);
 
     // limit max throttle
     return get_throttle_hover() + ((1.0-get_throttle_hover())*_throttle_limit);
