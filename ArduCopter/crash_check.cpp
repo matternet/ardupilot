@@ -88,7 +88,6 @@ void Copter::parachute_check()
     const float tilt_angle = acosf(ahrs.get_rotation_body_to_ned().c.z);
     const float tilt_angle_limit = attitude_control->get_tilt_limit_rad() + radians(PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG);
     const float vel_z = -inertial_nav.get_velocity_z()*0.01f; // Convert cm/s to m/s and convert NEU to NED
-    const float vel_z_error = -pos_control->get_vel_error_z()*0.01f; // Convert cm/s to m/s and convert NEU to NED
 
     // Start attitude error timer
     bool new_angle_error_excessive = angle_error > PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG;
@@ -97,21 +96,11 @@ void Copter::parachute_check()
     }
     parachute_check_state.angle_error_excessive = new_angle_error_excessive;
 
-    // Start vertical velocity error timer
-    bool new_vel_z_error_excessive = pos_control->is_active_z() && fabsf(vel_z) > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS && fabsf(vel_z_error) > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS;
-    if (new_vel_z_error_excessive && !parachute_check_state.vel_z_error_excessive) {
-        parachute_check_state.vel_z_error_excessive_begin_ms = millis();
-    }
-    parachute_check_state.vel_z_error_excessive = new_vel_z_error_excessive;
-
     // Check for criterion: "Attitude error is greater than PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG for PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC seconds"
     bool angle_error_excessive_timeout = parachute_check_state.angle_error_excessive && (millis()-parachute_check_state.angle_error_excessive_begin_ms)*1e-3f > PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC;
 
     // Check for criterion: "Attitude error is greater than PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG *AND* tilt angle is greater than ANGLE_MAX + PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG"
     bool tilt_angle_excessive = parachute_check_state.angle_error_excessive && tilt_angle > tilt_angle_limit;
-
-    // Check for criterion: "Height control is active *AND* vertical velocity error is above PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS *AND* abs(vertical velocity) is above PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS *AND* all of these conditions are true for PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_TIMEOUT_SEC"
-    bool vel_z_error_excessive_timeout = parachute_check_state.vel_z_error_excessive && (millis()-parachute_check_state.vel_z_error_excessive_begin_ms)*1e-3f > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_TIMEOUT_SEC;
 
     // Check for criterion: "Flight mode is STABILIZE *AND* throttle is zero *AND* downward velocity is greater than 5 m/s"
     bool stabilize_throttle_cut = control_mode == STABILIZE && ap.throttle_zero && vel_z > 5.0f;
@@ -122,9 +111,6 @@ void Copter::parachute_check()
         parachute_release();
     } else if (tilt_angle_excessive) {
         Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_TILT_ANGLE_EXCESSIVE);
-        parachute_release();
-    } else if (vel_z_error_excessive_timeout) {
-        Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_VEL_Z_ERROR_EXCESSIVE_TIMEOUT);
         parachute_release();
     } else if (stabilize_throttle_cut) {
         Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_STABILIZE_THROTTLE_CUT);
