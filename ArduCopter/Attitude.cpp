@@ -10,6 +10,10 @@ float Copter::get_pilot_desired_yaw_rate(int16_t stick_angle)
     }
     float yaw_request;
 
+    if (control_mode == Mode::Number::AUTO) {
+        return 0;
+    }
+
     // range check expo
     g2.acro_y_expo = constrain_float(g2.acro_y_expo, 0.0f, 1.0f);
 
