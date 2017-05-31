@@ -761,6 +761,11 @@ float Mode::get_pilot_desired_yaw_rate(int16_t stick_angle)
         return 0.0f;
     }
 
+    // no pilot yaw input in AUTO
+    if (copter.flightmode == &copter.mode_auto) {
+        return 0;
+    }
+    
     // range check expo
     g2.acro_y_expo = constrain_float(g2.acro_y_expo, -0.5f, 1.0f);
 
