@@ -7,6 +7,10 @@ float Copter::get_pilot_desired_yaw_rate(int16_t stick_angle)
 {
     float yaw_request;
 
+    if (control_mode == AUTO) {
+        return 0;
+    }
+
     // calculate yaw rate request
     if (g2.acro_y_expo <= 0) {
         yaw_request = stick_angle * g.acro_yaw_p;
