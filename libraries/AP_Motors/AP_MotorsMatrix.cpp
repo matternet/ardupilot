@@ -154,6 +154,8 @@ void AP_MotorsMatrix::output_armed_stabilizing()
     float   unused_range;               // amount of yaw we can fit in the current channel
     float   thr_adj;                    // the difference between the pilot's desired throttle and throttle_thrust_best_rpy
 
+    float throttle_thrust_max_corrected = MIN(_throttle_thrust_max * get_compensation_gain(), 1.0f);
+
     // apply voltage and air pressure compensation
     const float compensation_gain = get_compensation_gain();
     roll_thrust = _roll_in * compensation_gain;
@@ -167,12 +169,12 @@ void AP_MotorsMatrix::output_armed_stabilizing()
         throttle_thrust = 0.0f;
         limit.throttle_lower = true;
     }
-    if (throttle_thrust >= _throttle_thrust_max) {
-        throttle_thrust = _throttle_thrust_max;
+    if (throttle_thrust >= throttle_thrust_max_corrected) {
+        throttle_thrust = throttle_thrust_max_corrected;
         limit.throttle_upper = true;
     }
 
-    throttle_avg_max = constrain_float(throttle_avg_max, throttle_thrust, _throttle_thrust_max);
+    throttle_avg_max = constrain_float(throttle_avg_max, throttle_thrust, throttle_thrust_max_corrected);
 
     // calculate throttle that gives most possible room for yaw which is the lower of:
     //      1. 0.5f - (rpy_low+rpy_high)/2.0 - this would give the maximum possible margin above the highest motor and below the lowest
