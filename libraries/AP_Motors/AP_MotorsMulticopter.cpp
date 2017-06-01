@@ -162,6 +162,14 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     // @Increment: 0.1
     // @User: Advanced
     AP_GROUPINFO("SPOOL_TIME",   36, AP_MotorsMulticopter,  _spool_up_time, AP_MOTORS_SPOOL_UP_TIME_DEFAULT),
+
+    // @Param: BAT_POW_MAX
+    // @DisplayName: Motor Power Max
+    // @Description: Maximum power over which maximum throttle is limited (0 = Disabled)
+    // @Range: 0 20000
+    // @Units: Watts
+    // @User: Advanced
+    AP_GROUPINFO("BAT_POW_MAX", 38, AP_MotorsMulticopter, _batt_power_max, 0),
     
     AP_GROUPEND
 };
@@ -247,8 +255,19 @@ void AP_MotorsMulticopter::update_throttle_filter()
 // return current_limit as a number from 0 ~ 1 in the range throttle_min to throttle_max
 float AP_MotorsMulticopter::get_current_limit_max_throttle()
 {
+    float batt_voltage = constrain_float(_batt_voltage, _batt_voltage_min, _batt_voltage_max);
+
+    float batt_current_max = 0;
+    if (!is_zero(_batt_current_max) && !is_zero(_batt_power_max) && !is_zero(batt_voltage)) {
+        batt_current_max = MIN(_batt_current_max, _batt_power_max/batt_voltage);
+    } else if(!is_zero(_batt_power_max) && !is_zero(batt_voltage)) {
+        batt_current_max = _batt_power_max/batt_voltage;
+    } else if(!is_zero(_batt_current_max)) {
+        batt_current_max = _batt_current_max;
+    }
+
     // return maximum if current limiting is disabled
-    if (_batt_current_max <= 0) {
+    if (batt_current_max <= 0) {
         _throttle_limit = 1.0f;
         return 1.0f;
     }
@@ -260,7 +279,7 @@ float AP_MotorsMulticopter::get_current_limit_max_throttle()
     }
 
     // calculate the maximum current to prevent voltage sag below _batt_voltage_min
-    float batt_current_ratio = _batt_current/_batt_current_max;
+    float batt_current_ratio = _batt_current/batt_current_max;
 
     float loop_interval = 1.0f/_loop_rate;
     _throttle_limit += (loop_interval/(loop_interval+_batt_current_time_constant))*(1.0f - batt_current_ratio);
