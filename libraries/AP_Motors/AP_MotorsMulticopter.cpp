@@ -176,7 +176,13 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("BOOST_SCALE", 37, AP_MotorsMulticopter, _boost_scale, 0),
 
-    // 38 RESERVED for BAT_POW_MAX
+    // @Param: BAT_POW_MAX
+    // @DisplayName: Motor Power Max
+    // @Description: Maximum power over which maximum throttle is limited (0 = Disabled)
+    // @Range: 0 20000
+    // @Units: W
+    // @User: Advanced
+    AP_GROUPINFO("BAT_POW_MAX", 38, AP_MotorsMulticopter, _batt_power_max, 0),
     
     // @Param: BAT_IDX
     // @DisplayName: Battery compensation index
@@ -298,9 +304,20 @@ float AP_MotorsMulticopter::get_current_limit_max_throttle()
 {
     AP_BattMonitor &battery = AP::battery();
 
-    float _batt_current;
+    float batt_voltage = constrain_float(battery.voltage(_batt_idx), _batt_voltage_min, _batt_voltage_max);
 
-    if (_batt_current_max <= 0 || // return maximum if current limiting is disabled
+    float batt_current_max = 0;
+    if (!is_zero(_batt_current_max) && !is_zero(_batt_power_max) && !is_zero(batt_voltage)) {
+        batt_current_max = MIN(_batt_current_max, _batt_power_max/batt_voltage);
+    } else if(!is_zero(_batt_power_max) && !is_zero(batt_voltage)) {
+        batt_current_max = _batt_power_max/batt_voltage;
+    } else if(!is_zero(_batt_current_max)) {
+        batt_current_max = _batt_current_max;
+    }
+
+    // return maximum if current limiting is disabled
+    float _batt_current;
+    if (batt_current_max <= 0 || // return maximum if current limiting is disabled
         !_flags.armed || // remove throttle limit if disarmed
         !battery.current_amps(_batt_current, _batt_idx)) { // no current monitoring is available
         _throttle_limit = 1.0f;
@@ -315,7 +332,7 @@ float AP_MotorsMulticopter::get_current_limit_max_throttle()
     }
 
     // calculate the maximum current to prevent voltage sag below _batt_voltage_min
-    float batt_current_ratio = _batt_current/_batt_current_max;
+    float batt_current_ratio = _batt_current/batt_current_max;
 
     float loop_interval = 1.0f / _loop_rate;
     _throttle_limit += (loop_interval / (loop_interval + _batt_current_time_constant)) * (1.0f - batt_current_ratio);
