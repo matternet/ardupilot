@@ -40,6 +40,10 @@ struct Guided_Limit {
 // guided_init - initialise guided controller
 bool ModeGuided::init(bool ignore_checks)
 {
+    if (motors->armed()) {
+        return false;
+    }
+
     // start in position control mode
     pos_control_start();
     return true;
