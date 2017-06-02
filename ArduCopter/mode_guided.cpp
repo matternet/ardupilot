@@ -45,6 +45,11 @@ bool ModeGuided::init(bool ignore_checks)
     guided_vel_target_cms.zero();
     guided_accel_target_cmss.zero();
     send_notification = false;
+
+    if (motors->armed()) {
+        return false;
+    }
+
     return true;
 }
 
