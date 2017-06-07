@@ -92,7 +92,6 @@ private:
 
     // Matternet FTS
     uint32_t _mttr_last_loop_ms;
-    uint32_t _mttr_last_log_ms;
     AP_HAL::UARTDriver *_mttr_uart = nullptr;
     char _mttr_fts_version[16];
     void send_debug_message(uint32_t tnow_ms, uint8_t ind, float value);
