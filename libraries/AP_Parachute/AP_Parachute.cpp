@@ -226,6 +226,14 @@ void AP_Parachute::mttr_fts_update()
                 memset(_mttr_fts_version, 0, sizeof(_mttr_fts_version));
                 memcpy(_mttr_fts_version, msg->git_hash, sizeof(msg->git_hash));
                 DataFlash_Class::instance()->Log_Write("FTSV", "TimeUS,Hash", "QN", AP_HAL::micros64(), _mttr_fts_version);
+            } else if (msg_id == FTS_MSGID_STATUS2) {
+                struct fts_msg_status2_s* msg = (struct fts_msg_status2_s*)msg_buf;
+
+                DataFlash_Class::instance()->Log_Write("FTS2", "TimeUS,Fuse,WDTm", "QBh", AP_HAL::micros64(), msg->fuse_fault_state, msg->wdt_min_margin_ms);
+
+                // send via MAVLink
+                send_debug_message(tnow_ms, 8, msg->fuse_fault_state);
+                send_debug_message(tnow_ms, 9, msg->wdt_min_margin_ms);
             }
         }
     }
