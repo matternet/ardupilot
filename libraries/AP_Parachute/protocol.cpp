@@ -48,6 +48,11 @@ enum fts_msg_id_t fts_protocol_identify_message(uint8_t msg_len, uint8_t* msg) {
                 return FTS_MSGID_UNKNOWN;
             }
             break;
+        case FTS_MSGID_STATUS2:
+            if (msg_len != sizeof(struct fts_msg_status2_s)) {
+                return FTS_MSGID_UNKNOWN;
+            }
+            break;
         default:
             return FTS_MSGID_UNKNOWN;
     }
