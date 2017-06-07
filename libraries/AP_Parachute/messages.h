@@ -18,6 +18,7 @@ enum fts_msg_id_t {
     FTS_MSGID_ARM_CMD=5,
     FTS_MSGID_DISARM_CMD=6,
     FTS_MSGID_VERSION=7,
+    FTS_MSGID_STATUS2=8
 };
 
 enum fts_state_t {
@@ -34,6 +35,12 @@ enum fts_state_reason_t {
     FTS_REASON_COMMANDED=1,
     FTS_REASON_WATCHDOG_EXPIRE=2,
     FTS_REASON_BUTTON_PRESS=3
+};
+
+enum fuse_fault_state_t {
+    FTS_FUSE_STATE_UNKNOWN=0,
+    FTS_FUSE_STATE_PASS=1,
+    FTS_FUSE_STATE_FAIL=2
 };
 
 struct fts_msg_status_s {
@@ -70,6 +77,12 @@ struct fts_msg_disarm_cmd_s {
 struct fts_msg_version_s {
     uint8_t msgid;
     uint8_t git_hash[7];
+} FTS_PACKED;
+
+struct fts_msg_status2_s {
+    uint8_t msgid;
+    int16_t wdt_min_margin_ms;
+    uint8_t fuse_fault_state;
 } FTS_PACKED;
 
 #endif
