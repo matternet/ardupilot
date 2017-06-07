@@ -156,6 +156,8 @@ private:
     const uint32_t _free_space_check_interval = 1000UL; // milliseconds
     const uint32_t _free_space_min_avail = 8388608; // bytes
 
+    uint8_t _io_thread_step = 0;
+
     AP_HAL::Semaphore *semaphore;
     
     // performance counters

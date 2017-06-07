@@ -186,7 +186,9 @@ bool DataFlash_File::log_exists(const uint16_t lognum) const
 void DataFlash_File::periodic_1Hz(const uint32_t now)
 {
     if (!io_thread_alive()) {
-        GCS_MAVLINK::send_statustext_all(MAV_SEVERITY_CRITICAL, "No IO Thread Heartbeat");
+        char msg[64];
+        snprintf(msg, sizeof(msg), "No IO Thread Heartbeat, step %u", _io_thread_step);
+        GCS_MAVLINK::send_statustext_all(MAV_SEVERITY_CRITICAL, msg);
         // If you try to close the file here then it will almost
         // certainly block.  Since this is the main thread, this is
         // likely to cause a crash.
@@ -1066,20 +1068,24 @@ void DataFlash_File::_io_timer(void)
 {
     uint32_t tnow = AP_HAL::millis();
     _io_timer_heartbeat = tnow;
+    _io_thread_step = 0;
     if (_write_fd == -1 || !_initialised || _open_error) {
         return;
     }
+    _io_thread_step = 1;
 
     uint32_t nbytes = _writebuf.available();
     if (nbytes == 0) {
         return;
     }
+    _io_thread_step = 2;
     if (nbytes < _writebuf_chunk && 
         tnow - _last_write_time < 2000UL) {
         // write in _writebuf_chunk-sized chunks, but always write at
         // least once per 2 seconds if data is available
         return;
     }
+    _io_thread_step = 3;
     if (tnow - _free_space_last_check_time > _free_space_check_interval) {
         _free_space_last_check_time = tnow;
         if (disk_space_avail() < _free_space_min_avail) {
@@ -1089,18 +1095,21 @@ void DataFlash_File::_io_timer(void)
             return;
         }
     }
+    _io_thread_step = 4;
 
     hal.util->perf_begin(_perf_write);
-
+    _io_thread_step = 5;
     _last_write_time = tnow;
     if (nbytes > _writebuf_chunk) {
         // be kind to the FAT PX4 filesystem
         nbytes = _writebuf_chunk;
     }
+    _io_thread_step = 6;
 
     uint32_t size;
     const uint8_t *head = _writebuf.readptr(size);
     nbytes = MIN(nbytes, size);
+    _io_thread_step = 7;
 
     // try to align writes on a 512 byte boundary to avoid filesystem reads
     if ((nbytes + _write_offset) % 512 != 0) {
@@ -1110,13 +1119,17 @@ void DataFlash_File::_io_timer(void)
         }
     }
 
+    _io_thread_step = 8;
     ssize_t nwritten = ::write(_write_fd, head, nbytes);
+    _io_thread_step = 9;
     if (nwritten <= 0) {
         hal.util->perf_count(_perf_errors);
         close(_write_fd);
         _write_fd = -1;
         _initialised = false;
+        _io_thread_step = 10;
     } else {
+        _io_thread_step = 11;
         _write_offset += nwritten;
         _writebuf.advance(nwritten);
         /*
@@ -1126,10 +1139,14 @@ void DataFlash_File::_io_timer(void)
           write.
          */
 #if CONFIG_HAL_BOARD != HAL_BOARD_SITL && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_NONE && CONFIG_HAL_BOARD != HAL_BOARD_QURT
+        _io_thread_step = 12;
         ::fsync(_write_fd);
+        _io_thread_step = 13;
 #endif
     }
+    _io_thread_step = 14;
     hal.util->perf_end(_perf_write);
+    _io_thread_step = 15;
 }
 
 // this sensor is enabled if we should be logging at the moment
@@ -1146,7 +1163,7 @@ bool DataFlash_File::io_thread_alive() const
 {
     uint32_t tnow = AP_HAL::millis();
     // if the io thread hasn't had a heartbeat in a full second then it is dead
-    return _io_timer_heartbeat + 1000 > tnow;
+    return tnow-_io_timer_heartbeat > 1000;
 }
 
 bool DataFlash_File::logging_failed() const
