@@ -307,7 +307,7 @@ void Copter::parachute_check()
     parachute_check_state.angle_error_excessive = new_angle_error_excessive;
 
     // Start vertical velocity error timer
-    bool new_vel_z_error_excessive = pos_control->is_active_z() && fabsf(vel_z) > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS && fabsf(vel_z_error) > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS;
+    bool new_vel_z_error_excessive = pos_control->is_active_z() && fabsf(vel_z) > speed_z_excessive_limit_mps && fabsf(vel_z_error) > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS;
     if (new_vel_z_error_excessive && !parachute_check_state.vel_z_error_excessive) {
         parachute_check_state.vel_z_error_excessive_begin_ms = millis();
     }
