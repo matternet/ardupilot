@@ -198,6 +198,7 @@ void Copter::parachute_check()
     const float tilt_angle_limit = attitude_control->get_tilt_limit_rad() + radians(PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG);
     const float vel_z = -inertial_nav.get_velocity_z()*0.01f; // Convert cm/s to m/s and convert NEU to NED
     const float vel_z_error = -pos_control->get_vel_error_z()*0.01f; // Convert cm/s to m/s and convert NEU to NED
+    const float speed_z_excessive_limit_mps = MAX(fabsf(pos_control->get_speed_down()), fabsf(pos_control->get_speed_up()))*0.01f + 1.0f;
 
     // Start attitude error timer
     bool new_angle_error_excessive = angle_error > PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG;
@@ -207,7 +208,7 @@ void Copter::parachute_check()
     parachute_check_state.angle_error_excessive = new_angle_error_excessive;
 
     // Start vertical velocity error timer
-    bool new_vel_z_error_excessive = pos_control->is_active_z() && fabsf(vel_z) > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS && fabsf(vel_z_error) > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS;
+    bool new_vel_z_error_excessive = pos_control->is_active_z() && fabsf(vel_z) > speed_z_excessive_limit_mps && fabsf(vel_z_error) > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS;
     if (new_vel_z_error_excessive && !parachute_check_state.vel_z_error_excessive) {
         parachute_check_state.vel_z_error_excessive_begin_ms = millis();
     }
