@@ -10,52 +10,52 @@
 // called at MAIN_LOOP_RATE
 void Copter::crash_check()
 {
-    static uint16_t crash_counter;  // number of iterations vehicle may have been crashed
-
-    // return immediately if disarmed, or crash checking disabled
-    if (!motors->armed() || ap.land_complete || g.fs_crash_check == 0) {
-        crash_counter = 0;
-        return;
-    }
-
-    // return immediately if we are not in an angle stabilize flight mode or we are flipping
-    if (control_mode == ACRO || control_mode == FLIP) {
-        crash_counter = 0;
-        return;
-    }
-
-    // vehicle not crashed if 1hz filtered acceleration is more than 3m/s (1G on Z-axis has been subtracted)
-    if (land_accel_ef_filter.get().length() >= CRASH_CHECK_ACCEL_MAX) {
-        crash_counter = 0;
-        return;
-    }
-
-    // check for angle error over 30 degrees
-    const float angle_error = attitude_control->get_att_error_angle_deg();
-    if (angle_error <= CRASH_CHECK_ANGLE_DEVIATION_DEG) {
-        crash_counter = 0;
-        return;
-    }
-
-    // we may be crashing
-    crash_counter++;
-
-    // check if crashing for 2 seconds
-    if (crash_counter >= (CRASH_CHECK_TRIGGER_SEC * scheduler.get_loop_rate_hz())) {
-        // log an error in the dataflash
-        Log_Write_Error(ERROR_SUBSYSTEM_CRASH_CHECK, ERROR_CODE_CRASH_CHECK_CRASH);
-        // send message to gcs
-        gcs_send_text(MAV_SEVERITY_EMERGENCY,"Crash: Disarming");
-        // disarm motors
-        init_disarm_motors();
-    }
+//     static uint16_t crash_counter;  // number of iterations vehicle may have been crashed
+//
+//     // return immediately if disarmed, or crash checking disabled
+//     if (!motors->armed() || ap.land_complete || g.fs_crash_check == 0) {
+//         crash_counter = 0;
+//         return;
+//     }
+//
+//     // return immediately if we are not in an angle stabilize flight mode or we are flipping
+//     if (control_mode == ACRO || control_mode == FLIP) {
+//         crash_counter = 0;
+//         return;
+//     }
+//
+//     // vehicle not crashed if 1hz filtered acceleration is more than 3m/s (1G on Z-axis has been subtracted)
+//     if (land_accel_ef_filter.get().length() >= CRASH_CHECK_ACCEL_MAX) {
+//         crash_counter = 0;
+//         return;
+//     }
+//
+//     // check for angle error over 30 degrees
+//     const float angle_error = attitude_control->get_att_error_angle_deg();
+//     if (angle_error <= CRASH_CHECK_ANGLE_DEVIATION_DEG) {
+//         crash_counter = 0;
+//         return;
+//     }
+//
+//     // we may be crashing
+//     crash_counter++;
+//
+//     // check if crashing for 2 seconds
+//     if (crash_counter >= (CRASH_CHECK_TRIGGER_SEC * scheduler.get_loop_rate_hz())) {
+//         // log an error in the dataflash
+//         Log_Write_Error(ERROR_SUBSYSTEM_CRASH_CHECK, ERROR_CODE_CRASH_CHECK_CRASH);
+//         // send message to gcs
+//         gcs_send_text(MAV_SEVERITY_EMERGENCY,"Crash: Disarming");
+//         // disarm motors
+//         init_disarm_motors();
+//     }
 }
 
 #if PARACHUTE == ENABLED
 
 // Code to detect a crash main ArduCopter code
-#define PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG  30.0f
-#define PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC 0.5f
+#define PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG  45.0f
+#define PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC 1.0f
 #define PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_LIMIT_MPS 3.0f
 #define PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_TIMEOUT_SEC 0.5f
 
@@ -160,13 +160,13 @@ void Copter::parachute_manual_release()
 
     // do not release if vehicle is landed
     // do not release if we are landed or below the minimum altitude above home
-    if (ap.land_complete) {
-        // warn user of reason for failure
-        gcs_send_text(MAV_SEVERITY_INFO,"Parachute: Landed");
-        // log an error in the dataflash
-        Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_LANDED);
-        return;
-    }
+//     if (ap.land_complete) {
+//         // warn user of reason for failure
+//         gcs_send_text(MAV_SEVERITY_INFO,"Parachute: Landed");
+//         // log an error in the dataflash
+//         Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_LANDED);
+//         return;
+//     }
 
     // do not release if we are landed or below the minimum altitude above home
 //     if ((parachute.alt_min() != 0 && (current_loc.alt < (int32_t)parachute.alt_min() * 100))) {
