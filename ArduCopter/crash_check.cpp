@@ -86,7 +86,7 @@ void Copter::parachute_check()
     // Retrieve useful values
     const float angle_error = attitude_control->get_att_error_angle_deg();
     const float tilt_angle = acosf(ahrs.get_rotation_body_to_ned().c.z);
-    const float tilt_angle_limit = attitude_control->get_tilt_limit_rad() + radians(PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG);
+    const float tilt_angle_limit = attitude_control->get_tilt_limit_rad() + radians(PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG+20);
     const float vel_z = -inertial_nav.get_velocity_z()*0.01f; // Convert cm/s to m/s and convert NEU to NED
     const float vel_z_error = -pos_control->get_vel_error_z()*0.01f; // Convert cm/s to m/s and convert NEU to NED
 
