@@ -1,4 +1,5 @@
 #include "Copter.h"
+#include <AP_RangeFinder/RangeFinder_Backend.h>
 
 // performs pre-arm checks. expects to be called at 1hz.
 void AP_Arming_Copter::update(void)
@@ -579,6 +580,16 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, bool arming_from_gcs)
             gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: FTS state");
         }
         return false;
+    }
+
+    for (uint8_t i=0; i<RANGEFINDER_MAX_INSTANCES; i++) {
+        AP_RangeFinder_Backend *sensor = copter.rangefinder.get_backend(i);
+        if (sensor != nullptr && (sensor->status() == RangeFinder::RangeFinder_NotConnected || sensor->status() == RangeFinder::RangeFinder_NoData)) {
+            if (display_failure) {
+                gcs().send_text(MAV_SEVERITY_CRITICAL,"PreArm: check range finder");
+            }
+            return false;
+        }
     }
 
     control_mode_t control_mode = copter.control_mode;
