@@ -105,7 +105,7 @@ void Copter::parachute_check()
     parachute_check_state.vel_z_error_excessive = new_vel_z_error_excessive;
 
     // Check for criterion: "Attitude error is greater than PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG for PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC seconds"
-    bool angle_error_excessive_timeout = parachute_check_state.angle_error_excessive && (millis()-parachute_check_state.angle_error_excessive_begin_ms)*1e-3f > PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC;
+    bool angle_error_excessive_timeout = false;// parachute_check_state.angle_error_excessive && (millis()-parachute_check_state.angle_error_excessive_begin_ms)*1e-3f > PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT_SEC;
 
     // Check for criterion: "Attitude error is greater than PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG *AND* tilt angle is greater than ANGLE_MAX + PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG"
     bool tilt_angle_excessive = parachute_check_state.angle_error_excessive && tilt_angle > tilt_angle_limit;
