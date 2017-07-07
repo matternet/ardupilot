@@ -165,6 +165,9 @@ void Copter::Mode::auto_takeoff_attitude_run(float target_yaw_rate)
 #endif
         // tell the position controller that we have limited roll/pitch demand to prevent integrator buildup
         pos_control->set_limit_accel_xy();
+
+        wp_nav->shift_wp_origin_to_current_pos();
+        wp_nav->wp_and_spline_init();
     } else {
         nav_roll = wp_nav->get_roll();
         nav_pitch = wp_nav->get_pitch();
