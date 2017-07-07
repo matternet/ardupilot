@@ -157,6 +157,10 @@ public:
     RangeFinder_Status status(uint8_t instance) const;
     RangeFinder_Status status_orient(enum Rotation orientation) const;
 
+    bool configured(uint8_t instance) const {
+        return instance < RANGEFINDER_MAX_INSTANCES && _type[instance] != RangeFinder_TYPE_NONE;
+    }
+
     // true if sensor is returning data
     bool has_data(uint8_t instance) const;
     bool has_data_orient(enum Rotation orientation) const;
