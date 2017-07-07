@@ -534,6 +534,13 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, AP_Arming::ArmingMethod 
         return false;
     }
 
+    if (!copter.parachute.get_mttr_prearm_pass()) {
+        if (display_failure) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: FTS state");
+        }
+        return false;
+    }
+
     control_mode_t control_mode = copter.control_mode;
 
     // always check if the current mode allows arming
