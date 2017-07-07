@@ -181,6 +181,10 @@ void AP_Parachute::mttr_fts_update()
             mttr_fts_transmit(sizeof(deploy_msg), (uint8_t*)&deploy_msg);
         }
 
+        if (tnow_ms - _mttr_last_status_recv_ms > 1000) {
+            _mttr_prearm_pass = false;
+        }
+
         struct fts_msg_wdrst_s wdrst_msg;
         wdrst_msg.msgid = FTS_MSGID_WDRST;
         mttr_fts_transmit(sizeof(wdrst_msg), (uint8_t*)&wdrst_msg);
@@ -210,6 +214,10 @@ void AP_Parachute::mttr_fts_update()
             if (msg_id == FTS_MSGID_STATUS) {
                 struct fts_msg_status_s* msg = (struct fts_msg_status_s*)msg_buf;
                 DataFlash_Class::instance()->Log_Write("FTSS", "TimeUS,State,Rsn,BSoC,BC1mV,BC2mV,BC3mV,BTINT,BTTS1", "QBBBHHHhh", AP_HAL::micros64(), msg->state, msg->state_reason, msg->batt_SoC, msg->batt_cell_mV[0], msg->batt_cell_mV[1], msg->batt_cell_mV[2], msg->batt_temp_INT, msg->batt_temp_TS1);
+
+                // update pre-arm state
+                _mttr_last_status_recv_ms = tnow_ms;
+                _mttr_prearm_pass = (msg->state == FTS_DISARMED_MASTER_PRESENT);
 
                 // send via MAVLink
                 send_debug_message(tnow_ms, 0, msg->state);
