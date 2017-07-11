@@ -13,7 +13,6 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "AP_RangeFinder_LightWareI2C.h"
-//#include "AP_RangeFinder_LightWareI2C_lw20api.h"
 
 #include <utility>
 
@@ -28,10 +27,7 @@ extern const AP_HAL::HAL& hal;
 #define LIGHTWARE_LOST_SIGNAL_TIMEOUT_WRITE_REG 23
 #define LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE 5
 
-//lwLW20			lw20;
-const uint32_t _headerSize_bytes_ = 0; // Must match definition in send_buf_disable_fx20_address_tagging.
-                                       // The address field ("0x66")is optionally included in the byte_rx buffer and may be accounted for here as a 4 byte header.
-const uint32_t _lx20_max_reply_len_bytes_ = 32;
+const size_t lx20_max_reply_len_bytes = 32;
 /*
    The constructor also initializes the rangefinder. Note that this
    constructor is not called until detect() returns true, so we
@@ -42,7 +38,7 @@ AP_RangeFinder_LightWareI2C::AP_RangeFinder_LightWareI2C(RangeFinder::RangeFinde
     , _dev(std::move(dev)) {}
 
 /*
-   detect if a Lightware rangefinder is connected. We'll detect by
+   Detects if a Lightware rangefinder is connected. We'll detect by
    trying to take a reading on I2C. If we get a result the sensor is
    there.
 */
@@ -82,32 +78,32 @@ bool AP_RangeFinder_LightWareI2C::write_bytes(uint8_t *write_buf_u8, uint32_t le
 }
 
 /**
- * Disables "address tagging" in the fx20 response packets.
+ * Disables "address tagging" in the sf20 response packets.
  */
-bool AP_RangeFinder_LightWareI2C::fx20_disable_address_tagging()
+bool AP_RangeFinder_LightWareI2C::sf20_disable_address_tagging()
 {
-    if(!fx20_send_and_expect("#CT,0\r\n", "ct:0")) {
+    if(!sf20_send_and_expect("#CT,0\r\n", "ct:0")) {
         return false;
     }
     return true;
 }
 
-bool AP_RangeFinder_LightWareI2C::fx20_product_name_check()
+bool AP_RangeFinder_LightWareI2C::sf20_product_name_check()
 {
-    if(!fx20_send_and_expect("?P\r\n", "p:LW21,")) {
+    if(!sf20_send_and_expect("?P\r\n", "p:LW20,")) {
         return false;
     }
     return true;
 }
 
-bool AP_RangeFinder_LightWareI2C::fx20_send_and_expect(const char* send_msg, const char* expected_reply)
+bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, const char* expected_reply)
 {
-    uint8_t rx_bytes[_lx20_max_reply_len_bytes_ + 1];
-    int expected_reply_len = strlen(expected_reply);
+    uint8_t rx_bytes[lx20_max_reply_len_bytes + 1];
+    size_t expected_reply_len = strlen(expected_reply);
 
-    if ((expected_reply_len > _lx20_max_reply_len_bytes_) ||
+    if ((expected_reply_len > lx20_max_reply_len_bytes) ||
         (expected_reply_len < 2)) {
-        hal.console->printf("Lidar_FX20 [%s] len FAILED: %s\n", send_msg, (char*)expected_reply);
+        hal.console->printf("LiDAR_SF20 [%s] len FAILED: %s\n", send_msg, (char*)expected_reply);
         return false;
     }
 
@@ -116,29 +112,29 @@ bool AP_RangeFinder_LightWareI2C::fx20_send_and_expect(const char* send_msg, con
 
     if (!write_bytes((uint8_t*)send_msg,
                            strlen(send_msg) + 1)) {
-        hal.console->printf("Lidar_FX20 [%s] 0 FAILED.\n", (char*)send_msg);
+        hal.console->printf("LiDAR_SF20 [%s] 0 FAILED.\n", (char*)send_msg);
         return false;
     }
 
-    if (!fx20_wait_on_reply(rx_bytes)) {
-        hal.console->printf("Lidar_FX20 [%s] 1 FAILED: %s\n", send_msg, (char*)rx_bytes);
+    if (!sf20_wait_on_reply(rx_bytes)) {
+        hal.console->printf("LiDAR_SF20 [%s] 1 FAILED: %s\n", send_msg, (char*)rx_bytes);
         return false;
     }
 
     if ((rx_bytes[0] != expected_reply[0]) ||
         (rx_bytes[1] != expected_reply[1]) ) {
-        hal.console->printf("Lidar_FX20 [%s] 2 FAILED: %s\n", send_msg, (char*)rx_bytes);
+        hal.console->printf("LiDAR_SF20 [%s] 2 FAILED: %s\n", send_msg, (char*)rx_bytes);
         return false;
     }
 
     if (!_dev->read(rx_bytes, expected_reply_len)) {
-        hal.console->printf("Lidar_FX20 [%s] 3 FAILED: %s\n", send_msg, (char*)rx_bytes);
+        hal.console->printf("LiDAR_SF20 [%s] 3 FAILED: %s\n", send_msg, (char*)rx_bytes);
         return false;
     }
 
     for (int i = 0 ; i < expected_reply_len ; i++) {
         if (rx_bytes[i] != expected_reply[i]) {
-            hal.console->printf("Lidar_FX20 [%s] 4 FAILED: %s\n", send_msg, (char*)rx_bytes);
+            hal.console->printf("LiDAR_SF20 [%s] 4 FAILED: %s\n", send_msg, (char*)rx_bytes);
             return false;
         }
     }
@@ -146,13 +142,13 @@ bool AP_RangeFinder_LightWareI2C::fx20_send_and_expect(const char* send_msg, con
     return true;
 }
 
-/* Driver first attempts to initialize the fx20.
- * If for any reason this fails, the driver attempts to initialize the legacy LightWare lidar.
- * If this fails, the driver returns false indicating no LightWare lidar is present.
+/* Driver first attempts to initialize the sf20.
+ * If for any reason this fails, the driver attempts to initialize the legacy LightWare LiDAR.
+ * If this fails, the driver returns false indicating no LightWare LiDAR is present.
  */
 bool AP_RangeFinder_LightWareI2C::init()
 {
-    if (!fx20_init()) {
+    if (!sf20_init()) {
     	if (!legacy_init()) {
     		return false;
     	}
@@ -160,7 +156,7 @@ bool AP_RangeFinder_LightWareI2C::init()
     return true;
 }
 
-// Original Lidar sensor configuration.
+// Original LiDAR sensor configuration.
 bool AP_RangeFinder_LightWareI2C::legacy_init()
 {
     union {
@@ -190,85 +186,149 @@ bool AP_RangeFinder_LightWareI2C::legacy_init()
     return true;
 }
 
-bool AP_RangeFinder_LightWareI2C::fx20_init()
+bool AP_RangeFinder_LightWareI2C::sf20_init()
 {
-    uint8_t byte_rx[33];
-    byte_rx[32] = 0;
-
     // Makes sure that "address tagging" is turned off.
     // Address tagging starts every response with "0x66".
     // Turns off Address Tagging just in case it was previously left on in the non-volatile configuration.
-    if(!fx20_disable_address_tagging()) {
+    if(!sf20_disable_address_tagging()) {
     	return false;
     }
 
-    if(!fx20_product_name_check()) {
+    if(!sf20_product_name_check()) {
         return false;
     }
+
+    // Disconnect the servo.
+    if(!sf20_send_and_expect("#SC,0\r\n", "sc:0")) {
+        return false;
+    }
+
+    // Change the power consumption:
+    // 0 = power off
+    // 1 = power on
+    // As of 7/10/17 sw and fw version 1.0 the "#E,1" command does not seem to be supported.
+    // When it is supported the expected response would be "e:1".
 
     // Changes the number of lost signal confirmations: 1 [1..250].
-    if(!fx20_send_and_expect("#LC,1\r\n", "lc:1")) {
+    if(!sf20_send_and_expect("#LC,1\r\n", "lc:1")) {
         return false;
     }
 
+    // For now just set to a fixed pattern to assess how well it improves operation with beacon.
+    // Pull parameter for encoding and overwrite hard-coded specifier for pattern 2.
+    // Todo: This is not useful. Have a way to set it on take off or landing.
     // Assuming there are some external communications prior to this point that will
     // randomize the startup time, the least significant bits of the system clock
     // are used to select the encoding pattern.
 	// Changes the laser encoding pattern: 2 [0..4].
-#if 0
-    if(!fx20_send_and_expect("#LE,2\r\n", "le:2")) {
+    if(!sf20_send_and_expect("#LE,2\r\n", "le:2")) {
         return false;
     }
 
-	uint8_t send_buf_change_laser_encoding_pattern[] = "#LE,2\r\n";
-	// Pull parameter for encoding and overwrite hardcoded specifier for pattern 2.
+    // Sets datum offset [-10.00 ... 10.00].
+    if(!sf20_send_and_expect("#LO,0.00\r\n", "lo:0.00")) {
+        return false;
+    }
+
+    // Changes to a new measuring mode (update rate):
+    //    1 = 388 readings per second
+    //    2 = 194 readings per second
+    //    3 = 129 readings per second
+    //    4 = 97 readings per second
+    //    5 = 78 readings per second
+    //    6 = 65 readings per second
+    //    7 = 55 readings per second
+    //    8 = 48 readings per second
+    if(!sf20_send_and_expect("#LM,7\r\n", "lm:7")) {
+        return false;
+    }
+
+    // Changes the gain boost value:
+    //     Adjustment range = -20.00 ... 5.00
+    if(!sf20_send_and_expect("#LB,0.00\r\n", "lb:0.00")) {
+        return false;
+    }
+
+    // Switches distance streaming on or off:
+    // 0 = off
+    // 1 = on
+    if(!sf20_send_and_expect("#SU,1\r\n", "su:1")) {
+        return false;
+    }
+
+    // Changes the laser state:
+    //    0 = laser is off
+    //    1 = laser is running
+    if(!sf20_send_and_expect("#LF,1\r\n", "lf:1")) {
+        return false;
+    }
+
+    if(!sf20_send_and_expect("?LT,1\r\n", "lt:")) {
+        return false;
+    }
+
+#if 1
+    be16_t reading_cm;
+    sf20_get_reading(reading_cm);
 #endif
+
+    // Configures the first stream for the raw first return.
+    // Alternatively for the median use:
+    // const char stream_the_median_distance_to_the_first_return_on_stream_one[] = "$1,ldf\r";
+    const char stream_the_raw_distance_to_the_first_return_on_stream_one[] = "$1ldf,1\r\n";
+    if (!write_bytes((uint8_t*)stream_the_raw_distance_to_the_first_return_on_stream_one,
+                        sizeof(stream_the_raw_distance_to_the_first_return_on_stream_one))) {
+        return false;
+    }
+
 #if 0
-    for ( int i = 0 ; i<4 ; i++) {
-		// Changes the laser encoding pattern: 2 [0..4].
-		uint8_t send_buf_change_laser_encoding_pattern[] = "#LE,2\r\n";
-		// Pull parameter for encoding and overwrite hardcoded specifier for pattern 2.
-//    hal.console->printf(fmt_laser_encoding_pattern, (char*)byte_rx + _headerSize_bytes_);
-//    Copter::gcs_send_text(MAV_SEVERITY_CRITICAL, byte_rx);
+    // Signal strength is returned as a (%)
+    const char stream_the_signal_strength_first_return_on_stream_2[] = "$2lhf\n";
+    if (!write_bytes((uint8_t*)stream_the_signal_strength_first_return_on_stream_2,
+                        sizeof(stream_the_signal_strength_first_return_on_stream_2))) {
+        return false;
+    }
 #endif
 
+#if 0
+    // Streams the raw distance to the last return on stream two.
+    const char stream_the_raw_distance_to_the_last_return_on_stream_two[] = "$3ldf,1\r\n"; //$3ldl,1\r\n
+    if (!write_bytes((uint8_t *)stream_the_raw_distance_to_the_last_return_on_stream_two,
+                         sizeof(stream_the_raw_distance_to_the_last_return_on_stream_two))) {
+        return false;
+    }
+#endif
 
 #if 0
-    // Enable I2C legacy distance streaming
-    const uint8_t send_buf_enable_I2C_legacy_distance_streaming[] = "0'";
-    if (!_dev->transfer((uint8_t*)send_buf_enable_I2C_legacy_distance_streaming,
-                           sizeof(send_buf_enable_I2C_legacy_distance_streaming),
-						   byte_rx,
-						   0)) {
-        return false;
-    }
-#else
-//    const char stream_the_median_distance_to_the_first_return_on_stream_one[] = "$1,ldf\r";
-    const char stream_the_raw_distance_to_the_first_return_on_stream_one[] = "$1,ldf,1\r";
-    if (!_dev->transfer((uint8_t*)stream_the_raw_distance_to_the_first_return_on_stream_one,
-                           sizeof(stream_the_raw_distance_to_the_first_return_on_stream_one),
-						   byte_rx,
-						   10)) {
+        // Signal strength is returned as a (%)
+    const char stream_the_signal_strength_last_return_on_stream_4[] = "$4lhl\r\n";
+    if (!write_bytes((uint8_t*)stream_the_signal_strength_last_return_on_stream_4,
+                        sizeof(stream_the_signal_strength_last_return_on_stream_4))) {
         return false;
     }
 
-    // TODO: Currently ignores response.
+    // Streams the level of background noise.
+    const char stream_the_level_of_background_noise_on_stream_5[] = "$5ln\r\n";
+    if (!write_bytes((uint8_t*)stream_the_level_of_background_noise_on_stream_5,
+                        sizeof(stream_the_level_of_background_noise_on_stream_5))) {
+    return false;
+}
+#endif
 
+#if 1
     // Enable I2C binary distance streaming.
-    // This enables output binary coded distance in centimeters.
+    // This enables the output of binary coded distance in centimeters.
     // Sending any other command will disable it.
     const uint8_t send_buf_enable_I2C_legacy_distance_streaming[] = "0'";
-    if (!_dev->transfer((uint8_t*)send_buf_enable_I2C_legacy_distance_streaming,
-                           sizeof(send_buf_enable_I2C_legacy_distance_streaming),
-						   byte_rx,
-						   0)) {
+    if (!write_bytes((uint8_t*)send_buf_enable_I2C_legacy_distance_streaming,
+                        sizeof(send_buf_enable_I2C_legacy_distance_streaming))) {
         return false;
     }
 #endif
-
     // call timer() at 20Hz
     _dev->register_periodic_callback(50000,
-                                     FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::fx20_timer, void));
+                                     FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
 
     return true;
 }
@@ -279,9 +339,9 @@ bool AP_RangeFinder_LightWareI2C::legacy_get_reading(uint16_t &reading_cm)
 #if 0 // latest from git hub master.
     be16_t val;
 
-//    if (ranger._address[state.instance] == 0) {
-//        return false;
-//    }
+    if (ranger._address[state.instance] == 0) {
+        return false;
+    }
 
     // read the high and low byte distance registers
     bool ret = _dev->read((uint8_t *) &val, sizeof(val));
@@ -290,7 +350,7 @@ bool AP_RangeFinder_LightWareI2C::legacy_get_reading(uint16_t &reading_cm)
         reading_cm = be16toh(val);
     }
 
-return ret;
+    return ret;
 #else //lateset from git hub mttr/master
     be16_t val;
 
@@ -306,19 +366,32 @@ return ret;
 #endif //lateset from git hub mttr/master
 }
 
-// read - return last value measured by fx20 sensor
-bool AP_RangeFinder_LightWareI2C::fx20_get_reading(uint16_t &reading_cm)
+// read - return last value measured by sf20 sensor
+bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 {
-    be16_t val;
+#if 0
+    be16_t val[15];
+    const uint8_t read_reg = LIGHTWARE_DISTANCE_READ_REG;
+
+    // read the high and low byte distance registers
+    if (_dev->transfer(&read_reg, 1, (uint8_t *)&val, sizeof(val))) {
+        // combine results into distance
+        reading_cm = be16toh(val[0]);
+        return true;
+    }
+    return false;
+#else
+    be16_t val[15];
 
     // Reads the streams in 16 bit binary.
     bool ret = _dev->read((uint8_t *) &val, sizeof(val));
     if (ret) {
         // combine results into distance
-        reading_cm = be16toh(val);
+        reading_cm = be16toh(val[0]);
     }
 
-return ret;
+    return ret;
+#endif
 }
 
 /*
@@ -339,9 +412,9 @@ void AP_RangeFinder_LightWareI2C::legacy_timer(void)
     }
 }
 
-void AP_RangeFinder_LightWareI2C::fx20_timer(void)
+void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 {
-    if (fx20_get_reading(state.distance_cm)) {
+    if (sf20_get_reading(state.distance_cm)) {
         // update range_valid state based on distance measured
         update_status();
     } else {
@@ -349,11 +422,11 @@ void AP_RangeFinder_LightWareI2C::fx20_timer(void)
     }
 }
 
-// Only for use during init as this blocks while waiting for the FX20 to be ready.
-bool AP_RangeFinder_LightWareI2C::fx20_wait_on_reply(uint8_t *rx_two_byte)
+// Only for use during init as this blocks while waiting for the SF20 to be ready.
+bool AP_RangeFinder_LightWareI2C::sf20_wait_on_reply(uint8_t *rx_two_byte)
 {
     // Waits for a non-zero first byte while repeatedly reading 16 bits.
-    // This is used after a read command to allow the fx20 time to provide the result.
+    // This is used after a read command to allow the sf20 time to provide the result.
     uint32_t start_time_ms = AP_HAL::millis();
     uint32_t current_time_ms;
     uint32_t elapsed_time_ms;
@@ -363,19 +436,19 @@ bool AP_RangeFinder_LightWareI2C::fx20_wait_on_reply(uint8_t *rx_two_byte)
         current_time_ms = AP_HAL::millis();
         elapsed_time_ms = current_time_ms - start_time_ms;
         if (rx_two_byte[0] != 0) {
-            const char fmt_wait_ms[] = "FX20 wait: normal exit after %d ms";
+            const char fmt_wait_ms[] = "SF20 wait: normal exit after %d ms";
             hal.console->printf(fmt_wait_ms, elapsed_time_ms);
             return true;
         }
         if (elapsed_time_ms > max_wait_time_ms) {
-            const char fmt_wait_timeout_ms[] = "FX20 wait: timeout exit after %d ms";
+            const char fmt_wait_timeout_ms[] = "SF20 wait: timeout exit after %d ms";
             hal.console->printf(fmt_wait_timeout_ms, elapsed_time_ms);
             return false;
         }
     }
     current_time_ms = AP_HAL::millis();
     elapsed_time_ms = current_time_ms - start_time_ms;
-    const char fmt_wait_fail_ms[] = "FX20 wait: fail exit after %d ms";
+    const char fmt_wait_fail_ms[] = "SF20 wait: fail exit after %d ms";
     hal.console->printf(fmt_wait_fail_ms, elapsed_time_ms);
     return false;
 }

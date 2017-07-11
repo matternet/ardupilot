@@ -26,19 +26,19 @@ private:
     AP_RangeFinder_LightWareI2C(RangeFinder::RangeFinder_State &_state, AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev);
 
     bool write_bytes(uint8_t *write_buf_u8, uint32_t len_u8);
-    bool fx20_disable_address_tagging();
-    bool fx20_product_name_check();
-    bool fx20_send_and_expect(const char* send, const char* expected_reply);
-    bool fx20_set_lost_signal_confirmations();
-    bool fx20_wait_on_reply(uint8_t *rx_two_bytes);
+    bool sf20_disable_address_tagging();
+    bool sf20_product_name_check();
+    bool sf20_send_and_expect(const char* send, const char* expected_reply);
+    bool sf20_set_lost_signal_confirmations();
+    bool sf20_wait_on_reply(uint8_t *rx_two_bytes);
     bool init();
     bool legacy_init();
-    bool fx20_init();
+    bool sf20_init();
     void legacy_timer();
-    void fx20_timer();
+    void sf20_timer();
 
     // get a reading
     bool legacy_get_reading(uint16_t &reading_cm);
-    bool fx20_get_reading(uint16_t &reading_cm);
+    bool sf20_get_reading(uint16_t &reading_cm);
     AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev;
 };
