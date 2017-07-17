@@ -19,6 +19,8 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/utility/sparse-endian.h>
 #include <GCS_MAVLink/GCS.h>
+#include <assert.h>
+#include <DataFlash/DataFlash.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -28,6 +30,47 @@ extern const AP_HAL::HAL& hal;
 #define LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE 5
 
 const size_t lx20_max_reply_len_bytes = 32;
+const size_t lx20_max_expected_stream_reply_len_bytes = 14;
+
+#define stream_the_median_distance_to_the_first_return "ldf,0"
+#define stream_the_raw_distance_to_the_first_return    "ldf,1"
+#define stream_the_signal_strength_first_return        "lhf"
+#define stream_the_raw_distance_to_the_last_return     "ldl,1"
+#define stream_the_signal_strength_last_return         "lhl"
+#define stream_the_level_of_background_noise           "ln"
+
+#if SF20_TEST_CODE
+/* Data streams from the LiDAR can include any sf20 LiDAR measurement.
+ * A request to stream the desired measurement is made on a 20Hz basis and
+ * on the next 20Hz service 50ms later, the result is read and a streaming
+ * request is made for the next desired measurement in the sequence.
+ * Results are generally available from the LiDAR within 10mS of request.
+ */
+#define STREAM1_VAL stream_the_raw_distance_to_the_first_return
+#define STREAM2_VAL stream_the_signal_strength_first_return
+#define STREAM3_VAL stream_the_raw_distance_to_the_last_return
+#define STREAM4_VAL stream_the_signal_strength_last_return
+#define STREAM5_VAL stream_the_level_of_background_noise
+const char *parse_stream_id[NUM_TEST_STREAMS] = {
+            STREAM1_VAL ":",
+            STREAM2_VAL ":",
+            STREAM3_VAL ":",
+            STREAM4_VAL ":",
+            STREAM5_VAL ":"
+};
+
+const char *init_stream_id[NUM_TEST_STREAMS] = {
+        "$1" STREAM1_VAL "\r\n",
+        "$1" STREAM2_VAL "\r\n",
+        "$1" STREAM3_VAL "\r\n",
+        "$1" STREAM4_VAL "\r\n",
+        "$1" STREAM5_VAL "\r\n"
+};
+
+const int streamSequence[] = { 0,1,2,3,4 }; // List of 0 based stream Ids that determine the LiDAR values collected.
+#endif // SF20_TEST_CODE
+const int numStreamSequenceIndexes = sizeof(streamSequence)/sizeof(streamSequence[0]);
+
 /*
    The constructor also initializes the rangefinder. Note that this
    constructor is not called until detect() returns true, so we
@@ -103,7 +146,9 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
 
     if ((expected_reply_len > lx20_max_reply_len_bytes) ||
         (expected_reply_len < 2)) {
-        hal.console->printf("LiDAR_SF20 [%s] len FAILED: %s\n", send_msg, (char*)expected_reply);
+        assert(!(expected_reply_len > lx20_max_reply_len_bytes) ||
+        (expected_reply_len < 2));
+        hal.console->printf("LiDAR_SF20 [%s] len FAILED: %s\n", send_msg, (char*)expected_reply); // TODO: Change to assert
         return false;
     }
 
@@ -111,30 +156,30 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
     rx_bytes[2] = 0;
 
     if (!write_bytes((uint8_t*)send_msg,
-                           strlen(send_msg) + 1)) {
-        hal.console->printf("LiDAR_SF20 [%s] 0 FAILED.\n", (char*)send_msg);
+                           strlen(send_msg))) {
+        hal.console->printf("LiDAR_SF20 [%s] 0 FAILED.\n", (char*)send_msg); // TODO: Remove except in test branch.
         return false;
     }
 
     if (!sf20_wait_on_reply(rx_bytes)) {
-        hal.console->printf("LiDAR_SF20 [%s] 1 FAILED: %s\n", send_msg, (char*)rx_bytes);
+        hal.console->printf("LiDAR_SF20 [%s] 1 FAILED: %s\n", send_msg, (char*)rx_bytes); // TODO: Remove except in test branch.
         return false;
     }
 
     if ((rx_bytes[0] != expected_reply[0]) ||
         (rx_bytes[1] != expected_reply[1]) ) {
-        hal.console->printf("LiDAR_SF20 [%s] 2 FAILED: %s\n", send_msg, (char*)rx_bytes);
+        hal.console->printf("LiDAR_SF20 [%s] 2 FAILED: %s\n", send_msg, (char*)rx_bytes); // TODO: Remove except in test branch.
         return false;
     }
 
     if (!_dev->read(rx_bytes, expected_reply_len)) {
-        hal.console->printf("LiDAR_SF20 [%s] 3 FAILED: %s\n", send_msg, (char*)rx_bytes);
+        hal.console->printf("LiDAR_SF20 [%s] 3 FAILED: %s\n", send_msg, (char*)rx_bytes); // TODO: Remove except in test branch.
         return false;
     }
 
     for (int i = 0 ; i < expected_reply_len ; i++) {
         if (rx_bytes[i] != expected_reply[i]) {
-            hal.console->printf("LiDAR_SF20 [%s] 4 FAILED: %s\n", send_msg, (char*)rx_bytes);
+            hal.console->printf("LiDAR_SF20 [%s] 4 FAILED: %s\n", send_msg, (char*)rx_bytes); // TODO: Remove except in test branch.
             return false;
         }
     }
@@ -188,6 +233,8 @@ bool AP_RangeFinder_LightWareI2C::legacy_init()
 
 bool AP_RangeFinder_LightWareI2C::sf20_init()
 {
+    missed_samples = 0;
+
     // Makes sure that "address tagging" is turned off.
     // Address tagging starts every response with "0x66".
     // Turns off Address Tagging just in case it was previously left on in the non-volatile configuration.
@@ -215,14 +262,22 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
         return false;
     }
 
-    // For now just set to a fixed pattern to assess how well it improves operation with beacon.
-    // Pull parameter for encoding and overwrite hard-coded specifier for pattern 2.
-    // Todo: This is not useful. Have a way to set it on take off or landing.
-    // Assuming there are some external communications prior to this point that will
-    // randomize the startup time, the least significant bits of the system clock
-    // are used to select the encoding pattern.
-	// Changes the laser encoding pattern: 2 [0..4].
-    if(!sf20_send_and_expect("#LE,2\r\n", "le:2")) {
+#if 0 // Address change to 0x65 = 101
+    write_bytes((uint8_t*)"#CI,0x65\r\n",10);
+    _dev->set_address(0x65);
+    uint8_t rx_bytes[lx20_max_reply_len_bytes + 1];
+    sf20_wait_on_reply(rx_bytes);
+    // Save the comm settings
+    if(!sf20_send_and_expect("%C\r\n", "%c:")) {
+        return false;
+    }
+#endif
+
+    /* Sets the Laser Encoding to a fixed pattern to assess how well it improves operation with interference from
+     * the Precision Landing infrared beacon.
+     */
+	// Changes the laser encoding pattern: 3 (Random A) [0..4].
+    if(!sf20_send_and_expect("#LE,3\r\n", "le:3")) {
         return false;
     }
 
@@ -264,65 +319,18 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
         return false;
     }
 
-    if(!sf20_send_and_expect("?LT,1\r\n", "lt:")) {
-        return false;
-    }
 
-#if 1
-    be16_t reading_cm;
-    sf20_get_reading(reading_cm);
-#endif
+    // Requests the measurement specified in the first stream.
+    int i = 0;
+    write_bytes((uint8_t*)init_stream_id[i], strlen(init_stream_id[i]));
 
-    // Configures the first stream for the raw first return.
-    // Alternatively for the median use:
-    // const char stream_the_median_distance_to_the_first_return_on_stream_one[] = "$1,ldf\r";
-    const char stream_the_raw_distance_to_the_first_return_on_stream_one[] = "$1ldf,1\r\n";
-    if (!write_bytes((uint8_t*)stream_the_raw_distance_to_the_first_return_on_stream_one,
-                        sizeof(stream_the_raw_distance_to_the_first_return_on_stream_one))) {
-        return false;
-    }
-
-#if 0
-    // Signal strength is returned as a (%)
-    const char stream_the_signal_strength_first_return_on_stream_2[] = "$2lhf\n";
-    if (!write_bytes((uint8_t*)stream_the_signal_strength_first_return_on_stream_2,
-                        sizeof(stream_the_signal_strength_first_return_on_stream_2))) {
-        return false;
-    }
-#endif
-
-#if 0
-    // Streams the raw distance to the last return on stream two.
-    const char stream_the_raw_distance_to_the_last_return_on_stream_two[] = "$3ldf,1\r\n"; //$3ldl,1\r\n
-    if (!write_bytes((uint8_t *)stream_the_raw_distance_to_the_last_return_on_stream_two,
-                         sizeof(stream_the_raw_distance_to_the_last_return_on_stream_two))) {
-        return false;
-    }
-#endif
-
-#if 0
-        // Signal strength is returned as a (%)
-    const char stream_the_signal_strength_last_return_on_stream_4[] = "$4lhl\r\n";
-    if (!write_bytes((uint8_t*)stream_the_signal_strength_last_return_on_stream_4,
-                        sizeof(stream_the_signal_strength_last_return_on_stream_4))) {
-        return false;
-    }
-
-    // Streams the level of background noise.
-    const char stream_the_level_of_background_noise_on_stream_5[] = "$5ln\r\n";
-    if (!write_bytes((uint8_t*)stream_the_level_of_background_noise_on_stream_5,
-                        sizeof(stream_the_level_of_background_noise_on_stream_5))) {
-    return false;
-}
-#endif
-
-#if 1
+#if 0 // If testing indicates that the legacy mode is appropriate, legacy binary streaming may be used.
     // Enable I2C binary distance streaming.
     // This enables the output of binary coded distance in centimeters.
     // Sending any other command will disable it.
     const uint8_t send_buf_enable_I2C_legacy_distance_streaming[] = "0'";
     if (!write_bytes((uint8_t*)send_buf_enable_I2C_legacy_distance_streaming,
-                        sizeof(send_buf_enable_I2C_legacy_distance_streaming))) {
+                        strlen(send_buf_enable_I2C_legacy_distance_streaming))) {
         return false;
     }
 #endif
@@ -369,29 +377,100 @@ bool AP_RangeFinder_LightWareI2C::legacy_get_reading(uint16_t &reading_cm)
 // read - return last value measured by sf20 sensor
 bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 {
-#if 0
-    be16_t val[15];
-    const uint8_t read_reg = LIGHTWARE_DISTANCE_READ_REG;
+    // Parses up to 5 ASCII streams for LiDAR data.
+    // If a parse fails, the stream measurement is not updated until it is successfully read in the future.
+    uint8_t stream[lx20_max_expected_stream_reply_len_bytes]; // Maximum response length for a stream ie "ldf,0:40.99" is 11 characters
 
-    // read the high and low byte distance registers
-    if (_dev->transfer(&read_reg, 1, (uint8_t *)&val, sizeof(val))) {
-        // combine results into distance
-        reading_cm = be16toh(val[0]);
-        return true;
-    }
-    return false;
-#else
-    be16_t val[15];
+    bool ret;
+    int i;
 
-    // Reads the streams in 16 bit binary.
-    bool ret = _dev->read((uint8_t *) &val, sizeof(val));
+    /* Reads the LiDAR value requested during the last interrupt. */
+    ret = _dev->read(stream, sizeof(stream));
     if (ret) {
-        // combine results into distance
-        reading_cm = be16toh(val[0]);
+        i = streamSequence[currentStreamSequenceIndex];
+        size_t num_processed_chars = 0;
+        if (sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_test_val[i])) {
+            switch (i) {
+            case 0:
+                reading_cm = sf20_test_val[0];
+                break;
+            case 1:
+                break;
+            }
+        }
+        else {
+            // Count issues
+            missed_samples++;
+            state.voltage_mv = missed_samples;
+        }
     }
+
+    currentStreamSequenceIndex++;
+    if (currentStreamSequenceIndex >= numStreamSequenceIndexes) {
+        currentStreamSequenceIndex = 0;
+        // Logs collected data:
+        data_log(sf20_test_val);
+    }
+    i = streamSequence[currentStreamSequenceIndex];
+
+    write_bytes((uint8_t*)init_stream_id[i], strlen(init_stream_id[i]));
 
     return ret;
-#endif
+}
+
+void AP_RangeFinder_LightWareI2C::data_log(uint16_t *val)
+{
+    DataFlash_Class::instance()->Log_Write("SF20", "Time_uS,s0,s1,s2,s3,s4",
+                                                              "QHHHHH",
+                                            AP_HAL::micros64(),
+                                            val[0], val[1], val[2], val[3], val[4]);
+}
+
+
+bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
+                       size_t *p_num_processed_chars,
+                       const char *string_identifier,
+                       uint16_t &val) {
+    size_t string_identifier_len = strlen(string_identifier);
+    for (int i = 0 ; i < string_identifier_len ; i++) {
+        if (stream_buf[*p_num_processed_chars] != string_identifier[i]) {
+            return false;
+        }
+        (*p_num_processed_chars)++;
+    }
+
+    /* Number is always returned in hundredths. So 6.33 is returned as 633. 6.3 is returned as 630.
+         * 6 is returned as 600.
+         * Extract number in format 6.33 or 123.99 (meters to be converted to centimeters).
+         * Percentages such as 100 (percent), are returned as 10000.
+         */
+    uint32_t final_multiplier = 100;
+    bool decrement_multiplier = false;
+    bool number_found = false;
+    uint16_t accumulator = 0;
+    uint16_t digit_u16 = (uint16_t)stream_buf[*p_num_processed_chars];
+    while ((((digit_u16 < '9') &&
+             (digit_u16 >= '0')) ||
+             (digit_u16 == '.')) &&
+             (*p_num_processed_chars < lx20_max_reply_len_bytes)) {
+        (*p_num_processed_chars)++;
+        if (decrement_multiplier) {
+            final_multiplier /=10;
+        }
+        if (digit_u16 == '.') {
+            decrement_multiplier = true;
+            digit_u16 = (uint16_t)stream_buf[*p_num_processed_chars];
+            continue;
+        }
+        number_found = true;
+        accumulator *= 10;
+        accumulator += digit_u16 - '0';
+        digit_u16 = (uint16_t)stream_buf[*p_num_processed_chars];
+    }
+
+    accumulator *= final_multiplier;
+    val = accumulator;
+    return number_found;
 }
 
 /*
@@ -436,7 +515,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_wait_on_reply(uint8_t *rx_two_byte)
         current_time_ms = AP_HAL::millis();
         elapsed_time_ms = current_time_ms - start_time_ms;
         if (rx_two_byte[0] != 0) {
-            const char fmt_wait_ms[] = "SF20 wait: normal exit after %d ms";
+            const char fmt_wait_ms[] = "SF20 wait: normal exit after %d ms"; //TODO: remove after testing all printf
             hal.console->printf(fmt_wait_ms, elapsed_time_ms);
             return true;
         }
