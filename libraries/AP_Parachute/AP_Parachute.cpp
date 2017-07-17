@@ -213,7 +213,7 @@ void AP_Parachute::mttr_fts_update()
             enum fts_msg_id_t msg_id = fts_protocol_identify_message(msg_len, msg_buf);
             if (msg_id == FTS_MSGID_STATUS) {
                 struct fts_msg_status_s* msg = (struct fts_msg_status_s*)msg_buf;
-                DataFlash_Class::instance()->Log_Write("FTSS", "TimeUS,State,Rsn,BSoC,BC1mV,BC2mV,BC3mV,BTINT,BTTS1", "QBBBHHHhh", AP_HAL::micros64(), msg->state, msg->state_reason, msg->batt_SoC, msg->batt_cell_mV[0], msg->batt_cell_mV[1], msg->batt_cell_mV[2], msg->batt_temp_INT, msg->batt_temp_TS1);
+                DataFlash_Class::instance()->Log_Write("FTSS", "TimeUS,State,Rsn,BSoC,BC1mV,BC2mV,BC3mV,BTINT,BTTS1", "QBBBHHHcc", AP_HAL::micros64(), msg->state, msg->state_reason, msg->batt_SoC, msg->batt_cell_mV[0], msg->batt_cell_mV[1], msg->batt_cell_mV[2], msg->batt_temp_INT, msg->batt_temp_TS1);
 
                 // update pre-arm state
                 _mttr_last_status_recv_ms = tnow_ms;
