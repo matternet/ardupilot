@@ -30,6 +30,7 @@ public:
     /// Constructor
     AP_Parachute(AP_Relay &relay)
         : _relay(relay)
+        , _mttr_fuse_pass(true)
     {
         // setup parameter defaults
         AP_Param::setup_object_defaults(this, var_info);
@@ -71,7 +72,7 @@ public:
     int16_t alt_min() const { return _alt_min; }
 
     const char* mttr_get_fts_version() { return _mttr_fts_version; }
-    bool get_mttr_prearm_pass() { return _mttr_prearm_pass; }
+    bool get_mttr_prearm_pass() { return _mttr_status_pass && _mttr_fuse_pass; }
 
     static const struct AP_Param::GroupInfo        var_info[];
 
@@ -94,7 +95,8 @@ private:
     // Matternet FTS
     uint32_t _mttr_last_loop_ms;
     uint32_t _mttr_last_status_recv_ms;
-    bool _mttr_prearm_pass;
+    bool _mttr_status_pass;
+    bool _mttr_fuse_pass;
     AP_HAL::UARTDriver *_mttr_uart = nullptr;
     char _mttr_fts_version[16];
     void send_debug_message(uint32_t tnow_ms, uint8_t ind, float value);
