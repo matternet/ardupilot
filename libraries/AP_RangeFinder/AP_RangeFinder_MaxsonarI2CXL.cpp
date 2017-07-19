@@ -62,7 +62,16 @@ AP_RangeFinder_Backend *AP_RangeFinder_MaxsonarI2CXL::detect(RangeFinder::RangeF
         return nullptr;
     }
 
-    if (!sensor->_init()) {
+    bool success = false;
+    for (uint8_t i=0; i<10; i++) {
+        if (sensor->_init()) {
+            success = true;
+            break;
+        }
+        hal.scheduler->delay(10);
+    }
+
+    if (!success) {
         delete sensor;
         return nullptr;
     }
