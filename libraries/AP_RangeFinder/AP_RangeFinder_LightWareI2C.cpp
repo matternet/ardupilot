@@ -46,10 +46,10 @@ const size_t lx20_max_expected_stream_reply_len_bytes = 14;
  * request is made for the next desired measurement in the sequence.
  * Results are generally available from the LiDAR within 10mS of request.
  */
-#define STREAM1_VAL stream_the_raw_distance_to_the_first_return
-#define STREAM2_VAL stream_the_signal_strength_first_return
-#define STREAM3_VAL stream_the_raw_distance_to_the_last_return
-#define STREAM4_VAL stream_the_signal_strength_last_return
+#define STREAM1_VAL stream_the_raw_distance_to_the_last_return
+#define STREAM2_VAL stream_the_signal_strength_last_return
+#define STREAM3_VAL stream_the_raw_distance_to_the_first_return
+#define STREAM4_VAL stream_the_signal_strength_first_return
 #define STREAM5_VAL stream_the_level_of_background_noise
 const char *parse_stream_id[NUM_TEST_STREAMS] = {
             STREAM1_VAL ":",
@@ -67,7 +67,7 @@ const char *init_stream_id[NUM_TEST_STREAMS] = {
         "$1" STREAM5_VAL "\r\n"
 };
 
-const int streamSequence[] = { 0,1,2,3,4 }; // List of 0 based stream Ids that determine the LiDAR values collected.
+const int streamSequence[] = { 0,1,0,2,0,3,0,4 }; // List of 0 based stream Ids that determine the LiDAR values collected.
 #endif // SF20_TEST_CODE
 const int numStreamSequenceIndexes = sizeof(streamSequence)/sizeof(streamSequence[0]);
 
@@ -146,8 +146,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
 
     if ((expected_reply_len > lx20_max_reply_len_bytes) ||
         (expected_reply_len < 2)) {
-        assert(!(expected_reply_len > lx20_max_reply_len_bytes) ||
-        (expected_reply_len < 2));
         hal.console->printf("LiDAR_SF20 [%s] len FAILED: %s\n", send_msg, (char*)expected_reply); // TODO: Change to assert
         return false;
     }
@@ -382,6 +380,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
     uint8_t stream[lx20_max_expected_stream_reply_len_bytes]; // Maximum response length for a stream ie "ldf,0:40.99" is 11 characters
 
     bool ret;
+    static bool ret_associated_with_reading_cm = false;
     int i;
 
     /* Reads the LiDAR value requested during the last interrupt. */
@@ -393,6 +392,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
             switch (i) {
             case 0:
                 reading_cm = sf20_test_val[0];
+                ret_associated_with_reading_cm = ret;
                 break;
             case 1:
                 break;
@@ -415,7 +415,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 
     write_bytes((uint8_t*)init_stream_id[i], strlen(init_stream_id[i]));
 
-    return ret;
+    return ret_associated_with_reading_cm;
 }
 
 void AP_RangeFinder_LightWareI2C::data_log(uint16_t *val)
@@ -440,10 +440,10 @@ bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
     }
 
     /* Number is always returned in hundredths. So 6.33 is returned as 633. 6.3 is returned as 630.
-         * 6 is returned as 600.
-         * Extract number in format 6.33 or 123.99 (meters to be converted to centimeters).
-         * Percentages such as 100 (percent), are returned as 10000.
-         */
+     * 6 is returned as 600.
+     * Extract number in format 6.33 or 123.99 (meters to be converted to centimeters).
+     * Percentages such as 100 (percent), are returned as 10000.
+     */
     uint32_t final_multiplier = 100;
     bool decrement_multiplier = false;
     bool number_found = false;
@@ -515,8 +515,8 @@ bool AP_RangeFinder_LightWareI2C::sf20_wait_on_reply(uint8_t *rx_two_byte)
         current_time_ms = AP_HAL::millis();
         elapsed_time_ms = current_time_ms - start_time_ms;
         if (rx_two_byte[0] != 0) {
-            const char fmt_wait_ms[] = "SF20 wait: normal exit after %d ms"; //TODO: remove after testing all printf
-            hal.console->printf(fmt_wait_ms, elapsed_time_ms);
+//            const char fmt_wait_ms[] = "SF20 wait: normal exit after %d ms"; //TODO: remove after testing all printf
+//            hal.console->printf(fmt_wait_ms, elapsed_time_ms);
             return true;
         }
         if (elapsed_time_ms > max_wait_time_ms) {
