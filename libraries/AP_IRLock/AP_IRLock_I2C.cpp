@@ -34,7 +34,7 @@ extern const AP_HAL::HAL& hal;
 
 void AP_IRLock_I2C::init()
 {
-    dev = std::move(hal.i2c_mgr->get_device(1, IRLOCK_I2C_ADDRESS));
+    dev = std::move(hal.i2c_mgr->get_device(0, IRLOCK_I2C_ADDRESS));
     if (!dev) {
         return;
     }
