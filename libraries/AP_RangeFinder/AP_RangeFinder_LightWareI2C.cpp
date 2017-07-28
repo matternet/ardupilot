@@ -19,7 +19,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/utility/sparse-endian.h>
 #include <GCS_MAVLink/GCS.h>
-#include <assert.h>
+#include <stdio.h>
 #include <DataFlash/DataFlash.h>
 
 extern const AP_HAL::HAL& hal;
@@ -444,12 +444,24 @@ bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
      * Extract number in format 6.33 or 123.99 (meters to be converted to centimeters).
      * Percentages such as 100 (percent), are returned as 10000.
      */
+#if 0
+    float float_value;
+    int number_of_fields_scanned;
+    number_of_fields_scanned = sscanf((const char*)&(stream_buf[string_identifier_len]), "%f", &float_value);
+    float_value = float_value * 100;
+    val = (int16_t)float_value;
+    if ( number_of_fields_scanned == 1) {
+        return true;
+    } else {
+        return false;
+    }
+#else // hand coded parser that is off by 100cm low sometimes.
     uint32_t final_multiplier = 100;
     bool decrement_multiplier = false;
     bool number_found = false;
     uint16_t accumulator = 0;
     uint16_t digit_u16 = (uint16_t)stream_buf[*p_num_processed_chars];
-    while ((((digit_u16 < '9') &&
+    while ((((digit_u16 <= '9') &&
              (digit_u16 >= '0')) ||
              (digit_u16 == '.')) &&
              (*p_num_processed_chars < lx20_max_reply_len_bytes)) {
@@ -471,6 +483,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
     accumulator *= final_multiplier;
     val = accumulator;
     return number_found;
+#endif
 }
 
 /*
