@@ -148,9 +148,12 @@ void AP_RangeFinder_MaxsonarI2CXL::update(void)
             state.distance_cm = distance;
             new_distance = false;
             update_status();
-        } else {
-            set_status(RangeFinder::RangeFinder_NoData);
+            _last_meas_us = AP_HAL::micros();
         }
          _sem->give();
+    }
+
+    if (AP_HAL::micros()-_last_meas_us > 100000) {
+        set_status(RangeFinder::RangeFinder_NoData);
     }
 }
