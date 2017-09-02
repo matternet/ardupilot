@@ -64,43 +64,6 @@ uint8_t PX4_I2C::map_bus_number(uint8_t bus) const
     // default to bus 1
     return 1;
 }
-
-bool PX4_I2C::do_writewrite(uint8_t address, const uint8_t *send1, uint32_t send1_len, uint8_t *send2, uint32_t send2_len)
-{
-    set_address(address);
-    if (!init_done) {
-        init_done = true;
-        // we do late init() so we can setup the device paths
-        snprintf(devname, sizeof(devname), "AP_I2C_%u", instance);
-        snprintf(devpath, sizeof(devpath), "/dev/api2c%u", instance);
-        init_ok = (init() == OK);
-        if (init_ok) {
-            instance++;
-        }
-    }
-    if (!init_ok) {
-        return false;
-    }
-
-
-    px4_i2c_msg_t msgv[2];
-
-    msgv[0].addr = address;
-    msgv[0].flags = 0;
-    msgv[0].buffer = const_cast<uint8_t *>(send1);
-    msgv[0].length = send1_len;
-
-    msgv[1].addr = address;
-    msgv[1].flags = 0;
-    msgv[1].buffer = const_cast<uint8_t *>(send2);
-    msgv[1].length = send2_len;
-
-    if (!transfer(msgv,2)) {
-        return false;
-    }
-
-    return true;
-}
     
 /*
   implement wrapper for PX4 I2C driver
@@ -172,14 +135,6 @@ bool I2CDevice::transfer(const uint8_t *send, uint32_t send_len,
 {
     perf_begin(perf);
     bool ret = _px4dev.do_transfer(_address, send, send_len, recv, recv_len, _split_transfers);
-    perf_end(perf);
-    return ret;
-}
-
-bool I2CDevice::writewrite(uint8_t address, const uint8_t *send1, uint32_t send1_len, uint8_t *send2, uint32_t send2_len)
-{
-    perf_begin(perf);
-    bool ret = _px4dev.do_transfer(address, send1, send1_len, send2, send2_len);
     perf_end(perf);
     return ret;
 }

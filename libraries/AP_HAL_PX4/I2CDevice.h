@@ -50,8 +50,6 @@ public:
     bool transfer(const uint8_t *send, uint32_t send_len,
                   uint8_t *recv, uint32_t recv_len) override;
 
-    bool writewrite(uint8_t address, const uint8_t *send1, uint32_t send1_len, uint8_t *send2, uint32_t send2_len) override;
-
     bool read_registers_multiple(uint8_t first_reg, uint8_t *recv,
                                  uint32_t recv_len, uint8_t times) override;
 
