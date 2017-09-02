@@ -17,6 +17,7 @@ class PX4::PX4_I2C : public device::I2C {
 public:
     PX4_I2C(uint8_t bus);
     bool do_transfer(uint8_t address, const uint8_t *send, uint32_t send_len, uint8_t *recv, uint32_t recv_len, bool split_transfers);
+    bool do_writewrite(uint8_t address, const uint8_t *send1, uint32_t send1_len, uint8_t *send2, uint32_t send2_len);
 
     void set_retries(uint8_t retries) {
         _retries = retries;

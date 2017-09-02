@@ -45,6 +45,8 @@ public:
     virtual bool transfer(const uint8_t *send, uint32_t send_len,
                           uint8_t *recv, uint32_t recv_len) override = 0;
 
+    virtual bool writewrite(uint8_t address, const uint8_t *send1, uint32_t send1_len, uint8_t *send2, uint32_t send2_len) { return false };
+
     /*
      * Read location from device multiple times, advancing the buffer each
      * time
