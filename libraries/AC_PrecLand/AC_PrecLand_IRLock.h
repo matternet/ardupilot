@@ -22,10 +22,10 @@ public:
     AC_PrecLand_IRLock(const AC_PrecLand& frontend, AC_PrecLand::precland_state& state);
 
     // perform any required initialisation of backend
-    void init() override;
+    virtual void init() override;
 
     // retrieve updates from sensor
-    void update() override;
+    virtual void update() override;
 
     // provides a unit vector towards the target in body frame
     //  returns same as have_los_meas()
@@ -37,7 +37,7 @@ public:
     // return true if there is a valid los measurement available
     bool have_los_meas() override;
 
-private:
+protected:
     AP_IRLock_I2C irlock;
 
     Vector3f            _los_meas_body;         // unit vector in body frame pointing towards target

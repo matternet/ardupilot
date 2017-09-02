@@ -3,6 +3,7 @@
 #include "AC_PrecLand_Backend.h"
 #include "AC_PrecLand_Companion.h"
 #include "AC_PrecLand_IRLock.h"
+#include "AC_PrecLand_IRLockPozyx.h"
 #include "AC_PrecLand_SITL_Gazebo.h"
 #include "AC_PrecLand_SITL.h"
 
@@ -146,6 +147,9 @@ void AC_PrecLand::init()
             _backend = new AC_PrecLand_SITL(*this, _backend_state);
             break;
 #endif
+        case PRECLAND_TYPE_IRLOCK_AND_POZYX:
+            _backend = new AC_PrecLand_IRLockPozyx(*this, _backend_state);
+            break;
     }
 
     // init backend
