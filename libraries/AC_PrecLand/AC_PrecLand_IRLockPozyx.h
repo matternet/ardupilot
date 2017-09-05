@@ -40,6 +40,7 @@ private:
     } _range_data[2];
     volatile uint8_t _range_data_idx;
     volatile bool _have_range_meas;
+    uint32_t _prev_range_time_us;
 
     AP_HAL::OwnPtr<AP_HAL::I2CDevice> _pozyx_dev;
 

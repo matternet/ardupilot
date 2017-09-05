@@ -1,6 +1,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL/utility/sparse-endian.h>
 #include "AC_PrecLand_IRLockPozyx.h"
+#include <DataFlash/DataFlash.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -51,8 +52,15 @@ float AC_PrecLand_IRLockPozyx::distance_to_target() {
 void AC_PrecLand_IRLockPozyx::update()
 {
     AC_PrecLand_IRLock::update();
-    _have_range_meas = _have_range_meas && (AP_HAL::micros()-_range_data[_range_data_idx].time_us < 150000);
 
+    uint8_t curr_range_data_idx = _range_data_idx;
+
+    _have_range_meas = _have_range_meas && (AP_HAL::micros()-_range_data[curr_range_data_idx].time_us < 150000);
+
+    if (_range_data[curr_range_data_idx].time_us != _prev_range_time_us) {
+        DataFlash_Class::instance()->Log_Write("PLR", "TimeUS,Rng", "Qf", AP_HAL::micros64(), _range_data[curr_range_data_idx].range_m);
+    }
+    _prev_range_time_us = _range_data[curr_range_data_idx].time_us;
 }
 
 void AC_PrecLand_IRLockPozyx::timer()
