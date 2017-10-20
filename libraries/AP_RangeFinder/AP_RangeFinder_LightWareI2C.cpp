@@ -444,18 +444,19 @@ bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
      * Extract number in format 6.33 or 123.99 (meters to be converted to centimeters).
      * Percentages such as 100 (percent), are returned as 10000.
      */
-#if 0
+//#if 0 // scanf based parser. Included for verification of non-scanf parser.
+    uint16_t val_scanned;
     float float_value;
     int number_of_fields_scanned;
     number_of_fields_scanned = sscanf((const char*)&(stream_buf[string_identifier_len]), "%f", &float_value);
     float_value = float_value * 100;
-    val = (int16_t)float_value;
-    if ( number_of_fields_scanned == 1) {
-        return true;
-    } else {
-        return false;
-    }
-#else // hand coded parser that is off by 100cm low sometimes.
+    val_scanned = (int16_t)float_value;
+//    if ( number_of_fields_scanned == 1) {
+//        return true;
+//    } else {
+//        return false;
+//    }
+//#else // custom parser that does not use floats.
     uint32_t final_multiplier = 100;
     bool decrement_multiplier = false;
     bool number_found = false;
@@ -482,8 +483,24 @@ bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
 
     accumulator *= final_multiplier;
     val = accumulator;
+
+    if ((val_scanned < (val)) ||
+            (val_scanned > (val)) ||
+            number_of_fields_scanned != 1) {
+        DataFlash_Class::instance()->Log_Write("SF2e", "Parse Assert Time_uS,scanf,custom,num_scanned,char1,char2,char3,char4",
+                                                "QHHeBBBB",
+                                                AP_HAL::micros64(),
+                                                val_scanned, val,
+                                                number_of_fields_scanned,
+                                                stream_buf[string_identifier_len],
+                                                stream_buf[string_identifier_len + 1],
+                                                stream_buf[string_identifier_len + 2],
+                                                stream_buf[string_identifier_len + 3]
+                                                );
+
+    }
     return number_found;
-#endif
+//#endif
 }
 
 /*
