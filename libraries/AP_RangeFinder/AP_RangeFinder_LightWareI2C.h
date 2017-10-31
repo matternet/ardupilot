@@ -4,10 +4,7 @@
 #include "RangeFinder_Backend.h"
 #include <AP_HAL/I2CDevice.h>
 
-#define SF20_TEST_CODE 1
-#if SF20_TEST_CODE
-    #define NUM_TEST_STREAMS 5
-#endif
+#define NUM_SF20_DATA_STREAMS 1
 
 class AP_RangeFinder_LightWareI2C : public AP_RangeFinder_Backend
 {
@@ -30,10 +27,8 @@ private:
 
     int missed_samples;
 
-#if SF20_TEST_CODE
-    uint16_t sf20_test_val[NUM_TEST_STREAMS];
+    uint16_t sf20_stream_val[NUM_SF20_DATA_STREAMS];
     int currentStreamSequenceIndex = 0;
-#endif
 
     // constructor
     AP_RangeFinder_LightWareI2C(RangeFinder::RangeFinder_State &_state, AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev);
