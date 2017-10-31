@@ -39,7 +39,6 @@ const size_t lx20_max_expected_stream_reply_len_bytes = 14;
 #define stream_the_signal_strength_last_return         "lhl"
 #define stream_the_level_of_background_noise           "ln"
 
-#if SF20_TEST_CODE
 /* Data streams from the LiDAR can include any sf20 LiDAR measurement.
  * A request to stream the desired measurement is made on a 20Hz basis and
  * on the next 20Hz service 50ms later, the result is read and a streaming
@@ -51,24 +50,16 @@ const size_t lx20_max_expected_stream_reply_len_bytes = 14;
 #define STREAM3_VAL stream_the_raw_distance_to_the_first_return
 #define STREAM4_VAL stream_the_signal_strength_first_return
 #define STREAM5_VAL stream_the_level_of_background_noise
-const char *parse_stream_id[NUM_TEST_STREAMS] = {
-            STREAM1_VAL ":",
-            STREAM2_VAL ":",
-            STREAM3_VAL ":",
-            STREAM4_VAL ":",
-            STREAM5_VAL ":"
+const char *parse_stream_id[NUM_SF20_DATA_STREAMS] = { // List of stream identifier strings. Must match init_stream_id[].
+            STREAM1_VAL ":"
 };
 
-const char *init_stream_id[NUM_TEST_STREAMS] = {
-        "$1" STREAM1_VAL "\r\n",
-        "$1" STREAM2_VAL "\r\n",
-        "$1" STREAM3_VAL "\r\n",
-        "$1" STREAM4_VAL "\r\n",
-        "$1" STREAM5_VAL "\r\n"
+const char *init_stream_id[NUM_SF20_DATA_STREAMS] = {// List of stream initialization strings. Must match parse_stream_id[].
+        "$1" STREAM1_VAL "\r\n"
 };
 
-const int streamSequence[] = { 0,1,0,2,0,3,0,4 }; // List of 0 based stream Ids that determine the LiDAR values collected.
-#endif // SF20_TEST_CODE
+const int streamSequence[] = { 0 }; // List of 0 based stream Ids that determine the LiDAR values collected.
+
 const int numStreamSequenceIndexes = sizeof(streamSequence)/sizeof(streamSequence[0]);
 
 /*
@@ -146,7 +137,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
 
     if ((expected_reply_len > lx20_max_reply_len_bytes) ||
         (expected_reply_len < 2)) {
-        hal.console->printf("LiDAR_SF20 [%s] len FAILED: %s\n", send_msg, (char*)expected_reply); // TODO: Change to assert
         return false;
     }
 
@@ -155,29 +145,24 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
 
     if (!write_bytes((uint8_t*)send_msg,
                            strlen(send_msg))) {
-        hal.console->printf("LiDAR_SF20 [%s] 0 FAILED.\n", (char*)send_msg); // TODO: Remove except in test branch.
         return false;
     }
 
     if (!sf20_wait_on_reply(rx_bytes)) {
-        hal.console->printf("LiDAR_SF20 [%s] 1 FAILED: %s\n", send_msg, (char*)rx_bytes); // TODO: Remove except in test branch.
         return false;
     }
 
     if ((rx_bytes[0] != expected_reply[0]) ||
         (rx_bytes[1] != expected_reply[1]) ) {
-        hal.console->printf("LiDAR_SF20 [%s] 2 FAILED: %s\n", send_msg, (char*)rx_bytes); // TODO: Remove except in test branch.
         return false;
     }
 
     if (!_dev->read(rx_bytes, expected_reply_len)) {
-        hal.console->printf("LiDAR_SF20 [%s] 3 FAILED: %s\n", send_msg, (char*)rx_bytes); // TODO: Remove except in test branch.
         return false;
     }
 
     for (int i = 0 ; i < expected_reply_len ; i++) {
         if (rx_bytes[i] != expected_reply[i]) {
-            hal.console->printf("LiDAR_SF20 [%s] 4 FAILED: %s\n", send_msg, (char*)rx_bytes); // TODO: Remove except in test branch.
             return false;
         }
     }
@@ -320,21 +305,10 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
         return false;
     }
 
-
     // Requests the measurement specified in the first stream.
     int i = 0;
     write_bytes((uint8_t*)init_stream_id[i], strlen(init_stream_id[i]));
 
-#if 0 // If testing indicates that the legacy mode is appropriate, legacy binary streaming may be used.
-    // Enable I2C binary distance streaming.
-    // This enables the output of binary coded distance in centimeters.
-    // Sending any other command will disable it.
-    const uint8_t send_buf_enable_I2C_legacy_distance_streaming[] = "0'";
-    if (!write_bytes((uint8_t*)send_buf_enable_I2C_legacy_distance_streaming,
-                        strlen(send_buf_enable_I2C_legacy_distance_streaming))) {
-        return false;
-    }
-#endif
     // call timer() at 20Hz
     _dev->register_periodic_callback(50000,
                                      FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
@@ -345,22 +319,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
 // read - return last value measured by sensor
 bool AP_RangeFinder_LightWareI2C::legacy_get_reading(uint16_t &reading_cm)
 {
-#if 0 // latest from git hub master.
-    be16_t val;
-
-    if (ranger._address[state.instance] == 0) {
-        return false;
-    }
-
-    // read the high and low byte distance registers
-    bool ret = _dev->read((uint8_t *) &val, sizeof(val));
-    if (ret) {
-        // combine results into distance
-        reading_cm = be16toh(val);
-    }
-
-    return ret;
-#else //lateset from git hub mttr/master
     be16_t val;
 
     const uint8_t read_reg = LIGHTWARE_DISTANCE_READ_REG;
@@ -372,7 +330,6 @@ bool AP_RangeFinder_LightWareI2C::legacy_get_reading(uint16_t &reading_cm)
         return true;
     }
     return false;
-#endif //lateset from git hub mttr/master
 }
 
 // read - return last value measured by sf20 sensor
@@ -391,13 +348,11 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
     if (ret) {
         i = streamSequence[currentStreamSequenceIndex];
         size_t num_processed_chars = 0;
-        if (sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_test_val[i])) {
+        if (sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_stream_val[i])) {
             switch (i) {
             case 0:
-                reading_cm = sf20_test_val[0];
+                reading_cm = sf20_stream_val[0];
                 ret_associated_with_reading_cm = ret;
-                break;
-            case 1:
                 break;
             }
         }
@@ -411,8 +366,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
     currentStreamSequenceIndex++;
     if (currentStreamSequenceIndex >= numStreamSequenceIndexes) {
         currentStreamSequenceIndex = 0;
-        // Logs collected data:
-        data_log(sf20_test_val);
     }
     i = streamSequence[currentStreamSequenceIndex];
 
@@ -420,15 +373,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 
     return ret_associated_with_reading_cm;
 }
-
-void AP_RangeFinder_LightWareI2C::data_log(uint16_t *val)
-{
-    DataFlash_Class::instance()->Log_Write("SF20", "Time_uS,s0,s1,s2,s3,s4",
-                                                              "QHHHHH",
-                                            AP_HAL::micros64(),
-                                            val[0], val[1], val[2], val[3], val[4]);
-}
-
 
 bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
                        size_t *p_num_processed_chars,
@@ -518,19 +462,12 @@ bool AP_RangeFinder_LightWareI2C::sf20_wait_on_reply(uint8_t *rx_two_byte)
         current_time_ms = AP_HAL::millis();
         elapsed_time_ms = current_time_ms - start_time_ms;
         if (rx_two_byte[0] != 0) {
-//            const char fmt_wait_ms[] = "SF20 wait: normal exit after %d ms"; //TODO: remove after testing all printf
-//            hal.console->printf(fmt_wait_ms, elapsed_time_ms);
+            // normal exit
             return true;
         }
         if (elapsed_time_ms > max_wait_time_ms) {
-            const char fmt_wait_timeout_ms[] = "SF20 wait: timeout exit after %d ms";
-            hal.console->printf(fmt_wait_timeout_ms, elapsed_time_ms);
             return false;
         }
     }
-    current_time_ms = AP_HAL::millis();
-    elapsed_time_ms = current_time_ms - start_time_ms;
-    const char fmt_wait_fail_ms[] = "SF20 wait: fail exit after %d ms";
-    hal.console->printf(fmt_wait_fail_ms, elapsed_time_ms);
     return false;
 }
