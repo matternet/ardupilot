@@ -62,6 +62,9 @@ void Copter::read_rangefinder(void)
     rangefinder_alt_meas = rangefinder_alt_meas * MAX(0.707f, ahrs.get_rotation_body_to_ned().c.z);
  #endif
 
+    // Remove rangefinder body offset - converting NED to NEU
+    rangefinder_alt_meas += (ahrs.get_rotation_body_to_ned()*rangefinder.get_pos_offset(rangefinder_in_use)).z;
+
     float terrain_height_meas = inertial_nav.get_altitude() - rangefinder_alt_meas;
 
     // filter rangefinder for use by AC_WPNav
