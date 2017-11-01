@@ -399,20 +399,21 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
         bool alt_valid = (rangefinder_alt_valid && rangefinder_alt_m > 0.0f) || (_backend->distance_to_target() > 0.0f);
         if (target_vec_valid && alt_valid) {
             float dist, alt;
+
+            Vector3f cam_pos_ned = inertial_data_delayed.Tbn * _cam_offset.get();
+
             if (_backend->distance_to_target() > 0.0f) {
                 dist = _backend->distance_to_target();
                 alt = dist * target_vec_unit_ned.z;
             } else {
-                alt = MAX(rangefinder_alt_m, 0.0f);
+                alt = MAX(rangefinder_alt_m-cam_pos_ned.z, 0.0f);
                 dist = alt / target_vec_unit_ned.z;
             }
 
-            // Compute camera position relative to IMU
-            Vector3f accel_body_offset = AP::ins().get_imu_pos_offset(AP::ahrs().get_primary_accel_index());
-            Vector3f cam_pos_ned = inertial_data_delayed->Tbn * (_cam_offset.get() - accel_body_offset);
-
             // Compute target position relative to IMU
-            _target_pos_rel_meas_NED = Vector3f(target_vec_unit_ned.x*dist, target_vec_unit_ned.y*dist, alt) + cam_pos_ned;
+            Vector3f imu_pos_ned = inertial_data_delayed.Tbn * AP::ins().get_ins().get_imu_pos_offset(_ahrs.get_primary_accel_index());
+            Vector3f cam_pos_ned_rel_imu = cam_pos_ned-imu_pos_ned;
+            _target_pos_rel_meas_NED = Vector3f(target_vec_unit_ned.x*dist, target_vec_unit_ned.y*dist, alt) + cam_pos_ned_rel_imu;
             return true;
         }
     }
