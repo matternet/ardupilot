@@ -18,8 +18,6 @@ public:
 
 private:
 
-    int missed_samples;
-
     uint16_t sf20_stream_val[NUM_SF20_DATA_STREAMS];
     int currentStreamSequenceIndex = 0;
 

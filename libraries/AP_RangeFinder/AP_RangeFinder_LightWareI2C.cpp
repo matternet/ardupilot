@@ -216,8 +216,6 @@ bool AP_RangeFinder_LightWareI2C::legacy_init()
 
 bool AP_RangeFinder_LightWareI2C::sf20_init()
 {
-    missed_samples = 0;
-
     // Makes sure that "address tagging" is turned off.
     // Address tagging starts every response with "0x66".
     // Turns off Address Tagging just in case it was previously left on in the non-volatile configuration.
@@ -339,39 +337,33 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
     // If a parse fails, the stream measurement is not updated until it is successfully read in the future.
     uint8_t stream[lx20_max_expected_stream_reply_len_bytes]; // Maximum response length for a stream ie "ldf,0:40.99" is 11 characters
 
-    bool ret;
-    static bool ret_associated_with_reading_cm = false;
-    int i;
+    int i = streamSequence[currentStreamSequenceIndex];
+    size_t num_processed_chars = 0;
 
     /* Reads the LiDAR value requested during the last interrupt. */
-    ret = _dev->read(stream, sizeof(stream));
-    if (ret) {
-        i = streamSequence[currentStreamSequenceIndex];
-        size_t num_processed_chars = 0;
-        if (sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_stream_val[i])) {
-            switch (i) {
-            case 0:
-                reading_cm = sf20_stream_val[0];
-                ret_associated_with_reading_cm = ret;
-                break;
-            }
-        }
-        else {
-            // Count issues
-            missed_samples++;
-            state.voltage_mv = missed_samples;
-        }
+    if (!_dev->read(stream, sizeof(stream))) {
+        return false;
     }
 
+    if (!sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_stream_val[i])) {
+        return false;
+    }
+
+    if (i==0) {
+        reading_cm = sf20_stream_val[0];
+    }
+
+    // Increment the stream sequence
     currentStreamSequenceIndex++;
     if (currentStreamSequenceIndex >= numStreamSequenceIndexes) {
         currentStreamSequenceIndex = 0;
     }
     i = streamSequence[currentStreamSequenceIndex];
 
+    // Request the next stream in the sequence from the SF20
     write_bytes((uint8_t*)init_stream_id[i], strlen(init_stream_id[i]));
 
-    return ret_associated_with_reading_cm;
+    return true;
 }
 
 bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
