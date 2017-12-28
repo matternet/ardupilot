@@ -15,6 +15,8 @@
 #include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_BoardConfig/AP_BoardConfig_CAN.h>
 
+#include <com/matternet/equipment/uwb/PosVelEstimate.hpp>
+
 // Zubax GPS and other GPS, baro, magnetic sensors
 #include <uavcan/equipment/gnss/Fix.hpp>
 #include <uavcan/equipment/gnss/Auxiliary.hpp>
@@ -25,6 +27,7 @@
 #include <uavcan/equipment/actuator/Command.hpp>
 #include <uavcan/equipment/actuator/Status.hpp>
 #include <uavcan/equipment/esc/RawCommand.hpp>
+#include <uavcan/equipment/ahrs/Solution.hpp>
 
 extern const AP_HAL::HAL& hal;
 
@@ -167,6 +170,17 @@ static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::g
     }
 }
 
+struct precland_uwb_data_s precland_uwb_data;
+static void uwb_fix_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::PosVelEstimate>& msg) {
+    precland_uwb_data.timestamp_ms = AP_HAL::millis();
+    precland_uwb_data.pos[0] = msg.pos[0];
+    precland_uwb_data.pos[1] = msg.pos[1];
+    precland_uwb_data.pos[2] = msg.pos[2];
+    precland_uwb_data.vel[0] = msg.vel[0];
+    precland_uwb_data.vel[1] = msg.vel[1];
+    precland_uwb_data.vel[2] = msg.vel[2];
+}
+
 static void gnss_fix_cb0(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg)
 {   gnss_fix_cb(msg, 0); }
 static void gnss_fix_cb1(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg)
@@ -277,6 +291,26 @@ static void (*air_data_st_cb_arr[2])(const uavcan::ReceivedDataStructure<uavcan:
 // publisher interfaces
 static uavcan::Publisher<uavcan::equipment::actuator::ArrayCommand>* act_out_array[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::esc::RawCommand>* esc_raw[MAX_NUMBER_OF_CAN_DRIVERS];
+static uavcan::Publisher<uavcan::equipment::ahrs::Solution>* ahrs_publisher[MAX_NUMBER_OF_CAN_DRIVERS];
+
+static struct {
+    Quaternion orientation;
+    Vector3f ang_vel_body;
+    Vector3f accel_body;
+} ahrs_data;
+static bool new_ahrs_data;
+
+void AP_UAVCAN::publish_ahrs_solution(const Quaternion& orientation, const Vector3f& ang_vel_body, const Vector3f& accel_body)
+{
+    if (!new_ahrs_data) {
+        ahrs_data.orientation = orientation;
+        ahrs_data.ang_vel_body = ang_vel_body;
+        ahrs_data.accel_body = accel_body;
+        new_ahrs_data = true;
+    } else {
+        // TODO: alert missed data
+    }
+}
 
 AP_UAVCAN::AP_UAVCAN() :
     _node_allocator(
@@ -369,6 +403,15 @@ bool AP_UAVCAN::try_init(void)
                         debug_uavcan(1, "UAVCAN: node start problem\n\r");
                     }
 
+                    uavcan::Subscriber<com::matternet::equipment::uwb::PosVelEstimate> *uwb_fix;
+                    uwb_fix = new uavcan::Subscriber<com::matternet::equipment::uwb::PosVelEstimate>(*node);
+
+                    const int uwb_fix_start_res = uwb_fix->start(uwb_fix_cb);
+                    if (uwb_fix_start_res < 0) {
+                        debug_uavcan(1, "UAVCAN UWB subscriber start problem\n\r");
+                        return false;
+                    }
+
                     uavcan::Subscriber<uavcan::equipment::gnss::Fix> *gnss_fix;
                     gnss_fix = new uavcan::Subscriber<uavcan::equipment::gnss::Fix>(*node);
 
@@ -418,6 +461,10 @@ bool AP_UAVCAN::try_init(void)
                     esc_raw[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
                     esc_raw[_uavcan_i]->setPriority(uavcan::TransferPriority::OneLowerThanHighest);
 
+                    ahrs_publisher[_uavcan_i] = new uavcan::Publisher<uavcan::equipment::ahrs::Solution>(*node);
+                    ahrs_publisher[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(10));
+                    ahrs_publisher[_uavcan_i]->setPriority(uavcan::TransferPriority(2));
+
                     /*
                      * Informing other nodes that we're ready to work.
                      * Default mode is INITIALIZING.
@@ -460,11 +507,26 @@ void AP_UAVCAN::do_cyclic(void)
     if (_initialized) {
         auto *node = get_node();
 
-        const int error = node->spin(uavcan::MonotonicDuration::fromMSec(1));
+        const int error = node->spin(uavcan::MonotonicDuration::fromUSec(200));
 
         if (error < 0) {
-            hal.scheduler->delay_microseconds(1000);
+            hal.scheduler->delay_microseconds(200);
         } else {
+            if (ahrs_publisher[_uavcan_i] && new_ahrs_data) {
+                uavcan::equipment::ahrs::Solution msg;
+                msg.timestamp.usec = uavcan::Timestamp::UNKNOWN;
+                msg.orientation_xyzw[3] = ahrs_data.orientation[0];
+                msg.orientation_xyzw[0] = ahrs_data.orientation[1];
+                msg.orientation_xyzw[1] = ahrs_data.orientation[2];
+                msg.orientation_xyzw[2] = ahrs_data.orientation[3];
+                for (uint8_t i=0; i<3; i++) {
+                    msg.angular_velocity[i] = ahrs_data.ang_vel_body[i];
+                    msg.linear_acceleration[i] = ahrs_data.accel_body[i];
+                }
+                ahrs_publisher[_uavcan_i]->broadcast(msg);
+                new_ahrs_data = false;
+            }
+
             if (rc_out_sem_take()) {
                 if (_rco_armed) {
                     bool repeat_send;

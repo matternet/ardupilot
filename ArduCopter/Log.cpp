@@ -530,9 +530,9 @@ void Copter::Log_Write_Precland()
 {
  #if PRECISION_LANDING == ENABLED
     // exit immediately if not enabled
-    if (!precland.enabled()) {
-        return;
-    }
+//     if (!precland.enabled()) {
+//         return;
+//     }
 
     Vector2f target_pos_rel = Vector2f(0.0f,0.0f);
     Vector2f target_vel_rel = Vector2f(0.0f,0.0f);
