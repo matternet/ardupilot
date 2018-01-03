@@ -178,7 +178,7 @@ const AP_Param::GroupInfo AP_MotorsMulticopter::var_info[] = {
     // @DisplayName: Motor Power Max
     // @Description: Maximum power over which maximum throttle is limited (0 = Disabled)
     // @Range: 0 20000
-    // @Units: Watts
+    // @Units: W
     // @User: Advanced
     AP_GROUPINFO("BAT_POW_MAX", 38, AP_MotorsMulticopter, _batt_power_max, 0),
     
