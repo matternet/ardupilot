@@ -46,13 +46,14 @@ void Copter::read_rangefinder(void)
 
     bool rangefinder_alt_meas_valid = false;
     float rangefinder_alt_meas = 0;
-
+    Vector3f rangefinder_pos_offset;
 
     for (uint8_t i=0; i<RANGEFINDER_MAX_INSTANCES; i++) {
         AP_RangeFinder_Backend *sensor = rangefinder.get_backend(i);
         if (sensor != nullptr && sensor->orientation() == ROTATION_PITCH_270 && sensor->status() == RangeFinder::RangeFinder_Good && sensor->range_valid_count() >= RANGEFINDER_HEALTH_MAX) {
             rangefinder_alt_meas_valid = true;
             rangefinder_alt_meas = sensor->distance_cm();
+            rangefinder_pos_offset = sensor->get_pos_offset();
             break;
         }
     }
@@ -63,7 +64,7 @@ void Copter::read_rangefinder(void)
  #endif
 
     // Remove rangefinder body offset - converting NED to NEU
-    rangefinder_alt_meas += (ahrs.get_rotation_body_to_ned()*rangefinder.get_pos_offset(rangefinder_in_use)).z;
+    rangefinder_alt_meas += (ahrs.get_rotation_body_to_ned()*rangefinder_pos_offset).z;
 
     float terrain_height_meas = inertial_nav.get_altitude() - rangefinder_alt_meas;
 
