@@ -237,7 +237,7 @@ void AP_Parachute::mttr_fts_update()
             } else if (msg_id == FTS_MSGID_STATUS2) {
                 struct fts_msg_status2_s* msg = (struct fts_msg_status2_s*)msg_buf;
 
-                _mttr_fuse_pass = !msg->fuse_fault_state;
+                _mttr_fuse_pass = (msg->fuse_fault_state == FTS_FUSE_STATE_PASS);
 
                 DataFlash_Class::instance()->Log_Write("FTS2", "TimeUS,Fuse,WDTm", "QBh", AP_HAL::micros64(), msg->fuse_fault_state, msg->wdt_min_margin_ms);
 
