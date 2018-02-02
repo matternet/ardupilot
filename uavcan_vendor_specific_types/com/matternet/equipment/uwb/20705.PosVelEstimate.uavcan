@@ -1,0 +1,3 @@
+uavcan.Timestamp timestamp
+float16[3] pos
+float16[3] vel

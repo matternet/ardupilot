@@ -21,11 +21,11 @@
 #include <uavcan/equipment/indication/RGB565.hpp>
 
 #ifndef UAVCAN_NODE_POOL_SIZE
-#define UAVCAN_NODE_POOL_SIZE 8192
+#define UAVCAN_NODE_POOL_SIZE 32
 #endif
 
 #ifndef UAVCAN_NODE_POOL_BLOCK_SIZE
-#define UAVCAN_NODE_POOL_BLOCK_SIZE 256
+#define UAVCAN_NODE_POOL_BLOCK_SIZE 64
 #endif
 
 #ifndef UAVCAN_SRV_NUMBER
@@ -46,6 +46,14 @@
 
 #define AP_UAVCAN_MAX_LED_DEVICES 4
 #define AP_UAVCAN_LED_DELAY_MILLISECONDS 50
+
+struct precland_uwb_range_s {
+    bool valid {};
+    uint32_t timestamp_ms;
+    float range;
+};
+
+extern struct precland_uwb_range_s precland_uwb_range;
 
 class AP_UAVCAN {
 public:
