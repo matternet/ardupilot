@@ -212,6 +212,20 @@ bool AC_PrecLand::target_acquired()
     return _target_acquired;
 }
 
+bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
+    if (!target_acquired()) {
+        return false;
+    }
+
+    bool precland_uwb_range_valid = precland_uwb_range.valid && AP_HAL::millis()-precland_uwb_range.timestamp_ms < 100;
+    if (!precland_uwb_range_valid) {
+        return false;
+    }
+
+    ret = precland_uwb_range.range * 100;
+    return true;
+}
+
 bool AC_PrecLand::get_target_position_cm(Vector2f& ret)
 {
     if (!target_acquired()) {
