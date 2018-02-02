@@ -1,0 +1,3 @@
+int12[3] anchor_pos_mm
+int12[3] tag_pos_mm
+uint16 range_mm

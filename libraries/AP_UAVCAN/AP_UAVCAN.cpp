@@ -34,6 +34,7 @@
 #include <uavcan/equipment/indication/RGB565.hpp>
 
 #include <uavcan/equipment/power/BatteryInfo.hpp>
+#include <com/matternet/equipment/uwb/RangeObservation.hpp>
 
 extern const AP_HAL::HAL& hal;
 
@@ -85,6 +86,18 @@ const AP_Param::GroupInfo AP_UAVCAN::var_info[] = {
 // this is the timeout in milliseconds for periodic message types. We
 // set this to 1 to minimise resend of stale msgs
 #define CAN_PERIODIC_TX_TIMEOUT_MS 2
+
+struct precland_uwb_range_s precland_uwb_range;
+
+static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::RangeObservation>& msg) {
+    precland_uwb_range.valid = true;
+    precland_uwb_range.timestamp_ms = AP_HAL::millis();
+    precland_uwb_range.range = msg.range_mm*1e-3;
+
+    if (DataFlash_Class::instance()) {
+        DataFlash_Class::instance()->Log_Write("UWBR", "TimeUS,aX,aY,aZ,tX,tY,tZ,Rng", "QhhhhhhH", AP_HAL::micros64(), msg.anchor_pos_mm[0], msg.anchor_pos_mm[1], msg.anchor_pos_mm[2], msg.tag_pos_mm[0], msg.tag_pos_mm[1], msg.tag_pos_mm[2], msg.range_mm);
+    }
+}
 
 static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg, uint8_t mgr)
 {
@@ -478,6 +491,18 @@ bool AP_UAVCAN::try_init(void)
     const int node_start_res = node->start();
     if (node_start_res < 0) {
         debug_uavcan(1, "UAVCAN: node start problem\n\r");
+    }
+
+    uavcan::Subscriber<uavcan::equipment::gnss::Fix> *gnss_fix;
+    gnss_fix = new uavcan::Subscriber<uavcan::equipment::gnss::Fix>(*node);
+
+    uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation> *uwb_range;
+    uwb_range = new uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation>(*node);
+
+    const int uwb_range_start_res = uwb_range->start(uwb_range_cb);
+    if (uwb_range_start_res < 0) {
+        debug_uavcan(1, "UAVCAN UWB subscriber start problem\n\r");
+        return false;
     }
 
     uavcan::Subscriber<uavcan::equipment::gnss::Fix> *gnss_fix;
