@@ -19,11 +19,11 @@
 #include <uavcan/helpers/heap_based_pool_allocator.hpp>
 
 #ifndef UAVCAN_NODE_POOL_SIZE
-#define UAVCAN_NODE_POOL_SIZE 8192
+#define UAVCAN_NODE_POOL_SIZE 32
 #endif
 
 #ifndef UAVCAN_NODE_POOL_BLOCK_SIZE
-#define UAVCAN_NODE_POOL_BLOCK_SIZE 256
+#define UAVCAN_NODE_POOL_BLOCK_SIZE 64
 #endif
 
 #ifndef UAVCAN_RCO_NUMBER
@@ -40,6 +40,14 @@
 
 #define AP_UAVCAN_HW_VERS_MAJOR 1
 #define AP_UAVCAN_HW_VERS_MINOR 0
+
+struct precland_uwb_range_s {
+    bool valid {};
+    uint32_t timestamp_ms;
+    float range;
+};
+
+extern struct precland_uwb_range_s precland_uwb_range;
 
 class AP_UAVCAN {
 public:
