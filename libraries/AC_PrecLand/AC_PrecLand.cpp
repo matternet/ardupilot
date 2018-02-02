@@ -1,4 +1,5 @@
 #include <AP_HAL/AP_HAL.h>
+#include <AP_UAVCAN/AP_UAVCAN.h>
 #include "AC_PrecLand.h"
 #include "AC_PrecLand_Backend.h"
 #include "AC_PrecLand_Companion.h"
@@ -352,13 +353,17 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
 
         Vector3f target_vec_unit_ned = inertial_data_delayed.Tbn * target_vec_unit_body;
         bool target_vec_valid = target_vec_unit_ned.z > 0.0f;
-        bool alt_valid = (rangefinder_alt_valid && rangefinder_alt_m > 0.0f) || (_backend->distance_to_target() > 0.0f);
+        bool precland_uwb_range_valid = precland_uwb_range.valid && AP_HAL::millis()-precland_uwb_range.timestamp_ms < 100;
+        bool alt_valid = (rangefinder_alt_valid && rangefinder_alt_m > 0.0f) || (_backend->distance_to_target() > 0.0f || precland_uwb_range_valid);
         if (target_vec_valid && alt_valid) {
             float dist, alt;
 
             Vector3f cam_pos_ned = inertial_data_delayed.Tbn * _cam_offset.get();
 
-            if (_backend->distance_to_target() > 0.0f) {
+            if (precland_uwb_range_valid) {
+                dist = precland_uwb_range.range;
+                alt = dist * target_vec_unit_ned.z;
+            } else if (_backend->distance_to_target() > 0.0f) {
                 dist = _backend->distance_to_target();
                 alt = dist * target_vec_unit_ned.z;
             } else {
