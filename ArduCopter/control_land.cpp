@@ -201,6 +201,10 @@ void Copter::land_run_vertical_control(bool pause_descent)
         // Adjust for height of landing gear
         rangefinder_height_above_terrain_cm -= rangefinder.ground_clearance_cm_orient(ROTATION_PITCH_270) + rangefinder.get_pos_offset_orient(ROTATION_PITCH_270).z*100;
 
+        if (precland.get_height_above_target_cm(rangefinder_height_above_terrain_cm)) {
+            rangefinder_height_above_terrain_cm_valid = true;
+        }
+
         if (doing_precision_landing && rangefinder_height_above_terrain_cm_valid && rangefinder_height_above_terrain_cm > 35 && rangefinder_height_above_terrain_cm < 200) {
             float max_descent_speed = abs(g.land_speed)/2.0f;
             float land_slowdown = MAX(0.0f, pos_control->get_horizontal_error()*(max_descent_speed/precland_acceptable_error));
