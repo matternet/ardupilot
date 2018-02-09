@@ -60,7 +60,7 @@ void Copter::read_rangefinder(void)
  #endif
 
     // Remove rangefinder body offset - converting NED to NEU
-    rangefinder_alt_meas += (ahrs.get_rotation_body_to_ned()*rangefinder.get_pos_offset(rangefinder_in_use)).z;
+    rangefinder_alt_meas += (ahrs.get_rotation_body_to_ned()*rangefinder.get_pos_offset(rangefinder_in_use)*100).z;
 
     float terrain_height_meas = inertial_nav.get_altitude() - rangefinder_alt_meas;
 
