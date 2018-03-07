@@ -6,6 +6,9 @@ set -ex
 
 mkdir -p "$HOME/deploy_files"
 
+git submodule init
+git submodule update
+
 python Tools/autotest/param_metadata/param_parse.py --vehicle ArduCopter
 mv apm.pdef.xml "$HOME/deploy_files"
 
