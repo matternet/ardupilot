@@ -16,7 +16,6 @@ unset CXX CC
 ./waf distclean
 ./waf configure --board=px4-v3
 ./waf build --targets bin/arducopter -j8
-./waf distclean
 ./waf configure --board=sitl
 ./waf build --targets bin/arducopter -j8
 
