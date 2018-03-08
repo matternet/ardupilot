@@ -1,11 +1,14 @@
 #include <AP_HAL/AP_HAL.h>
-#include <AP_UAVCAN/AP_UAVCAN.h>
 #include "AC_PrecLand.h"
 #include "AC_PrecLand_Backend.h"
 #include "AC_PrecLand_Companion.h"
 #include "AC_PrecLand_IRLock.h"
 #include "AC_PrecLand_SITL_Gazebo.h"
 #include "AC_PrecLand_SITL.h"
+
+#if HAL_WITH_UAVCAN
+#include <AP_UAVCAN/AP_UAVCAN.h>
+#endif
 
 extern const AP_HAL::HAL& hal;
 
@@ -180,6 +183,9 @@ bool AC_PrecLand::target_acquired()
 }
 
 bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
+#if !HAL_WITH_UAVCAN
+    return false;
+#else
     if (!target_acquired()) {
         return false;
     }
@@ -191,6 +197,7 @@ bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
 
     ret = precland_uwb_range.range * 100;
     return true;
+#endif
 }
 
 bool AC_PrecLand::get_target_position_cm(Vector2f& ret)
@@ -367,7 +374,11 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
 
         Vector3f target_vec_unit_ned = inertial_data_delayed.Tbn * target_vec_unit_body;
         bool target_vec_valid = target_vec_unit_ned.z > 0.0f;
+#if HAL_WITH_UAVCAN
         bool precland_uwb_range_valid = precland_uwb_range.valid && AP_HAL::millis()-precland_uwb_range.timestamp_ms < 100;
+#else
+        bool precland_uwb_range_valid = false;
+#endif
         bool alt_valid = (rangefinder_alt_valid && rangefinder_alt_m > 0.0f) || (_backend->distance_to_target() > 0.0f || precland_uwb_range_valid);
         if (target_vec_valid && alt_valid) {
             float dist, alt;
@@ -375,8 +386,10 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
             Vector3f cam_pos_ned = inertial_data_delayed.Tbn * _cam_offset.get();
 
             if (precland_uwb_range_valid) {
+#if HAL_WITH_UAVCAN
                 dist = precland_uwb_range.range;
                 alt = dist * target_vec_unit_ned.z;
+#endif
             } else if (_backend->distance_to_target() > 0.0f) {
                 dist = _backend->distance_to_target();
                 alt = dist * target_vec_unit_ned.z;
