@@ -154,6 +154,10 @@ int32_t Copter::land_get_alt_above_ground(void)
     int32_t height_above_terrain_cm;
     bool rangefinder_height_above_terrain_cm_valid = get_rangefinder_height_above_terrain(height_above_terrain_cm);
 
+    if (precland.get_height_above_target_cm(height_above_terrain_cm)) {
+        rangefinder_height_above_terrain_cm_valid = true;
+    }
+
     if (rangefinder_height_above_terrain_cm_valid) {
         return height_above_terrain_cm;
     } else if (pos_control->is_active_xy() && current_loc.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_TERRAIN, height_above_terrain_cm)) {
