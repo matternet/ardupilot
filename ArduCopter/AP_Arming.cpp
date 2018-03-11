@@ -575,12 +575,12 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, bool arming_from_gcs)
         return false;
     }
 
-    if (!copter.parachute.get_mttr_prearm_pass()) {
-        if (display_failure) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: FTS state");
-        }
-        return false;
-    }
+//     if (!copter.parachute.get_mttr_prearm_pass()) {
+//         if (display_failure) {
+//             gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: FTS state");
+//         }
+//         return false;
+//     }
 
     for (uint8_t i=0; i<RANGEFINDER_MAX_INSTANCES; i++) {
         AP_RangeFinder_Backend *sensor = copter.rangefinder.get_backend(i);
