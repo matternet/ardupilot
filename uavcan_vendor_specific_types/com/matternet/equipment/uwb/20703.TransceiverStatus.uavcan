@@ -2,7 +2,12 @@
 uint8 TYPE_SUPERVISOR = 0
 uint8 TYPE_SUBORDINATE = 1
 
+uint8 PSTATE_UNPAIRED = 0
+uint8 PSTATE_PAIRING = 1
+uint8 PSTATE_PAIRED = 2
+
 uint8 type
+uint8 pstate
 uint64 node_id
 uint64 body_id
 uint8 data_slot_id
