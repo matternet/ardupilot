@@ -387,6 +387,7 @@ private:
         // saved to eeprom when offsets are saved allowing ram &
         // eeprom values to be compared as consistency check
         AP_Int32    dev_id;
+        uint32_t detected_dev_id;
 
         AP_Int8     use_for_yaw;
 
