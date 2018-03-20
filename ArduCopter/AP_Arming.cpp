@@ -514,7 +514,7 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, AP_Arming::ArmingMethod 
         return false;
     }
 
-    const Compass &_compass = AP::compass();
+    Compass &_compass = AP::compass();
 #ifndef ALLOW_ARM_NO_COMPASS
     // check compass health
     if (!_compass.healthy()) {
@@ -539,6 +539,17 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, AP_Arming::ArmingMethod 
             gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: FTS state");
         }
         return false;
+    }
+
+    if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_COMPASS)) {
+        // check compass offsets have been set.  AP_Arming only checks
+        // this if learning is off; Copter *always* checks.
+        if (!_compass.configured()) {
+            if (display_failure) {
+                gcs().send_text(MAV_SEVERITY_CRITICAL,"PreArm: Compass not calibrated");
+            }
+            return false;
+        }
     }
 
     control_mode_t control_mode = copter.control_mode;
