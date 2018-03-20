@@ -479,6 +479,7 @@ Compass::Compass(void)
     // default device ids to zero.  init() method will overwrite with the actual device ids
     for (uint8_t i=0; i<COMPASS_MAX_INSTANCES; i++) {
         _state[i].detected_dev_id = 0;
+        _state[i].dev_id = 0;
     }
     _singleton = this;
     AP_Param::setup_object_defaults(this, var_info);
