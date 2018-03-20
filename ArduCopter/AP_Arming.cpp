@@ -575,6 +575,17 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, bool arming_from_gcs)
         return false;
     }
 
+    if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_COMPASS)) {
+        // check compass offsets have been set.  AP_Arming only checks
+        // this if learning is off; Copter *always* checks.
+        if (!_compass.configured()) {
+            if (display_failure) {
+                gcs().send_text(MAV_SEVERITY_CRITICAL,"PreArm: Compass not calibrated");
+            }
+            return false;
+        }
+    }
+
     if (!copter.parachute.get_mttr_prearm_pass()) {
         if (display_failure) {
             gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: FTS state");
