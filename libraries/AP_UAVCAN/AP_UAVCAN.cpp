@@ -186,6 +186,8 @@ static void uwb_fix_cb(const uavcan::ReceivedDataStructure<com::matternet::equip
     precland_uwb_data.vel[0] = msg.vel[0];
     precland_uwb_data.vel[1] = msg.vel[1];
     precland_uwb_data.vel[2] = msg.vel[2];
+
+    DataFlash_Class::instance()->Log_Write("UWBE", "TimeUS,PN,PE,PD,VN,VE,VD,Yaw,PNV,PEV,PDV,VNV,VEV,VDV,YawV", "Qffffffffffffff", AP_HAL::micros64(), msg.pos[0], msg.pos[1], msg.pos[2], msg.vel[0], msg.vel[1], msg.vel[2], msg.anchor_heading, msg.pos_variance[0], msg.pos_variance[1], msg.pos_variance[2], msg.vel_variance[0], msg.vel_variance[1], msg.vel_variance[2], msg.anchor_heading_variance);
 }
 
 static void gnss_fix_cb0(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg)
