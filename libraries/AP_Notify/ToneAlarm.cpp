@@ -134,6 +134,11 @@ bool AP_ToneAlarm::init()
 // play_tune - play one of the pre-defined tunes
 void AP_ToneAlarm::play_tone(const uint8_t tone_index)
 {
+    // Just don't play tones while armed
+    if (hal.util->get_soft_armed() && tone_index != AP_NOTIFY_TONE_QUIET_ARMING_WARNING) {
+        return;
+    }
+
     uint32_t tnow_ms = AP_HAL::millis();
     const Tone &tone_requested = _tones[tone_index];
 
