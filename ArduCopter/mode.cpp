@@ -192,7 +192,16 @@ bool Copter::set_mode(Mode::Number mode, ModeReason reason)
         return true;
     }
 
+    if (motors->armed() &&
+        (control_mode == Mode::Number::STABILIZE ||
+         control_mode == Mode::Number::ALT_HOLD ||
+         control_mode == Mode::Number::LOITER) &&
+        reason == ModeReason::GCS_COMMAND) {
+        return false;
+    }
+
     Mode *new_flightmode = mode_from_mode_num((Mode::Number)mode);
+
     if (new_flightmode == nullptr) {
         gcs().send_text(MAV_SEVERITY_WARNING,"No such mode");
         AP::logger().Write_Error(LogErrorSubsystem::FLIGHT_MODE, LogErrorCode(mode));
