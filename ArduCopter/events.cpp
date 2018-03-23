@@ -24,6 +24,9 @@ void Copter::failsafe_radio_on_event()
         case FS_THR_ENABLED_CONTINUE_MISSION:
             desired_action = Failsafe_Action_RTL;
             break;
+        case FS_THR_ENABLED_CONTINUE_MISSION_ALWAYS_LAND:
+            desired_action = Failsafe_Action_Land;
+            break;
         case FS_THR_ENABLED_ALWAYS_SMARTRTL_OR_RTL:
             desired_action = Failsafe_Action_SmartRTL;
             break;
