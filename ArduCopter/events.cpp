@@ -14,7 +14,9 @@ void Copter::failsafe_radio_on_event()
     if (should_disarm_on_failsafe()) {
         init_disarm_motors();
     } else {
-        if (control_mode == AUTO && g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION) {
+        if ((control_mode == AUTO || control_mode == BRAKE || control_mode == GUIDED) && g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION_ALWAYS_LAND) {
+            // continue mission
+        } if ((control_mode == AUTO || control_mode == BRAKE || control_mode == GUIDED) && g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION) {
             // continue mission
         } else if (control_mode == LAND &&
                    battery.has_failsafed() &&
@@ -29,7 +31,7 @@ void Copter::failsafe_radio_on_event()
                 set_mode_SmartRTL_or_RTL(MODE_REASON_RADIO_FAILSAFE);
             } else if (g.failsafe_throttle == FS_THR_ENABLED_ALWAYS_SMARTRTL_OR_LAND) {
                 set_mode_SmartRTL_or_land_with_pause(MODE_REASON_RADIO_FAILSAFE);
-            } else { // g.failsafe_throttle == FS_THR_ENABLED_ALWAYS_LAND
+            } else { // g.failsafe_throttle == FS_THR_ENABLED_ALWAYS_LAND || g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION_ALWAYS_LAND
                 set_mode_land_with_pause(MODE_REASON_RADIO_FAILSAFE);
             }
         }
