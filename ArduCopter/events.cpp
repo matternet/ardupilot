@@ -14,12 +14,14 @@ void Copter::failsafe_radio_on_event()
     if (should_disarm_on_failsafe()) {
         init_disarm_motors();
     } else {
-        if (control_mode == AUTO && g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION) {
+        if ((control_mode == AUTO || control_mode == BRAKE || control_mode == GUIDED) && g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION_ALWAYS_LAND) {
+            // continue mission
+        } if ((control_mode == AUTO || control_mode == BRAKE || control_mode == GUIDED) && g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION) {
             // continue mission
         } else if (control_mode == LAND && g.failsafe_battery_enabled == FS_BATT_LAND && failsafe.battery) {
             // continue landing
         } else {
-            if (g.failsafe_throttle == FS_THR_ENABLED_ALWAYS_LAND) {
+            if (g.failsafe_throttle == FS_THR_ENABLED_ALWAYS_LAND || g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION_ALWAYS_LAND) {
                 set_mode_land_with_pause(MODE_REASON_RADIO_FAILSAFE);
             } else {
                 set_mode_RTL_or_land_with_pause(MODE_REASON_RADIO_FAILSAFE);
