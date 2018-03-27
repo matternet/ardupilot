@@ -24,7 +24,7 @@ bool Copter::set_mode(control_mode_t mode, mode_reason_t reason)
         return true;
     }
 
-    if ((control_mode == STABILIZE || control_mode == ALT_HOLD || control_mode == LOITER) && reason == MODE_REASON_GCS_COMMAND) {
+    if (motors->armed() && (control_mode == STABILIZE || control_mode == ALT_HOLD || control_mode == LOITER) && reason == MODE_REASON_GCS_COMMAND) {
         return false;
     }
 
