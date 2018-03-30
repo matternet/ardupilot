@@ -5,6 +5,7 @@
 #include "AC_PrecLand_IRLock.h"
 #include "AC_PrecLand_SITL_Gazebo.h"
 #include "AC_PrecLand_SITL.h"
+#include <AP_UAVCAN/AP_UAVCAN.h>
 
 #if HAL_WITH_UAVCAN
 #include <AP_UAVCAN/AP_UAVCAN.h>
@@ -161,24 +162,24 @@ void AC_PrecLand::init()
 // update - give chance to driver to get updates from sensor
 void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
 {
-    // append current velocity and attitude correction into history buffer
-    struct inertial_data_frame_s inertial_data_newest;
-    _ahrs.getCorrectedDeltaVelocityNED(inertial_data_newest.correctedVehicleDeltaVelocityNED, inertial_data_newest.dt);
-    inertial_data_newest.Tbn = _ahrs.get_rotation_body_to_ned();
-    inertial_data_newest.inertialNavVelocity = _inav.get_velocity()*0.01f;
-    inertial_data_newest.inertialNavVelocityValid = _inav.get_filter_status().flags.horiz_vel;
-    _inertial_history.push_back(inertial_data_newest);
-
-    // update estimator of target position
-    if (_backend != nullptr && _enabled) {
-        _backend->update();
-        run_estimator(rangefinder_alt_cm*0.01f, rangefinder_alt_valid);
-    }
+//     // append current velocity and attitude correction into history buffer
+//     struct inertial_data_frame_s inertial_data_newest;
+//     _ahrs.getCorrectedDeltaVelocityNED(inertial_data_newest.correctedVehicleDeltaVelocityNED, inertial_data_newest.dt);
+//     inertial_data_newest.Tbn = _ahrs.get_rotation_body_to_ned();
+//     inertial_data_newest.inertialNavVelocity = _inav.get_velocity()*0.01f;
+//     inertial_data_newest.inertialNavVelocityValid = _inav.get_filter_status().flags.horiz_vel;
+//     _inertial_history.push_back(inertial_data_newest);
+//
+//     // update estimator of target position
+//     if (_backend != nullptr && _enabled) {
+//         _backend->update();
+//         run_estimator(rangefinder_alt_cm*0.01f, rangefinder_alt_valid);
+//     }
 }
 
 bool AC_PrecLand::target_acquired()
 {
-    _target_acquired = _target_acquired && (AP_HAL::millis()-_last_update_ms) < 2000;
+    _target_acquired = (AP_HAL::millis() - precland_uwb_data.timestamp_ms) < 50;
     return _target_acquired;
 }
 
@@ -189,13 +190,7 @@ bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
     if (!target_acquired()) {
         return false;
     }
-
-    bool precland_uwb_range_valid = precland_uwb_range.valid && AP_HAL::millis()-precland_uwb_range.timestamp_ms < 100;
-    if (!precland_uwb_range_valid) {
-        return false;
-    }
-
-    ret = precland_uwb_range.range * 100;
+    ret = -precland_uwb_data.pos[2]*100.0f;
     return true;
 #endif
 }
@@ -205,8 +200,8 @@ bool AC_PrecLand::get_target_position_cm(Vector2f& ret)
     if (!target_acquired()) {
         return false;
     }
-    ret.x = _target_pos_rel_out_NE.x*100.0f + _inav.get_position().x;
-    ret.y = _target_pos_rel_out_NE.y*100.0f + _inav.get_position().y;
+    ret.x = -precland_uwb_data.pos[0]*100.0f + _inav.get_position().x;
+    ret.y = -precland_uwb_data.pos[1]*100.0f + _inav.get_position().y;
     return true;
 }
 
@@ -215,7 +210,8 @@ bool AC_PrecLand::get_target_position_relative_cm(Vector2f& ret)
     if (!target_acquired()) {
         return false;
     }
-    ret = _target_pos_rel_out_NE*100.0f;
+    ret.x = -precland_uwb_data.pos[0]*100.0f;
+    ret.y = -precland_uwb_data.pos[1]*100.0f;
     return true;
 }
 
@@ -224,7 +220,8 @@ bool AC_PrecLand::get_target_velocity_relative_cms(Vector2f& ret)
     if (!target_acquired()) {
         return false;
     }
-    ret = _target_vel_rel_out_NE*100.0f;
+    ret.x = -precland_uwb_data.vel[0]*100.0f;
+    ret.y = -precland_uwb_data.vel[1]*100.0f;
     return true;
 }
 
@@ -374,23 +371,14 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
 
         Vector3f target_vec_unit_ned = inertial_data_delayed.Tbn * target_vec_unit_body;
         bool target_vec_valid = target_vec_unit_ned.z > 0.0f;
-#if HAL_WITH_UAVCAN
-        bool precland_uwb_range_valid = precland_uwb_range.valid && AP_HAL::millis()-precland_uwb_range.timestamp_ms < 100;
-#else
-        bool precland_uwb_range_valid = false;
-#endif
-        bool alt_valid = (rangefinder_alt_valid && rangefinder_alt_m > 0.0f) || (_backend->distance_to_target() > 0.0f || precland_uwb_range_valid);
+
+        bool alt_valid = (rangefinder_alt_valid && rangefinder_alt_m > 0.0f) || (_backend->distance_to_target() > 0.0f);
         if (target_vec_valid && alt_valid) {
             float dist, alt;
 
             Vector3f cam_pos_ned = inertial_data_delayed.Tbn * _cam_offset.get();
 
-            if (precland_uwb_range_valid) {
-#if HAL_WITH_UAVCAN
-                dist = precland_uwb_range.range;
-                alt = dist * target_vec_unit_ned.z;
-#endif
-            } else if (_backend->distance_to_target() > 0.0f) {
+            if (_backend->distance_to_target() > 0.0f) {
                 dist = _backend->distance_to_target();
                 alt = dist * target_vec_unit_ned.z;
             } else {
