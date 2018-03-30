@@ -19,7 +19,7 @@
 #include <uavcan/helpers/heap_based_pool_allocator.hpp>
 
 #ifndef UAVCAN_NODE_POOL_SIZE
-#define UAVCAN_NODE_POOL_SIZE 32
+#define UAVCAN_NODE_POOL_SIZE 64
 #endif
 
 #ifndef UAVCAN_NODE_POOL_BLOCK_SIZE
@@ -41,13 +41,13 @@
 #define AP_UAVCAN_HW_VERS_MAJOR 1
 #define AP_UAVCAN_HW_VERS_MINOR 0
 
-struct precland_uwb_range_s {
-    bool valid {};
+struct precland_uwb_data_s {
     uint32_t timestamp_ms;
-    float range;
+    float pos[3];
+    float vel[3];
 };
 
-extern struct precland_uwb_range_s precland_uwb_range;
+extern struct precland_uwb_data_s precland_uwb_data;
 
 class AP_UAVCAN {
 public:
@@ -101,6 +101,8 @@ public:
     uint8_t find_smallest_free_mag_node();
     uint8_t register_mag_listener_to_node(AP_Compass_Backend* new_listener, uint8_t node);
     void update_mag_state(uint8_t node);
+
+    static void publish_ahrs_solution(const Quaternion& orientation, const Vector3f& ang_vel_body, const Vector3f& accel_body);
 
     // synchronization for RC output
     bool rc_out_sem_take();
