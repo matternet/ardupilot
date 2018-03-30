@@ -1,3 +1,8 @@
 uavcan.Timestamp timestamp
 float16[3] pos
+float16[3] pos_variance
 float16[3] vel
+float16[3] vel_variance
+float16 anchor_heading
+float16 anchor_heading_variance
+bool ready
