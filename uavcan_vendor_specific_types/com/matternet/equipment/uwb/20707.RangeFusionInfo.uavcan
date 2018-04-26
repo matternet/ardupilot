@@ -1,0 +1,5 @@
+float16[3] anchor_pos
+float16[3] tag_pos
+float16 range
+float16 innovation
+float16 nis

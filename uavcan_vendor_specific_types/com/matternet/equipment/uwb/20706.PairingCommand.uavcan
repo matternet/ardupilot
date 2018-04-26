@@ -1,0 +1,2 @@
+uint64 body_id
+uint64 remote_body_id
