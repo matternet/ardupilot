@@ -71,10 +71,10 @@ struct precland_uwb_range_s precland_uwb_range;
 static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::RangeObservation>& msg) {
     precland_uwb_range.valid = true;
     precland_uwb_range.timestamp_ms = AP_HAL::millis();
-    precland_uwb_range.range = msg.range_mm*1e-3;
+    precland_uwb_range.range = msg.range;
 
     if (DataFlash_Class::instance()) {
-        DataFlash_Class::instance()->Log_Write("UWBR", "TimeUS,aX,aY,aZ,tX,tY,tZ,Rng", "QhhhhhhH", AP_HAL::micros64(), msg.anchor_pos_mm[0], msg.anchor_pos_mm[1], msg.anchor_pos_mm[2], msg.tag_pos_mm[0], msg.tag_pos_mm[1], msg.tag_pos_mm[2], msg.range_mm);
+        DataFlash_Class::instance()->Log_Write("UWBR", "TimeUS,aX,aY,aZ,tX,tY,tZ,Rng", "QhhhhhhH", AP_HAL::micros64(), msg.anchor_pos[0], msg.anchor_pos[1], msg.anchor_pos[2], msg.tag_pos[0], msg.tag_pos[1], msg.tag_pos[2], msg.range);
     }
 }
 
