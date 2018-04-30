@@ -18,7 +18,7 @@
 #include <DataFlash/DataFlash.h>
 
 #include <com/matternet/equipment/uwb/PosVelEstimate.hpp>
-#include <com/matternet/equipment/uwb/RangeObservation2.hpp>
+#include <com/matternet/equipment/uwb/RangeFusionInfo.hpp>
 
 // Zubax GPS and other GPS, baro, magnetic sensors
 #include <uavcan/equipment/gnss/Fix.hpp>
@@ -173,7 +173,7 @@ static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::g
     }
 }
 
-static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::RangeObservation2>& msg) {
+static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::RangeFusionInfo>& msg) {
     DataFlash_Class::instance()->Log_Write("UWBR", "TimeUS,AX,AY,AZ,TX,TY,TZ,rng,innov,nis", "Qfffffffff", AP_HAL::micros64(), msg.anchor_pos[0], msg.anchor_pos[1], msg.anchor_pos[2], msg.tag_pos[0], msg.tag_pos[1], msg.tag_pos[2], msg.range, msg.innovation, msg.nis);
 }
 
@@ -428,8 +428,8 @@ bool AP_UAVCAN::try_init(void)
                         return false;
                     }
 
-                    uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation2> *uwb_range;
-                    uwb_range = new uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation2>(*node);
+                    uavcan::Subscriber<com::matternet::equipment::uwb::RangeFusionInfo> *uwb_range;
+                    uwb_range = new uavcan::Subscriber<com::matternet::equipment::uwb::RangeFusionInfo>(*node);
 
                     const int uwb_range_start_res = uwb_range->start(uwb_range_cb);
                     if (uwb_range_start_res < 0) {
