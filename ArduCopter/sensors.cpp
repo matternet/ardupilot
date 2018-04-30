@@ -348,11 +348,11 @@ void Copter::update_sensor_status_flags(void)
         control_sensors_present |= MAV_SYS_STATUS_SENSOR_OPTICAL_FLOW;
     }
 #endif
-#if PRECISION_LANDING == ENABLED
-    if (precland.enabled()) {
+// #if PRECISION_LANDING == ENABLED
+//     if (precland.enabled()) {
         control_sensors_present |= MAV_SYS_STATUS_SENSOR_VISION_POSITION;
-    }
-#endif
+//     }
+// #endif
 #if VISUAL_ODOMETRY_ENABLED == ENABLED
     if (g2.visual_odom.enabled()) {
         control_sensors_present |= MAV_SYS_STATUS_SENSOR_VISION_POSITION;
@@ -442,9 +442,9 @@ void Copter::update_sensor_status_flags(void)
     }
 #endif
 #if PRECISION_LANDING == ENABLED
-    if (precland.enabled() && !precland.healthy()) {
-        control_sensors_health &= ~MAV_SYS_STATUS_SENSOR_VISION_POSITION;
-    }
+//     if (precland.enabled() && !precland.healthy()) {
+        control_sensors_health |= MAV_SYS_STATUS_SENSOR_VISION_POSITION;
+//     }
 #endif
 #if VISUAL_ODOMETRY_ENABLED == ENABLED
     if (g2.visual_odom.enabled() && !g2.visual_odom.healthy()) {
