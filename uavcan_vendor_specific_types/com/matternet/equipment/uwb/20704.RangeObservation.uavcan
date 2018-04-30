@@ -1,3 +1,4 @@
-int12[3] anchor_pos_mm
-int12[3] tag_pos_mm
-uint16 range_mm
+float16[3] anchor_pos
+float16[3] tag_pos
+float32 range
+float16 rssi
