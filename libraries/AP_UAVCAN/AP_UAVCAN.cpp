@@ -74,7 +74,7 @@ static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equ
     precland_uwb_range.range = msg.range;
 
     if (DataFlash_Class::instance()) {
-        DataFlash_Class::instance()->Log_Write("UWBR", "TimeUS,aX,aY,aZ,tX,tY,tZ,Rng", "QhhhhhhH", AP_HAL::micros64(), msg.anchor_pos[0], msg.anchor_pos[1], msg.anchor_pos[2], msg.tag_pos[0], msg.tag_pos[1], msg.tag_pos[2], msg.range);
+        DataFlash_Class::instance()->Log_Write("UWBR", "TimeUS,aX,aY,aZ,tX,tY,tZ,Rng", "QhhhhhhH", AP_HAL::micros64(), (int16_t)(msg.anchor_pos[0]*1e3f), (int16_t)(msg.anchor_pos[1]*1e3f), (int16_t)(msg.anchor_pos[2]*1e3f), (int16_t)(msg.tag_pos[0]*1e3f), (int16_t)(msg.tag_pos[1]*1e3f), (int16_t)(msg.tag_pos[2]*1e3f), (uint16_t)(msg.range*1e3f));
     }
 }
 
