@@ -83,6 +83,7 @@ void Copter::enable_motor_output()
     motors->output_min();
 }
 
+#define FS_COUNTER 3        // radio failsafe kicks in after 3 consecutive throttle values below failsafe_throttle_value
 void Copter::read_radio()
 {
     uint32_t tnow_ms = millis();
@@ -112,11 +113,11 @@ void Copter::read_radio()
             (g.failsafe_throttle && (ap.rc_receiver_present||motors->armed()) && !failsafe.radio)) {
             Log_Write_Error(ERROR_SUBSYSTEM_RADIO, ERROR_CODE_RADIO_LATE_FRAME);
             set_failsafe_radio(true);
+            failsafe.radio_counter = FS_COUNTER;
         }
     }
 }
 
-#define FS_COUNTER 3        // radio failsafe kicks in after 3 consecutive throttle values below failsafe_throttle_value
 void Copter::set_throttle_and_failsafe(uint16_t throttle_pwm)
 {
     // if failsafe not enabled pass through throttle and exit
