@@ -128,13 +128,6 @@ void Copter::set_land_complete_maybe(bool b)
         return;
 
     if (b) {
-        if (precland.target_acquired()) {
-            Vector2f target_pos_rel_ned;
-            precland.get_target_position_relative_cm(target_pos_rel_ned);
-
-            Vector2f vehicle_pos_rel_horizon = -Vector2f(ahrs.cos_yaw()*target_pos_rel_ned.x + ahrs.sin_yaw()*target_pos_rel_ned.y, ahrs.cos_yaw()*target_pos_rel_ned.y - ahrs.sin_yaw()*target_pos_rel_ned.x);
-            gcs().send_text(MAV_SEVERITY_WARNING, "land pos error %.1f forward %.1f right", vehicle_pos_rel_horizon.x, vehicle_pos_rel_horizon.y);
-        }
         Log_Write_Event(DATA_LAND_COMPLETE_MAYBE);
     }
     ap.land_complete_maybe = b;
