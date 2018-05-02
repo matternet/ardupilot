@@ -35,9 +35,11 @@ void Copter::read_control_switch()
     // debounce switch
     bool control_switch_changed = control_switch_state.debounced_switch_position != switch_position;
     bool sufficient_time_elapsed = tnow_ms - control_switch_state.last_edge_time_ms > CONTROL_SWITCH_DEBOUNCE_TIME_MS;
-    bool failsafe_disengaged = !failsafe.radio && failsafe.radio_counter == 0;
-
-    if (control_switch_changed && sufficient_time_elapsed && failsafe_disengaged) {
+    
+    if (failsafe.radio || failsafe.radio_counter != 0) {
+        // Ignore this edge because it occurred during radio failsafe
+        control_switch_state.debounced_switch_position = switch_position;
+    } else if (control_switch_changed && sufficient_time_elapsed) {
         // set flight mode and simple mode setting
         if (set_mode((control_mode_t)flight_modes[switch_position].get(), MODE_REASON_TX_COMMAND)) {
             // play a tone
