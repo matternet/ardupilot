@@ -219,7 +219,7 @@ bool AP_Arming_Copter::parameter_checks(bool display_failure)
         // failsafe parameter checks
         if (copter.g.failsafe_throttle) {
             // check throttle min is above throttle failsafe trigger and that the trigger is above ppm encoder's loss-of-signal value of 900
-            if (copter.channel_throttle->get_radio_min() <= copter.g.failsafe_throttle_value+10 || copter.g.failsafe_throttle_value < 910) {
+            if (copter.channel_throttle->get_radio_min() <= copter.g.failsafe_throttle_value+10) {
                 if (display_failure) {
                     gcs().send_text(MAV_SEVERITY_CRITICAL,"PreArm: Check FS_THR_VALUE");
                 }
