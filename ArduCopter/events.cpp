@@ -16,7 +16,7 @@ void Copter::failsafe_radio_on_event()
     } else {
         if ((control_mode == AUTO || control_mode == BRAKE || control_mode == GUIDED) && g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION_ALWAYS_LAND) {
             // continue mission
-        } if ((control_mode == AUTO || control_mode == BRAKE || control_mode == GUIDED) && g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION) {
+        } else if ((control_mode == AUTO || control_mode == BRAKE || control_mode == GUIDED) && g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION) {
             // continue mission
         } else if (control_mode == LAND &&
                    battery.has_failsafed() &&
