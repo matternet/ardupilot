@@ -538,6 +538,7 @@ void Mode::land_run_vertical_control(bool pause_descent)
 #endif
 
     // compute desired velocity
+    const float precland_acceptable_error_high = 100.0f;
     const float precland_acceptable_error = 15.0f;
     const float precland_min_descent_speed = 10.0f;
 
@@ -559,10 +560,14 @@ void Mode::land_run_vertical_control(bool pause_descent)
         // Constrain the demanded vertical velocity so that it is between the configured maximum descent speed and the configured minimum descent speed.
         cmb_rate = constrain_float(cmb_rate, max_land_descent_velocity, -abs(g.land_speed));
 
-        if (doing_precision_landing && copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm > 35.0f && copter.rangefinder_state.alt_cm < 200.0f) {
+        if (doing_precision_landing && copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm > 35.0f && copter.rangefinder_state.alt_cm < 80.0f) {
             float max_descent_speed = abs(g.land_speed)*0.5f;
             float land_slowdown = MAX(0.0f, pos_control->get_horizontal_error()*(max_descent_speed/precland_acceptable_error));
             cmb_rate = MIN(-precland_min_descent_speed, -max_descent_speed+land_slowdown);
+        }
+
+        if (doing_precision_landing && pos_control->get_horizontal_error() > precland_acceptable_error_high) {
+            cmb_rate = -precland_min_descent_speed;
         }
     }
 
