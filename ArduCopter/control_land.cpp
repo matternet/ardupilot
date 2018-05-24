@@ -179,8 +179,11 @@ void Copter::land_run_vertical_control(bool pause_descent)
 
     // compute desired velocity
     const float precland_acceptable_error_high = 100.0f;
+    const float precland_slow_descent_speed = 20.0f;
+    const float precland_slowdown_height = 100.0f;
+    const float precland_commit_height = 35.0f;
     const float precland_acceptable_error = 15.0f;
-    const float precland_min_descent_speed = 10.0f;
+    const float precland_min_descent_speed = 5.0f;
     int32_t alt_above_ground = land_get_alt_above_ground();
 
     float cmb_rate = 0;
@@ -210,8 +213,14 @@ void Copter::land_run_vertical_control(bool pause_descent)
             rangefinder_height_above_terrain_cm_valid = true;
         }
 
-        if (doing_precision_landing && rangefinder_height_above_terrain_cm_valid && rangefinder_height_above_terrain_cm > 35 && rangefinder_height_above_terrain_cm < 80) {
-            float max_descent_speed = abs(g.land_speed)/2.0f;
+        if (doing_precision_landing && rangefinder_height_above_terrain_cm_valid) {
+            // Smoothly slow for precision landing
+            cmb_rate = MAX(cmb_rate, AC_AttitudeControl::sqrt_controller(precland_slowdown_height-rangefinder_height_above_terrain_cm, g.p_alt_hold.kP(), pos_control->get_accel_z()*0.25f));
+            cmb_rate = MIN(cmb_rate, -precland_slow_descent_speed);
+        }
+
+        if (doing_precision_landing && rangefinder_height_above_terrain_cm_valid && rangefinder_height_above_terrain_cm > precland_commit_height && rangefinder_height_above_terrain_cm < precland_slowdown_height) {
+            float max_descent_speed = fabsf(g.land_speed)/2.0f;
             float land_slowdown = MAX(0.0f, pos_control->get_horizontal_error()*(max_descent_speed/precland_acceptable_error));
             cmb_rate = MIN(-precland_min_descent_speed, -max_descent_speed+land_slowdown);
         }
