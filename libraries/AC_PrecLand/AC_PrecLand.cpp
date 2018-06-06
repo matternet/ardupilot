@@ -190,7 +190,7 @@ bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
         return false;
     }
 
-    bool precland_uwb_range_valid = precland_uwb_range.valid && AP_HAL::millis()-precland_uwb_range.timestamp_ms < 100;
+    bool precland_uwb_range_valid = precland_uwb_range.valid && AP_HAL::millis()-precland_uwb_range.timestamp_ms < 200;
     if (!precland_uwb_range_valid) {
         return false;
     }
@@ -375,7 +375,7 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
         Vector3f target_vec_unit_ned = inertial_data_delayed.Tbn * target_vec_unit_body;
         bool target_vec_valid = target_vec_unit_ned.z > 0.0f;
 #if HAL_WITH_UAVCAN
-        bool precland_uwb_range_valid = precland_uwb_range.valid && AP_HAL::millis()-precland_uwb_range.timestamp_ms < 100;
+        bool precland_uwb_range_valid = precland_uwb_range.valid && AP_HAL::millis()-precland_uwb_range.timestamp_ms < 200;
 #else
         bool precland_uwb_range_valid = false;
 #endif
