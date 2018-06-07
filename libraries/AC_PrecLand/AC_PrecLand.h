@@ -134,6 +134,8 @@ private:
     AP_Vector3f                 _cam_offset;        // Position of the camera relative to the CG
 
     uint32_t                    _last_update_ms;    // system time in millisecond when update was last called
+    uint32_t                    _estimator_init_ms;
+    bool                        _estimator_initialized;
     bool                        _target_acquired;   // true if target has been seen recently
     uint32_t                    _last_backend_los_meas_ms;  // system time target was last seen
 
