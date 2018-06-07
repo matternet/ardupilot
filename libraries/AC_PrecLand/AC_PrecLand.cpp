@@ -208,7 +208,11 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
 
 bool AC_PrecLand::target_acquired()
 {
-    _target_acquired = _target_acquired && (AP_HAL::millis()-_last_update_ms) < 2000;
+    if ((AP_HAL::millis()-_last_update_ms) >= 2000) {
+        _estimator_initialized = false;
+        _target_acquired = false;
+    }
+
     return _target_acquired;
 }
 
@@ -340,7 +344,7 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
             // Update if a new Line-Of-Sight measurement is available
             if (construct_pos_meas_using_rangefinder(rangefinder_alt_m, rangefinder_alt_valid)) {
                 float xy_pos_var = sq(_target_pos_rel_meas_NED.z*(0.01f + 0.01f*AP::ahrs().get_gyro().length()) + 0.02f);
-                if (!target_acquired()) {
+                if (!_estimator_initialized) {
                     // reset filter state
                     if (inertial_data_delayed->inertialNavVelocityValid) {
                         _ekf_x.init(_target_pos_rel_meas_NED.x, xy_pos_var, -inertial_data_delayed->inertialNavVelocity.x, sq(2.0f));
@@ -350,7 +354,8 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
                         _ekf_y.init(_target_pos_rel_meas_NED.y, xy_pos_var, 0.0f, sq(10.0f));
                     }
                     _last_update_ms = AP_HAL::millis();
-                    _target_acquired = true;
+                    _estimator_initialized = true;
+                    _estimator_init_ms = AP_HAL::millis();
                 } else {
                     float NIS_x = _ekf_x.getPosNIS(_target_pos_rel_meas_NED.x, xy_pos_var);
                     float NIS_y = _ekf_y.getPosNIS(_target_pos_rel_meas_NED.y, xy_pos_var);
@@ -363,6 +368,15 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
                     } else {
                         _outlier_reject_count++;
                     }
+                }
+            }
+
+            // Check for estimator timeout
+            if (!target_acquired() && _estimator_initialized) {
+                if (AP_HAL::millis()-_last_update_ms > 200) {
+                    _estimator_initialized = false;
+                } else if (AP_HAL::millis()-_estimator_init_ms > 2000) {
+                    _target_acquired = true;
                 }
             }
 
