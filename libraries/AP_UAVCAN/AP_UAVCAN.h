@@ -203,7 +203,7 @@ private:
         }
     };
 
-    uavcan::HeapBasedPoolAllocator<UAVCAN_NODE_POOL_BLOCK_SIZE, AP_UAVCAN::RaiiSynchronizer> _node_allocator;
+    uavcan::PoolAllocator<UAVCAN_NODE_POOL_SIZE*UAVCAN_NODE_POOL_BLOCK_SIZE, UAVCAN_NODE_POOL_BLOCK_SIZE, AP_UAVCAN::RaiiSynchronizer> _node_allocator;
 
     AP_Int8 _uavcan_node;
     AP_Int32 _servo_bm;

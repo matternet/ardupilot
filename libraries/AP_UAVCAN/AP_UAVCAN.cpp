@@ -329,8 +329,7 @@ void AP_UAVCAN::publish_ahrs_solution(const Quaternion& orientation, const Vecto
 }
 
 AP_UAVCAN::AP_UAVCAN() :
-    _node_allocator(
-        UAVCAN_NODE_POOL_SIZE, UAVCAN_NODE_POOL_SIZE)
+    _node_allocator()
 {
     AP_Param::setup_object_defaults(this, var_info);
 
