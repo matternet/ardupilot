@@ -25,7 +25,7 @@
 #endif
 
 #ifndef UAVCAN_NODE_POOL_BLOCK_SIZE
-#define UAVCAN_NODE_POOL_BLOCK_SIZE 256
+#define UAVCAN_NODE_POOL_BLOCK_SIZE 64
 #endif
 
 #ifndef UAVCAN_SRV_NUMBER
@@ -251,7 +251,7 @@ private:
         }
     };
 
-    uavcan::HeapBasedPoolAllocator<UAVCAN_NODE_POOL_BLOCK_SIZE, AP_UAVCAN::RaiiSynchronizer> _node_allocator;
+    uavcan::PoolAllocator<UAVCAN_NODE_POOL_SIZE, UAVCAN_NODE_POOL_BLOCK_SIZE, AP_UAVCAN::RaiiSynchronizer> _node_allocator;
 
     AP_Int8 _uavcan_node;
     AP_Int32 _servo_bm;
