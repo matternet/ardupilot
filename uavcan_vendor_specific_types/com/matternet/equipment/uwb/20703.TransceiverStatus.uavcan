@@ -1,15 +1,22 @@
-
-uint8 TYPE_SUPERVISOR = 0
-uint8 TYPE_SUBORDINATE = 1
-
 uint8 PSTATE_UNPAIRED = 0
-uint8 PSTATE_PAIRING = 1
-uint8 PSTATE_PAIRED = 2
+uint8 PSTATE_PAIRED = 1
 
-uint8 type
-uint8 pstate
-uint64 node_id
+uint8 PREASON_NONE = 0
+uint8 PREASON_PARAM = 1
+uint8 PREASON_RTS_RCVD = 2
+uint8 PREASON_PARAM_OTA = 3
+uint8 PREASON_UAVCAN_OTA = 4
+uint8 PREASON_UAVCAN_CMD = 5
+
 uint64 body_id
 uint8 data_slot_id
-uint32 pkt_cnt
-uint32 rate
+uint8 start_rx_rate
+uint8 start_tx_rate
+uint8 follow_rx_rate
+uint8 follow_tx_rate
+uint8 dack_rx_rate
+uint8 tx_failed
+uint8 backoff
+uint8 last_errcode
+uint8 pstate
+uint8 preason
