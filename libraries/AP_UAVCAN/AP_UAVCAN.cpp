@@ -173,13 +173,13 @@ static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::g
     }
 }
 
-// static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::RangeFusionInfo>& msg) {
-//     DataFlash_Class::instance()->Log_Write("UWBR", "TimeUS,AX,AY,AZ,TX,TY,TZ,rng,innov,nis", "Qfffffffff", AP_HAL::micros64(), msg.anchor_pos[0], msg.anchor_pos[1], msg.anchor_pos[2], msg.tag_pos[0], msg.tag_pos[1], msg.tag_pos[2], msg.range, msg.innovation, msg.nis);
-// }
+static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::RangeFusionInfo>& msg) {
+    DataFlash_Class::instance()->Log_Write("UWBR", "TimeUS,AX,AY,AZ,TX,TY,TZ,rng,innov,nis", "Qfffffffff", AP_HAL::micros64(), msg.anchor_pos[0], msg.anchor_pos[1], msg.anchor_pos[2], msg.tag_pos[0], msg.tag_pos[1], msg.tag_pos[2], msg.range, msg.innovation, msg.nis);
+}
 
 struct precland_uwb_data_s precland_uwb_data;
 static void uwb_fix_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::PosVelEstimate>& msg) {
-//     DataFlash_Class::instance()->Log_Write("UWBE", "TimeUS,PN,PE,PD,VN,VE,VD,Yaw,PNV,PEV,PDV,VNV,VEV,VDV,YawV", "Qffffffffffffff", AP_HAL::micros64(), msg.pos[0], msg.pos[1], msg.pos[2], msg.vel[0], msg.vel[1], msg.vel[2], msg.anchor_heading, msg.pos_variance[0], msg.pos_variance[1], msg.pos_variance[2], msg.vel_variance[0], msg.vel_variance[1], msg.vel_variance[2], msg.anchor_heading_variance);
+    DataFlash_Class::instance()->Log_Write("UWBE", "TimeUS,PN,PE,PD,VN,VE,VD,Yaw,PNV,PEV,PDV,VNV,VEV,VDV,YawV", "Qffffffffffffff", AP_HAL::micros64(), msg.pos[0], msg.pos[1], msg.pos[2], msg.vel[0], msg.vel[1], msg.vel[2], msg.anchor_heading, msg.pos_variance[0], msg.pos_variance[1], msg.pos_variance[2], msg.vel_variance[0], msg.vel_variance[1], msg.vel_variance[2], msg.anchor_heading_variance);
 
     if (msg.ready) {
         for (uint8_t i=0; i<3; i++) {
@@ -427,14 +427,14 @@ bool AP_UAVCAN::try_init(void)
                         return false;
                     }
 
-//                     uavcan::Subscriber<com::matternet::equipment::uwb::RangeFusionInfo> *uwb_range;
-//                     uwb_range = new uavcan::Subscriber<com::matternet::equipment::uwb::RangeFusionInfo>(*node);
-// 
-//                     const int uwb_range_start_res = uwb_range->start(uwb_range_cb);
-//                     if (uwb_range_start_res < 0) {
-//                         debug_uavcan(1, "UAVCAN UWB subscriber start problem\n\r");
-//                         return false;
-//                     }
+                    uavcan::Subscriber<com::matternet::equipment::uwb::RangeFusionInfo> *uwb_range;
+                    uwb_range = new uavcan::Subscriber<com::matternet::equipment::uwb::RangeFusionInfo>(*node);
+
+                    const int uwb_range_start_res = uwb_range->start(uwb_range_cb);
+                    if (uwb_range_start_res < 0) {
+                        debug_uavcan(1, "UAVCAN UWB subscriber start problem\n\r");
+                        return false;
+                    }
 
                     uavcan::Subscriber<uavcan::equipment::gnss::Fix> *gnss_fix;
                     gnss_fix = new uavcan::Subscriber<uavcan::equipment::gnss::Fix>(*node);
