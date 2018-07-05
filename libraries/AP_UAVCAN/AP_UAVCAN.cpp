@@ -19,6 +19,7 @@
 
 #include <com/matternet/equipment/uwb/PosVelEstimate.hpp>
 #include <com/matternet/equipment/uwb/RangeFusionInfo.hpp>
+#include <com/matternet/equipment/uwb/PairingCommand.hpp>
 
 // Zubax GPS and other GPS, baro, magnetic sensors
 #include <uavcan/equipment/gnss/Fix.hpp>
@@ -171,6 +172,10 @@ static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::g
             }
         }
     }
+}
+
+static void uwb_pair_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::PairingCommand>& msg) {
+    DataFlash_Class::instance()->Log_Write("UWBP", "TimeUS,BId,RBId", "QQQ", AP_HAL::micros64(), msg.body_id, msg.remote_body_id);
 }
 
 static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::RangeFusionInfo>& msg) {
@@ -432,6 +437,15 @@ bool AP_UAVCAN::try_init(void)
 
                     const int uwb_range_start_res = uwb_range->start(uwb_range_cb);
                     if (uwb_range_start_res < 0) {
+                        debug_uavcan(1, "UAVCAN UWB subscriber start problem\n\r");
+                        return false;
+                    }
+
+                    uavcan::Subscriber<com::matternet::equipment::uwb::PairingCommand> *uwb_pair;
+                    uwb_pair = new uavcan::Subscriber<com::matternet::equipment::uwb::PairingCommand>(*node);
+
+                    const int uwb_pair_start_res = uwb_pair->start(uwb_pair_cb);
+                    if (uwb_pair_start_res < 0) {
                         debug_uavcan(1, "UAVCAN UWB subscriber start problem\n\r");
                         return false;
                     }
