@@ -73,7 +73,10 @@
  */
 
 #include "Copter.h"
+
+#if HAL_WITH_UAVCAN
 #include <AP_UAVCAN/AP_UAVCAN.h>
+#endif
 
 #define SCHED_TASK(func, rate_hz, max_time_micros) SCHED_TASK_CLASS(Copter, &copter, func, rate_hz, max_time_micros)
 
