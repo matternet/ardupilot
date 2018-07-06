@@ -5,7 +5,6 @@
 #include "AC_PrecLand_IRLock.h"
 #include "AC_PrecLand_SITL_Gazebo.h"
 #include "AC_PrecLand_SITL.h"
-#include <AP_UAVCAN/AP_UAVCAN.h>
 
 #if HAL_WITH_UAVCAN
 #include <AP_UAVCAN/AP_UAVCAN.h>
@@ -179,8 +178,12 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
 
 bool AC_PrecLand::target_acquired()
 {
+#if !HAL_WITH_UAVCAN
+    return false;
+#else
     _target_acquired = (AP_HAL::millis() - precland_uwb_data.timestamp_ms) < 50;
     return _target_acquired;
+#endif
 }
 
 bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
@@ -197,32 +200,44 @@ bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
 
 bool AC_PrecLand::get_target_position_cm(Vector2f& ret)
 {
+#if !HAL_WITH_UAVCAN
+    return false;
+#else
     if (!target_acquired()) {
         return false;
     }
     ret.x = -precland_uwb_data.pos[0]*100.0f + _inav.get_position().x;
     ret.y = -precland_uwb_data.pos[1]*100.0f + _inav.get_position().y;
     return true;
+#endif
 }
 
 bool AC_PrecLand::get_target_position_relative_cm(Vector2f& ret)
 {
+#if !HAL_WITH_UAVCAN
+    return false;
+#else
     if (!target_acquired()) {
         return false;
     }
     ret.x = -precland_uwb_data.pos[0]*100.0f;
     ret.y = -precland_uwb_data.pos[1]*100.0f;
     return true;
+#endif
 }
 
 bool AC_PrecLand::get_target_velocity_relative_cms(Vector2f& ret)
 {
+#if !HAL_WITH_UAVCAN
+    return false;
+#else
     if (!target_acquired()) {
         return false;
     }
     ret.x = -precland_uwb_data.vel[0]*100.0f;
     ret.y = -precland_uwb_data.vel[1]*100.0f;
     return true;
+#endif
 }
 
 bool AC_PrecLand::get_target_position_relative_measured_cm(Vector2f& ret)
