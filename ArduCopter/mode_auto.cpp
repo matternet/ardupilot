@@ -746,6 +746,9 @@ void Copter::ModeAuto::wp_run()
         zero_throttle_and_relax_ac();
         // clear i term when we're taking off
         set_throttle_takeoff();
+
+        // get initial alt for WP_NAVALT_MIN
+        auto_takeoff_set_start_alt();
         return;
     }
 
