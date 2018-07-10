@@ -74,6 +74,11 @@ void ToneAlarm_ChibiOS::update()
         }
     }
 
+    // Don't play tones other than arming warning
+    if (hal.util->get_soft_armed()) {
+        return;
+    }
+
     // notify the user when their mode change was successful
     if (AP_Notify::events.user_mode_change) {
         if (AP_Notify::flags.armed) {
