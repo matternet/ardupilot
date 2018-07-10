@@ -443,6 +443,24 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @Range: 0 100
     // @Increment: 1
     AP_GROUPINFO("FLTR_RNG", 34, Compass, _filter_range, HAL_COMPASS_FILTER_DEFAULT),
+
+    // @Param: EXP_DID
+    // @DisplayName: Compass device id expected
+    // @Description: The expected value of COMPASS_DEV_ID, used by arming checks. Setting this to -1 means "don't care."
+    // @User: Advanced
+    AP_GROUPINFO("EXP_DID",  35, Compass, _state[0].expected_dev_id, -1),
+
+    // @Param: EXP_DID2
+    // @DisplayName: Compass2 device id expected
+    // @Description: The expected value of COMPASS_DEV_ID2, used by arming checks. Setting this to -1 means "don't care."
+    // @User: Advanced
+    AP_GROUPINFO("EXP_DID2", 36, Compass, _state[1].expected_dev_id, -1),
+
+    // @Param: EXP_DID3
+    // @DisplayName: Compass3 device id expected
+    // @Description: The expected value of COMPASS_DEV_ID3, used by arming checks. Setting this to -1 means "don't care."
+    // @User: Advanced
+    AP_GROUPINFO("EXP_DID3", 37, Compass, _state[2].expected_dev_id, -1),
     
     AP_GROUPEND
 };
@@ -1187,6 +1205,11 @@ bool Compass::configured(uint8_t i)
         // restore cached value
         _state[i].dev_id = dev_id_cache_value;
         // return failure
+        return false;
+    }
+
+    // if expected_dev_id is configured and the detected dev_id is different, return false
+    if (_state[i].expected_dev_id != -1 && _state[i].expected_dev_id != _state[i].dev_id) {
         return false;
     }
 
