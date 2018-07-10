@@ -75,6 +75,10 @@
 
 #include "Copter.h"
 
+#if HAL_WITH_UAVCAN
+#include <AP_UAVCAN/AP_UAVCAN.h>
+#endif
+
 #define SCHED_TASK(func, rate_hz, max_time_micros) SCHED_TASK_CLASS(Copter, &copter, func, rate_hz, max_time_micros)
 
 /*
@@ -561,6 +565,56 @@ void Copter::read_AHRS(void)
 
     // we tell AHRS to skip INS update as we have already done it in fast_loop()
     ahrs.update(true);
+
+#if HAL_WITH_UAVCAN
+    static uint8_t accum_count;
+    static Quaternion att_quat;
+    static Quaternion del_ang_accum_quat;
+    static float del_ang_accum_dt;
+    static Vector3f del_vel_ned_accum;
+    static float del_vel_ned_accum_dt;
+
+    if (accum_count == 0) {
+        att_quat.from_rotation_matrix(ahrs.get_rotation_body_to_ned());
+    }
+
+    Vector3f del_ang;
+    ins.get_delta_angle(del_ang);
+    float del_ang_dt = ins.get_delta_angle_dt();
+    Vector3f del_vel_ned;
+    float del_vel_ned_dt;
+    ahrs.getCorrectedDeltaVelocityNED(del_vel_ned, del_vel_ned_dt);
+
+    del_ang_accum_dt += del_ang_dt;
+    del_vel_ned_accum_dt += del_vel_ned_dt;
+
+    del_ang_accum_quat.rotate(del_ang);
+    del_ang_accum_quat.normalize();
+
+    del_vel_ned_accum += del_vel_ned;
+
+    accum_count++;
+
+    if (accum_count >= 4) {
+        Matrix3f Tbn;
+        att_quat.rotation_matrix(Tbn);
+
+        Vector3f ang_vel_downsampled;
+        del_ang_accum_quat.to_axis_angle(ang_vel_downsampled);
+        ang_vel_downsampled /= del_ang_accum_dt;
+
+        Vector3f del_vel_downsampled;
+        del_vel_downsampled = Tbn.mul_transpose(del_vel_ned_accum/del_vel_ned_accum_dt-Vector3f(0,0,GRAVITY_MSS));
+
+        AP_UAVCAN::publish_ahrs_solution(att_quat, ang_vel_downsampled, del_vel_downsampled);
+
+        del_ang_accum_quat = {};
+        del_ang_accum_dt = {};
+        del_vel_ned_accum = {};
+        del_vel_ned_accum_dt = {};
+        accum_count = 0;
+    }
+#endif
 }
 
 // read baro and log control tuning
