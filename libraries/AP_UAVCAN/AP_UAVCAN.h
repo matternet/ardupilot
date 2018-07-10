@@ -47,6 +47,14 @@
 #define AP_UAVCAN_MAX_LED_DEVICES 4
 #define AP_UAVCAN_LED_DELAY_MILLISECONDS 50
 
+struct precland_uwb_data_s {
+    uint32_t timestamp_ms;
+    float pos[3];
+    float vel[3];
+};
+
+extern struct precland_uwb_data_s precland_uwb_data;
+
 class AP_UAVCAN {
 public:
     AP_UAVCAN();
