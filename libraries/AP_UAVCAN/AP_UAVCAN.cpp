@@ -35,6 +35,12 @@
 
 #include <uavcan/equipment/power/BatteryInfo.hpp>
 
+#include <DataFlash/DataFlash.h>
+#include <com/matternet/equipment/uwb/PosVelEstimate.hpp>
+#include <com/matternet/equipment/uwb/RangeFusionInfo.hpp>
+#include <com/matternet/equipment/uwb/PairingCommand.hpp>
+
+
 extern const AP_HAL::HAL& hal;
 
 #define debug_uavcan(level, fmt, args...) do { if ((level) <= AP_BoardConfig_CAN::get_can_debug()) { hal.console->printf(fmt, ##args); }} while (0)
@@ -85,6 +91,34 @@ const AP_Param::GroupInfo AP_UAVCAN::var_info[] = {
 // this is the timeout in milliseconds for periodic message types. We
 // set this to 1 to minimise resend of stale msgs
 #define CAN_PERIODIC_TX_TIMEOUT_MS 2
+
+static void uwb_pair_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::PairingCommand>& msg) {
+    DataFlash_Class::instance()->Log_Write("UWBP", "TimeUS,BId,RBId", "QQQ", AP_HAL::micros64(), msg.body_id, msg.remote_body_id);
+}
+
+static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::RangeFusionInfo>& msg) {
+    DataFlash_Class::instance()->Log_Write("UWBR", "TimeUS,AX,AY,AZ,TX,TY,TZ,rng,innov,nis", "Qfffffffff", AP_HAL::micros64(), msg.anchor_pos[0], msg.anchor_pos[1], msg.anchor_pos[2], msg.tag_pos[0], msg.tag_pos[1], msg.tag_pos[2], msg.range, msg.innovation, msg.nis);
+}
+
+struct precland_uwb_data_s precland_uwb_data;
+static void uwb_fix_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::PosVelEstimate>& msg) {
+    DataFlash_Class::instance()->Log_Write("UWBE", "TimeUS,PN,PE,PD,VN,VE,VD,Yaw,PNV,PEV,PDV,VNV,VEV,VDV,YawV", "Qffffffffffffff", AP_HAL::micros64(), msg.pos[0], msg.pos[1], msg.pos[2], msg.vel[0], msg.vel[1], msg.vel[2], msg.anchor_heading, msg.pos_variance[0], msg.pos_variance[1], msg.pos_variance[2], msg.vel_variance[0], msg.vel_variance[1], msg.vel_variance[2], msg.anchor_heading_variance);
+
+    if (msg.ready) {
+        for (uint8_t i=0; i<3; i++) {
+            if (isnan(msg.pos[i]) || isinf(msg.pos[i]) || isnan(msg.vel[i]) || isinf(msg.vel[i])) {
+                return;
+            }
+        }
+        precland_uwb_data.timestamp_ms = AP_HAL::millis();
+        precland_uwb_data.pos[0] = msg.pos[0];
+        precland_uwb_data.pos[1] = msg.pos[1];
+        precland_uwb_data.pos[2] = msg.pos[2];
+        precland_uwb_data.vel[0] = msg.vel[0];
+        precland_uwb_data.vel[1] = msg.vel[1];
+        precland_uwb_data.vel[2] = msg.vel[2];
+    }
+}
 
 static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg, uint8_t mgr)
 {
@@ -477,6 +511,33 @@ bool AP_UAVCAN::try_init(void)
     const int node_start_res = node->start();
     if (node_start_res < 0) {
         debug_uavcan(1, "UAVCAN: node start problem\n\r");
+    }
+
+    uavcan::Subscriber<com::matternet::equipment::uwb::PosVelEstimate> *uwb_fix;
+    uwb_fix = new uavcan::Subscriber<com::matternet::equipment::uwb::PosVelEstimate>(*node);
+
+    const int uwb_fix_start_res = uwb_fix->start(uwb_fix_cb);
+    if (uwb_fix_start_res < 0) {
+        debug_uavcan(1, "UAVCAN UWB subscriber start problem\n\r");
+        return false;
+    }
+
+    uavcan::Subscriber<com::matternet::equipment::uwb::RangeFusionInfo> *uwb_range;
+    uwb_range = new uavcan::Subscriber<com::matternet::equipment::uwb::RangeFusionInfo>(*node);
+
+    const int uwb_range_start_res = uwb_range->start(uwb_range_cb);
+    if (uwb_range_start_res < 0) {
+        debug_uavcan(1, "UAVCAN UWB subscriber start problem\n\r");
+        return false;
+    }
+
+    uavcan::Subscriber<com::matternet::equipment::uwb::PairingCommand> *uwb_pair;
+    uwb_pair = new uavcan::Subscriber<com::matternet::equipment::uwb::PairingCommand>(*node);
+
+    const int uwb_pair_start_res = uwb_pair->start(uwb_pair_cb);
+    if (uwb_pair_start_res < 0) {
+        debug_uavcan(1, "UAVCAN UWB subscriber start problem\n\r");
+        return false;
     }
 
     uavcan::Subscriber<uavcan::equipment::gnss::Fix> *gnss_fix;
