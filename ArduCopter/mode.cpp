@@ -178,6 +178,10 @@ bool Copter::set_mode(control_mode_t mode, mode_reason_t reason)
         return true;
     }
 
+    if (motors->armed() && (control_mode == STABILIZE || control_mode == ALT_HOLD || control_mode == LOITER) && reason == MODE_REASON_GCS_COMMAND) {
+        return false;
+    }
+
     Copter::Mode *new_flightmode = mode_from_mode_num(mode);
     if (new_flightmode == nullptr) {
         gcs().send_text(MAV_SEVERITY_WARNING,"No such mode");
