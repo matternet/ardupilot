@@ -19,6 +19,8 @@
 #include <uavcan/equipment/gnss/Fix.hpp>
 #include <uavcan/equipment/gnss/Auxiliary.hpp>
 
+#include <uavcan/equipment/ahrs/Solution.hpp>
+
 #include <uavcan/equipment/ahrs/MagneticFieldStrength.hpp>
 #include <uavcan/equipment/ahrs/MagneticFieldStrength2.hpp>
 #include <uavcan/equipment/air_data/StaticPressure.hpp>
@@ -396,6 +398,26 @@ static void (*battery_info_st_cb_arr[2])(const uavcan::ReceivedDataStructure<uav
 static uavcan::Publisher<uavcan::equipment::actuator::ArrayCommand>* act_out_array[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::esc::RawCommand>* esc_raw[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::indication::LightsCommand>* rgb_led[MAX_NUMBER_OF_CAN_DRIVERS];
+static uavcan::Publisher<uavcan::equipment::ahrs::Solution>* ahrs_publisher[MAX_NUMBER_OF_CAN_DRIVERS];
+
+static struct {
+    Quaternion orientation;
+    Vector3f ang_vel_body;
+    Vector3f accel_body;
+} ahrs_data;
+static bool new_ahrs_data;
+
+void AP_UAVCAN::publish_ahrs_solution(const Quaternion& orientation, const Vector3f& ang_vel_body, const Vector3f& accel_body)
+{
+    if (!new_ahrs_data) {
+        ahrs_data.orientation = orientation;
+        ahrs_data.ang_vel_body = ang_vel_body;
+        ahrs_data.accel_body = accel_body;
+        new_ahrs_data = true;
+    } else {
+        // TODO: alert missed data
+    }
+}
 
 AP_UAVCAN::AP_UAVCAN() :
     _node_allocator()
@@ -609,6 +631,10 @@ bool AP_UAVCAN::try_init(void)
     rgb_led[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
     rgb_led[_uavcan_i]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
 
+    ahrs_publisher[_uavcan_i] = new uavcan::Publisher<uavcan::equipment::ahrs::Solution>(*node);
+    ahrs_publisher[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(10));
+    ahrs_publisher[_uavcan_i]->setPriority(uavcan::TransferPriority(2));
+
     _led_conf.devices_count = 0;
 
     /*
@@ -744,6 +770,21 @@ void AP_UAVCAN::do_cyclic(void)
     if (error < 0) {
         hal.scheduler->delay_microseconds(100);
         return;
+    }
+
+    if (ahrs_publisher[_uavcan_i] && new_ahrs_data) {
+        uavcan::equipment::ahrs::Solution msg;
+        msg.timestamp.usec = uavcan::Timestamp::UNKNOWN;
+        msg.orientation_xyzw[3] = ahrs_data.orientation[0];
+        msg.orientation_xyzw[0] = ahrs_data.orientation[1];
+        msg.orientation_xyzw[1] = ahrs_data.orientation[2];
+        msg.orientation_xyzw[2] = ahrs_data.orientation[3];
+        for (uint8_t i=0; i<3; i++) {
+            msg.angular_velocity[i] = ahrs_data.ang_vel_body[i];
+            msg.linear_acceleration[i] = ahrs_data.accel_body[i];
+        }
+        ahrs_publisher[_uavcan_i]->broadcast(msg);
+        new_ahrs_data = false;
     }
 
     if (_SRV_armed) {

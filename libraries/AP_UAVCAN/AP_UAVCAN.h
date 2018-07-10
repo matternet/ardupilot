@@ -139,6 +139,8 @@ public:
     void SRV_send_servos();
     void SRV_send_esc();
 
+    static void publish_ahrs_solution(const Quaternion& orientation, const Vector3f& ang_vel_body, const Vector3f& accel_body);
+
 private:
     // ------------------------- GPS
     // 255 - means free node
