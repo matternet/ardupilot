@@ -6,6 +6,10 @@
 #include "AC_PrecLand_SITL_Gazebo.h"
 #include "AC_PrecLand_SITL.h"
 
+#if HAL_WITH_UAVCAN
+#include <AP_UAVCAN/AP_UAVCAN.h>
+#endif
+
 extern const AP_HAL::HAL& hal;
 
 const AP_Param::GroupInfo AC_PrecLand::var_info[] = {
@@ -156,33 +160,45 @@ void AC_PrecLand::init()
 // update - give chance to driver to get updates from sensor
 void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
 {
-    // append current velocity and attitude correction into history buffer
-    struct inertial_data_frame_s inertial_data_newest;
-    _ahrs.getCorrectedDeltaVelocityNED(inertial_data_newest.correctedVehicleDeltaVelocityNED, inertial_data_newest.dt);
-    inertial_data_newest.Tbn = _ahrs.get_rotation_body_to_ned();
-    Vector3f curr_vel;
-    nav_filter_status status;
-    if (!_ahrs.get_velocity_NED(curr_vel) || !_ahrs.get_filter_status(status)) {
-        inertial_data_newest.inertialNavVelocityValid = false;
-    } else {
-        inertial_data_newest.inertialNavVelocityValid = status.flags.horiz_vel;
-    }
-    curr_vel.z = -curr_vel.z;  // NED to NEU
-    inertial_data_newest.inertialNavVelocity = curr_vel;
-
-    _inertial_history.push_back(inertial_data_newest);
-
-    // update estimator of target position
-    if (_backend != nullptr && _enabled) {
-        _backend->update();
-        run_estimator(rangefinder_alt_cm*0.01f, rangefinder_alt_valid);
-    }
+//     // append current velocity and attitude correction into history buffer
+//     struct inertial_data_frame_s inertial_data_newest;
+//     _ahrs.getCorrectedDeltaVelocityNED(inertial_data_newest.correctedVehicleDeltaVelocityNED, inertial_data_newest.dt);
+//     inertial_data_newest.Tbn = _ahrs.get_rotation_body_to_ned();
+//     Vector3f curr_vel;
+//     nav_filter_status status;
+//     if (!_ahrs.get_velocity_NED(curr_vel) || !_ahrs.get_filter_status(status)) {
+//         inertial_data_newest.inertialNavVelocityValid = false;
+//     } else {
+//         inertial_data_newest.inertialNavVelocityValid = status.flags.horiz_vel;
+//     }
+//     curr_vel.z = -curr_vel.z;  // NED to NEU
+//     inertial_data_newest.inertialNavVelocity = curr_vel;
+//
+//     _inertial_history.push_back(inertial_data_newest);
+//
+//     // update estimator of target position
+//     if (_backend != nullptr && _enabled) {
+//         _backend->update();
+//         run_estimator(rangefinder_alt_cm*0.01f, rangefinder_alt_valid);
+//     }
 }
 
 bool AC_PrecLand::target_acquired()
 {
-    _target_acquired = _target_acquired && (AP_HAL::millis()-_last_update_ms) < 2000;
+    _target_acquired = (AP_HAL::millis() - precland_uwb_data.timestamp_ms) < 50;
     return _target_acquired;
+}
+
+bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
+#if !HAL_WITH_UAVCAN
+    return false;
+#else
+    if (!target_acquired()) {
+        return false;
+    }
+    ret = -precland_uwb_data.pos[2]*100.0f;
+    return true;
+#endif
 }
 
 bool AC_PrecLand::get_target_position_cm(Vector2f& ret)
@@ -190,12 +206,14 @@ bool AC_PrecLand::get_target_position_cm(Vector2f& ret)
     if (!target_acquired()) {
         return false;
     }
+
     Vector2f curr_pos;
     if (!_ahrs.get_relative_position_NE_origin(curr_pos)) {
         return false;
     }
-    ret.x = (_target_pos_rel_out_NE.x + curr_pos.x) * 100.0f;   // m to cm
-    ret.y = (_target_pos_rel_out_NE.y  + curr_pos.y) * 100.0f;  // m to cm
+
+    ret.x = (-precland_uwb_data.pos[0] + curr_pos.x)*100.0f;
+    ret.y = (-precland_uwb_data.pos[1] + curr_pos.y)*100.0f;
     return true;
 }
 
@@ -204,7 +222,8 @@ bool AC_PrecLand::get_target_position_relative_cm(Vector2f& ret)
     if (!target_acquired()) {
         return false;
     }
-    ret = _target_pos_rel_out_NE*100.0f;
+    ret.x = -precland_uwb_data.pos[0]*100.0f;
+    ret.y = -precland_uwb_data.pos[1]*100.0f;
     return true;
 }
 
@@ -213,7 +232,8 @@ bool AC_PrecLand::get_target_velocity_relative_cms(Vector2f& ret)
     if (!target_acquired()) {
         return false;
     }
-    ret = _target_vel_rel_out_NE*100.0f;
+    ret.x = -precland_uwb_data.vel[0]*100.0f;
+    ret.y = -precland_uwb_data.vel[1]*100.0f;
     return true;
 }
 
