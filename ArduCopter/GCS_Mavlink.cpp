@@ -996,7 +996,13 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
     }
 
     default:
-        return GCS_MAVLINK::handle_command_long_packet(packet);
+        auto ret = GCS_MAVLINK::handle_command_long_packet(packet);
+        if (packet.command == MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES && is_equal(packet.param1,1.0f)) {
+            char mttr_fts_text[50];
+            snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", copter.parachute.mttr_get_fts_version());
+            send_text(MAV_SEVERITY_INFO, mttr_fts_text);
+        }
+        return ret;
     }
 }
 
@@ -1462,6 +1468,13 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         
     default:
         handle_common_message(msg);
+
+        if (msg->msgid == MAVLINK_MSG_ID_AUTOPILOT_VERSION_REQUEST) {
+            char mttr_fts_text[50];
+            snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", copter.parachute.mttr_get_fts_version());
+            send_text(MAV_SEVERITY_INFO, mttr_fts_text);
+        }
+
         break;
     }     // end switch
 } // end handle mavlink
