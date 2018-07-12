@@ -144,7 +144,6 @@ void Util::set_imu_target_temp(int8_t *target)
 }
 
 #ifdef HAL_PWM_ALARM
-static int state;
 ToneAlarm Util::_toneAlarm;
 
 bool Util::toneAlarm_init()
@@ -152,9 +151,9 @@ bool Util::toneAlarm_init()
     return _toneAlarm.init();
 }
 
-void Util::toneAlarm_set_tune(uint8_t tone)
+void Util::toneAlarm_play_string(const char* string)
 {
-    _toneAlarm.set_tune(tone);
+    _toneAlarm.play(string);
 }
 
 // (state 0) if init_tune() -> (state 1) complete=false
@@ -163,21 +162,7 @@ void Util::toneAlarm_set_tune(uint8_t tone)
 // (state 3) -> (state 1)
 // (on every tick) if (complete) -> (state 0)
 void Util::_toneAlarm_timer_tick() {
-    if(state == 0) {
-        state = state + _toneAlarm.init_tune();
-    } else if (state == 1) {
-        state = state + _toneAlarm.set_note();
-    }
-    if (state == 2) {
-        state = state + _toneAlarm.play();
-    } else if (state == 3) {
-        state = 1;
-    }
-
-    if (_toneAlarm.is_tune_comp()) {
-        state = 0;
-    }
-
+    _toneAlarm.update();
 }
 #endif // HAL_PWM_ALARM
 
