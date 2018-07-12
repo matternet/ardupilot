@@ -72,7 +72,7 @@ public:
         ToneAlarm Driver
     */
     virtual bool toneAlarm_init() { return false;}
-    virtual void toneAlarm_set_tune(uint8_t tune) {}
+    virtual void toneAlarm_play_string(const char* string) {}
     virtual void _toneAlarm_timer_tick() {}
 
     /*
