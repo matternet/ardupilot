@@ -49,7 +49,7 @@ public:
     
 #ifdef HAL_PWM_ALARM
     bool toneAlarm_init();
-    void toneAlarm_set_tune(uint8_t tone);
+    void toneAlarm_play_string(const char* string) override;
     void _toneAlarm_timer_tick();
 
     static ToneAlarm& get_ToneAlarm() { return _toneAlarm; }

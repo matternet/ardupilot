@@ -340,10 +340,10 @@ void Scheduler::_toneAlarm_thread(void *arg)
     Scheduler *sched = (Scheduler *)arg;
     chRegSetThreadName("toneAlarm");
     while (!sched->_hal_initialized) {
-        sched->delay_microseconds(20000);
+        sched->delay_microseconds(1000);
     }
     while (true) {
-        sched->delay_microseconds(20000);
+        sched->delay_microseconds(1000);
 
         // process tone command
         Util::from(hal.util)->_toneAlarm_timer_tick();
