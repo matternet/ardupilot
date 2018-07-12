@@ -1,0 +1,4 @@
+float16[3] anchor_pos
+float16[3] tag_pos
+float32 range
+float16 rssi

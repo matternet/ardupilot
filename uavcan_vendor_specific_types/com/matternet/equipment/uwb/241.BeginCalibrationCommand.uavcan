@@ -1,0 +1,4 @@
+uint64 clock_trim_master_nid
+uint64 golden_trx_node_id
+---
+bool ack
