@@ -426,6 +426,10 @@ void Copter::Mode::land_run_vertical_control(bool pause_descent)
 #endif
 
     // compute desired velocity
+    const float precland_acceptable_error_high = 100.0f;
+    const float precland_slow_descent_speed = 20.0f;
+    const float precland_slowdown_height = 100.0f;
+    const float precland_commit_height = 35.0f;
     const float precland_acceptable_error = 15.0f;
     const float precland_min_descent_speed = 10.0f;
     const int32_t alt_above_ground = get_alt_above_ground();
@@ -448,10 +452,19 @@ void Copter::Mode::land_run_vertical_control(bool pause_descent)
         // Constrain the demanded vertical velocity so that it is between the configured maximum descent speed and the configured minimum descent speed.
         cmb_rate = constrain_float(cmb_rate, max_land_descent_velocity, -abs(g.land_speed));
 
-        if (doing_precision_landing && copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm > 35.0f && copter.rangefinder_state.alt_cm < 200.0f) {
-            float max_descent_speed = abs(g.land_speed)/2.0f;
-            float land_slowdown = MAX(0.0f, pos_control->get_horizontal_error()*(max_descent_speed/precland_acceptable_error));
-            cmb_rate = MIN(-precland_min_descent_speed, -max_descent_speed+land_slowdown);
+        if (doing_precision_landing) {
+            // Smoothly slow for precision landing
+            cmb_rate = MAX(cmb_rate, AC_AttitudeControl::sqrt_controller(precland_slowdown_height-alt_above_ground, pos_control->get_pos_z_p().kP(), pos_control->get_accel_z()*0.25f, G_Dt));
+            cmb_rate = MIN(cmb_rate, -precland_slow_descent_speed);
+
+            if (alt_above_ground > precland_commit_height && alt_above_ground < precland_slowdown_height) {
+                float land_slowdown = MAX(0.0f, pos_control->get_horizontal_error()*(precland_slow_descent_speed/precland_acceptable_error));
+                cmb_rate = MIN(-precland_min_descent_speed, -precland_slow_descent_speed+land_slowdown);
+            }
+
+            if (pos_control->get_horizontal_error() > precland_acceptable_error_high) {
+                cmb_rate = 0;
+            }
         }
     }
 
