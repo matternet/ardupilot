@@ -239,7 +239,9 @@ void Copter::ModeAuto::land_start(const Vector3f& destination)
     }
 
     // initialise yaw
-    auto_yaw.set_mode(AUTO_YAW_HOLD);
+    if (auto_yaw.mode() != AUTO_YAW_FIXED) {
+        auto_yaw.set_mode(AUTO_YAW_HOLD);
+    }
 }
 
 // auto_circle_movetoedge_start - initialise waypoint controller to move to edge of a circle with it's center at the specified location
@@ -874,7 +876,7 @@ void Copter::ModeAuto::land_run()
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DESIRED_THROTTLE_UNLIMITED);
     
-    land_run_horizontal_control();
+    land_run_horizontal_control(true, auto_yaw.yaw());
     land_run_vertical_control();
 }
 

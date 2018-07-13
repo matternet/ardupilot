@@ -471,7 +471,7 @@ void Copter::Mode::land_run_vertical_control(bool pause_descent)
     pos_control->update_z_controller();
 }
 
-void Copter::Mode::land_run_horizontal_control()
+void Copter::Mode::land_run_horizontal_control(bool fixed_yaw, float yaw_command_cd)
 {
     LowPassFilterFloat &rc_throttle_control_in_filter = copter.rc_throttle_control_in_filter;
     AP_Vehicle::MultiCopter &aparm = copter.aparm;
