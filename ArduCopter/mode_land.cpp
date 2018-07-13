@@ -42,7 +42,11 @@ bool Copter::ModeLand::init(bool ignore_checks)
 // should be called at 100hz or more
 void Copter::ModeLand::run()
 {
-    if (land_with_gps) {
+    bool doing_precision_landing;
+#if PRECISION_LANDING == ENABLED
+    doing_precision_landing = !ap.land_repo_active && copter.precland.target_acquired();
+#endif
+    if (land_with_gps || doing_precision_landing) {
         gps_run();
     }else{
         nogps_run();
