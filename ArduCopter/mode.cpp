@@ -394,6 +394,13 @@ void Copter::Mode::zero_throttle_and_relax_ac()
 int32_t Copter::Mode::get_alt_above_ground(void)
 {
     int32_t alt_above_ground;
+
+#if PRECISION_LANDING == ENABLED
+    if (copter.precland.get_height_above_target_cm(alt_above_ground)) {
+        return alt_above_ground;
+    }
+#endif
+
     if (copter.rangefinder_alt_ok()) {
         alt_above_ground = copter.rangefinder_state.alt_cm_filt.get();
     } else {
