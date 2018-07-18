@@ -107,6 +107,7 @@ bool ToneAlarm_ChibiOS::init()
     flags.pre_arm_check = 1;
     _cont_tone_playing = -1;
     play_tone(AP_NOTIFY_TONE_STARTUP);
+    _init_ms = AP_HAL::millis();
     return true;
 }
 
@@ -157,6 +158,10 @@ void ToneAlarm_ChibiOS::check_cont_tone() {
 // update - updates led according to timed_updated.  Should be called at 50Hz
 void ToneAlarm_ChibiOS::update()
 {
+    if (AP_HAL::millis()-_init_ms > 5000) {
+        flags.play_radio_failsafes = true;
+    }
+
     // exit if buzzer is not enabled
     if (pNotify->buzzer_enabled() == false) {
         return;
@@ -255,16 +260,18 @@ void ToneAlarm_ChibiOS::update()
     // notify the user when RC contact is lost
     if (flags.failsafe_radio != AP_Notify::flags.failsafe_radio) {
         flags.failsafe_radio = AP_Notify::flags.failsafe_radio;
-        if (flags.failsafe_radio) {
-            // armed case handled by events.failsafe_mode_change
-            if (!AP_Notify::flags.armed) {
-                play_tone(AP_NOTIFY_TONE_QUIET_NEG_FEEDBACK);
-            }
-        } else {
-            if (AP_Notify::flags.armed) {
-                play_tone(AP_NOTIFY_TONE_LOUD_POS_FEEDBACK);
+        if (flags.play_radio_failsafes) {
+            if (flags.failsafe_radio) {
+                // armed case handled by events.failsafe_mode_change
+                if (!AP_Notify::flags.armed) {
+                    play_tone(AP_NOTIFY_TONE_QUIET_NEG_FEEDBACK);
+                }
             } else {
-                play_tone(AP_NOTIFY_TONE_QUIET_POS_FEEDBACK);
+                if (AP_Notify::flags.armed) {
+                    play_tone(AP_NOTIFY_TONE_LOUD_POS_FEEDBACK);
+                } else {
+                    play_tone(AP_NOTIFY_TONE_QUIET_POS_FEEDBACK);
+                }
             }
         }
     }
