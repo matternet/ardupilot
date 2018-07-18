@@ -100,9 +100,10 @@ class Board:
                 '-Wno-c++11-narrowing'
             ]
 
+        env.CFLAGS += [ '-g' ]
+
         if cfg.env.DEBUG:
             env.CFLAGS += [
-                '-g',
                 '-O0',
             ]
 
