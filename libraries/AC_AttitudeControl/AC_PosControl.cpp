@@ -1004,6 +1004,12 @@ void AC_PosControl::run_xy_controller(float dt, float ekfNavVelGainScaler)
     Vector3f curr_pos = _inav.get_position();
     float kP = ekfNavVelGainScaler * _p_pos_xy.kP(); // scale gains to compensate for noisy optical flow measurement in the EKF
 
+    if (_flags.vehicle_horiz_pos_override) {
+        _flags.vehicle_horiz_pos_override = false;
+        curr_pos.x = _vehicle_horiz_pos.x;
+        curr_pos.y = _vehicle_horiz_pos.y;
+    }
+
     // avoid divide by zero
     if (kP <= 0.0f) {
         _vel_target.x = 0.0f;
