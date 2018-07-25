@@ -88,7 +88,7 @@ const AP_ToneAlarm::Tone AP_ToneAlarm::_tones[] {
 #define AP_NOTIFY_TONE_QUIET_NOT_READY_OR_NOT_FINISHED 28
     { "MFT200L4<B#4A#6G#6", false },
 #define AP_NOTIFY_TONE_STARTUP 29
-    { "MFT240L8O4aO5dcO4aO5dcO4aO5dcL16dcdcdcdc", false },
+    { "MFMST200L64O4ceceP32ceceP8df#df#P32df#df#P8L16gf#g>c", false },
 };
 
 bool AP_ToneAlarm::init()
