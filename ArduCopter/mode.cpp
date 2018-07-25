@@ -393,25 +393,24 @@ void Copter::Mode::zero_throttle_and_relax_ac()
 /*
   get a height above ground estimate for landing
  */
-int32_t Copter::Mode::get_alt_above_ground(void)
+bool Copter::Mode::get_alt_above_ground(int32_t& alt_above_ground)
 {
-    int32_t alt_above_ground;
-
 #if PRECISION_LANDING == ENABLED
     if (copter.precland.get_height_above_target_cm(alt_above_ground)) {
-        return alt_above_ground;
+        return true;
     }
 #endif
 
     if (copter.rangefinder_alt_ok()) {
         alt_above_ground = copter.rangefinder_state.alt_cm_filt.get();
+        return true;
     } else {
         bool navigating = pos_control->is_active_xy();
         if (!navigating || !copter.current_loc.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_TERRAIN, alt_above_ground)) {
             alt_above_ground = copter.current_loc.alt;
         }
     }
-    return alt_above_ground;
+    return false;
 }
 
 void Copter::Mode::land_run_vertical_control(bool pause_descent)
@@ -432,12 +431,13 @@ void Copter::Mode::land_run_vertical_control(bool pause_descent)
     const float precland_commit_height = 35.0f;
     const float precland_acceptable_error = 15.0f;
     const float precland_min_descent_speed = 10.0f;
-    const int32_t alt_above_ground = get_alt_above_ground();
+    int32_t alt_above_ground;
+    const bool have_accurate_height = get_alt_above_ground(alt_above_ground);
 
     float cmb_rate = 0;
     if (!pause_descent) {
         float max_land_descent_velocity;
-        if (g.land_speed_high > 0) {
+        if (g.land_speed_high > 0 && !have_accurate_height) {
             max_land_descent_velocity = -g.land_speed_high;
         } else {
             max_land_descent_velocity = pos_control->get_speed_down();
@@ -457,7 +457,7 @@ void Copter::Mode::land_run_vertical_control(bool pause_descent)
             cmb_rate = MAX(cmb_rate, AC_AttitudeControl::sqrt_controller(precland_slowdown_height-alt_above_ground, pos_control->get_pos_z_p().kP(), pos_control->get_accel_z()*0.25f, G_Dt));
             cmb_rate = MIN(cmb_rate, -precland_slow_descent_speed);
 
-            if (alt_above_ground > precland_commit_height && alt_above_ground < precland_slowdown_height) {
+            if (have_accurate_height && alt_above_ground > precland_commit_height && alt_above_ground < precland_slowdown_height) {
                 float land_slowdown = MAX(0.0f, pos_control->get_horizontal_error()*(precland_slow_descent_speed/precland_acceptable_error));
                 cmb_rate = MIN(-precland_min_descent_speed, -precland_slow_descent_speed+land_slowdown);
             }

@@ -112,7 +112,7 @@ protected:
 
     // functions to control landing
     // in modes that support landing
-    int32_t get_alt_above_ground(void);
+    bool get_alt_above_ground(int32_t& alt_above_ground);
     void land_run_horizontal_control(bool fixed_yaw=false, float yaw_command_cd=0);
     void land_run_vertical_control(bool pause_descent = false);
 
