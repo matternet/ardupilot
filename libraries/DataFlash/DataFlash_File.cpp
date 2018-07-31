@@ -188,28 +188,29 @@ bool DataFlash_File::log_exists(const uint16_t lognum) const
 void DataFlash_File::periodic_1Hz()
 {
     if (_log_fail_reason[0] != '\0') {
-        hal.console->printf("%s", _log_fail_reason);
+        hal.console->printf("%s\n", _log_fail_reason);
     }
 
-    if (!io_thread_alive()) {
-        if (io_thread_warning_decimation_counter == 0 && _initialised) {
-            // we don't print this error unless we did initialise. When _initialised is set to true
-            // we register the IO timer callback
-            gcs().send_text(MAV_SEVERITY_CRITICAL, "DataFlash: stuck thread (%s)", last_io_operation);
-        }
-        if (io_thread_warning_decimation_counter++ > 57) {
-            io_thread_warning_decimation_counter = 0;
-        }
-        // If you try to close the file here then it will almost
-        // certainly block.  Since this is the main thread, this is
-        // likely to cause a crash.
 
-        // semaphore_write_fd not taken here as if the io thread is
-        // dead it may not release lock...
-        _write_fd = -1;
-        _initialised = false;
-        snprintf(_log_fail_reason, sizeof(_log_fail_reason), "IO thread not alive");
-    }
+//     if (!io_thread_alive()) {
+//         if (io_thread_warning_decimation_counter == 0 && _initialised) {
+//             // we don't print this error unless we did initialise. When _initialised is set to true
+//             // we register the IO timer callback
+//             gcs().send_text(MAV_SEVERITY_CRITICAL, "DataFlash: stuck thread (%s)", last_io_operation);
+//         }
+//         if (io_thread_warning_decimation_counter++ > 57) {
+//             io_thread_warning_decimation_counter = 0;
+//         }
+//         snprintf(_log_fail_reason, sizeof(_log_fail_reason), "IO thread not alive %u %u", _initialised, AP_HAL::millis()-_io_timer_heartbeat);
+//         // If you try to close the file here then it will almost
+//         // certainly block.  Since this is the main thread, this is
+//         // likely to cause a crash.
+//
+//         // semaphore_write_fd not taken here as if the io thread is
+//         // dead it may not release lock...
+//         _write_fd = -1;
+//         _initialised = false;
+//     }
     df_stats_log();
 }
 
