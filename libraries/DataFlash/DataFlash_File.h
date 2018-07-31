@@ -64,6 +64,7 @@ protected:
     bool StartNewLogOK() const override;
 
 private:
+    char _log_fail_reason[128];
     int _write_fd;
     char *_write_filename;
     uint32_t _last_write_ms;

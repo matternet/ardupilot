@@ -133,6 +133,7 @@ void DataFlash_File::Init()
         ret = mkdir(_log_directory, 0777);
     }
     if (ret == -1) {
+        snprintf(_log_fail_reason, sizeof(_log_fail_reason), "failed to create log directory %u", errno);
         printf("Failed to create log directory %s : %s\n", _log_directory, strerror(errno));
         return;
     }
@@ -151,6 +152,7 @@ void DataFlash_File::Init()
     }
 
     if (!_writebuf.get_size()) {
+        snprintf(_log_fail_reason, sizeof(_log_fail_reason), "out of memory");
         hal.console->printf("Out of memory for logging\n");
         return;
     }
@@ -185,6 +187,10 @@ bool DataFlash_File::log_exists(const uint16_t lognum) const
 
 void DataFlash_File::periodic_1Hz()
 {
+    if (_log_fail_reason[0] != '\0') {
+        hal.console->printf("%s", _log_fail_reason);
+    }
+
     if (!io_thread_alive()) {
         if (io_thread_warning_decimation_counter == 0 && _initialised) {
             // we don't print this error unless we did initialise. When _initialised is set to true
@@ -202,6 +208,7 @@ void DataFlash_File::periodic_1Hz()
         // dead it may not release lock...
         _write_fd = -1;
         _initialised = false;
+        snprintf(_log_fail_reason, sizeof(_log_fail_reason), "IO thread not alive");
     }
     df_stats_log();
 }
@@ -728,6 +735,7 @@ int16_t DataFlash_File::get_log_data(const uint16_t list_entry, const uint16_t p
         stop_logging();
         _read_fd = ::open(fname, O_RDONLY|O_CLOEXEC);
         if (_read_fd == -1) {
+            snprintf(_log_fail_reason, sizeof(_log_fail_reason), "read open fail %u", errno);
             _open_error = true;
             int saved_errno = errno;
             ::printf("Log read open fail for %s - %s\n",
@@ -875,6 +883,7 @@ uint16_t DataFlash_File::start_new_log(void)
     }
 
     if (disk_space_avail() < _free_space_min_avail) {
+        snprintf(_log_fail_reason, sizeof(_log_fail_reason), "out of disk space");
         hal.console->printf("Out of space for logging\n");
         _open_error = true;
         return 0xffff;
@@ -889,6 +898,7 @@ uint16_t DataFlash_File::start_new_log(void)
         log_num = 1;
     }
     if (!write_fd_semaphore->take(1)) {
+        snprintf(_log_fail_reason, sizeof(_log_fail_reason), "new log, write sem take fail");
         _open_error = true;
         return 0xFFFF;
     }
@@ -898,6 +908,7 @@ uint16_t DataFlash_File::start_new_log(void)
     }
     _write_filename = _log_file_name(log_num);
     if (_write_filename == nullptr) {
+        snprintf(_log_fail_reason, sizeof(_log_fail_reason), "new log, write filename null");
         _open_error = true;
         write_fd_semaphore->give();
         return 0xFFFF;
@@ -911,6 +922,7 @@ uint16_t DataFlash_File::start_new_log(void)
     _cached_oldest_log = 0;
 
     if (_write_fd == -1) {
+        snprintf(_log_fail_reason, sizeof(_log_fail_reason), "new log, write open fail %u", errno);
         _initialised = false;
         _open_error = true;
         write_fd_semaphore->give();
@@ -1052,6 +1064,7 @@ void DataFlash_File::_io_timer(void)
             // if we can't write for 2 seconds we give up and close
             // the file. This allows us to cope with temporary write
             // failures caused by directory listing
+            snprintf(_log_fail_reason, sizeof(_log_fail_reason), "file write fail %u", errno);
             hal.util->perf_count(_perf_errors);
             last_io_operation = "close";
             close(_write_fd);
