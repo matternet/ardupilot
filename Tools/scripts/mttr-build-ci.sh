@@ -17,6 +17,6 @@ unset CXX CC
 ./waf configure --board=sitl
 ./waf build --targets bin/arducopter -j8
 
-mv build/fmuv3/bin/arducopter.apj "$HOME/deploy_files"
+mv build/fmuv3/bin/arducopter.apj "$HOME/deploy_files/arducopter.px4"
 mv build/fmuv3/bin/arducopter "$HOME/deploy_files/fmu.elf"
 mv build/sitl/bin/arducopter "$HOME/deploy_files/sitl.elf"
