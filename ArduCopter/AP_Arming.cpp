@@ -534,12 +534,14 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, AP_Arming::ArmingMethod 
         return false;
     }
 
+#if CONFIG_HAL_BOARD != HAL_BOARD_SITL
     if (!copter.parachute.get_mttr_prearm_pass()) {
         if (display_failure) {
             gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: FTS state");
         }
         return false;
     }
+#endif
 
     if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_COMPASS)) {
         // check compass offsets have been set.  AP_Arming only checks
