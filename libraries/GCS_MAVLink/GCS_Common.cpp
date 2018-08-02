@@ -673,6 +673,7 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
         // convert mavlink packet to mission command
         result = AP_Mission::mavlink_to_mission_cmd(packet, cmd);
         if (result != MAV_MISSION_ACCEPTED) {
+            send_text(MAV_SEVERITY_WARNING,"mis_nack res=%u line=%u\n",(unsigned)result,__LINE__);
             goto mission_ack;
         }
         
@@ -685,6 +686,7 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
         // convert mavlink packet to mission command
         result = AP_Mission::mavlink_int_to_mission_cmd(packet, cmd);
         if (result != MAV_MISSION_ACCEPTED) {
+            send_text(MAV_SEVERITY_WARNING,"mis_nack res=%u line=%u\n",(unsigned)result,__LINE__);
             goto mission_ack;
         }
         
@@ -697,7 +699,9 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
         // waypoint and not for the mission
         result = (handle_guided_request(cmd) ? MAV_MISSION_ACCEPTED
                                              : MAV_MISSION_ERROR) ;
-
+        if (result != MAV_MISSION_ACCEPTED) {
+            send_text(MAV_SEVERITY_WARNING,"mis_nack res=%u line=%u\n",(unsigned)result,__LINE__);
+        }
         // verify we received the command
         goto mission_ack;
     }
@@ -715,12 +719,14 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
     // Check if receiving waypoints (mission upload expected)
     if (!waypoint_receiving) {
         result = MAV_MISSION_ERROR;
+        send_text(MAV_SEVERITY_WARNING,"mis_nack res=%u line=%u\n",(unsigned)result,__LINE__);
         goto mission_ack;
     }
 
     // check if this is the requested waypoint
     if (seq != waypoint_request_i) {
         result = MAV_MISSION_INVALID_SEQUENCE;
+        send_text(MAV_SEVERITY_WARNING,"mis_nack res=%u line=%u\n",(unsigned)result,__LINE__);
         goto mission_ack;
     }
 
@@ -728,6 +734,7 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
     if (cmd.id == MAV_CMD_DO_JUMP) {
         if ((cmd.content.jump.target >= mission.num_commands() && cmd.content.jump.target >= waypoint_request_last) || cmd.content.jump.target == 0) {
             result = MAV_MISSION_ERROR;
+            send_text(MAV_SEVERITY_WARNING,"mis_nack res=%u line=%u\n",(unsigned)result,__LINE__);
             goto mission_ack;
         }
     }
@@ -738,6 +745,7 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
             result = MAV_MISSION_ACCEPTED;
         }else{
             result = MAV_MISSION_ERROR;
+            send_text(MAV_SEVERITY_WARNING,"mis_nack res=%u line=%u\n",(unsigned)result,__LINE__);
             goto mission_ack;
         }
         // if command is at the end of command list, add the command
@@ -746,11 +754,13 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
             result = MAV_MISSION_ACCEPTED;
         }else{
             result = MAV_MISSION_ERROR;
+            send_text(MAV_SEVERITY_WARNING,"mis_nack res=%u line=%u\n",(unsigned)result,__LINE__);
             goto mission_ack;
         }
         // if beyond the end of the command list, return an error
     } else {
         result = MAV_MISSION_ERROR;
+        send_text(MAV_SEVERITY_WARNING,"mis_nack res=%u line=%u\n",(unsigned)result,__LINE__);
         goto mission_ack;
     }
     
