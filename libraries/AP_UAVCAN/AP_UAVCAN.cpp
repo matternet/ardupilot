@@ -32,6 +32,7 @@
 #include <uavcan/equipment/actuator/Status.hpp>
 #include <uavcan/equipment/esc/RawCommand.hpp>
 #include <uavcan/equipment/ahrs/Solution.hpp>
+#include <uavcan/protocol/debug/KeyValue.hpp>
 
 extern const AP_HAL::HAL& hal;
 
@@ -200,6 +201,14 @@ static void uwb_fix_cb(const uavcan::ReceivedDataStructure<com::matternet::equip
         precland_uwb_data.vel[1] = msg.vel[1];
         precland_uwb_data.vel[2] = msg.vel[2];
     }
+}
+
+static void keyvalue_cb(const uavcan::ReceivedDataStructure<uavcan::protocol::debug::KeyValue>& msg) {
+    char key_str[16] = {};
+    
+    memcpy(key_str, msg.key.c_str(), strnlen(msg.key.c_str(),16));
+    
+    DataFlash_Class::instance()->Log_Write("UCKV", "TimeUS,Key,Value", "QNf", AP_HAL::micros64(), key_str, msg.value);
 }
 
 static void gnss_fix_cb0(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg)
@@ -421,6 +430,15 @@ bool AP_UAVCAN::try_init(void)
                     const int node_start_res = node->start();
                     if (node_start_res < 0) {
                         debug_uavcan(1, "UAVCAN: node start problem\n\r");
+                    }
+                    
+                    uavcan::Subscriber<uavcan::protocol::debug::KeyValue> *keyvalue;
+                    keyvalue = new uavcan::Subscriber<uavcan::protocol::debug::KeyValue>(*node);
+
+                    const int keyvalue_start_res = keyvalue->start(keyvalue_cb);
+                    if (keyvalue_start_res < 0) {
+                        debug_uavcan(1, "UAVCAN KeyValue subscriber start problem\n\r");
+                        return false;
                     }
 
                     uavcan::Subscriber<com::matternet::equipment::uwb::PosVelEstimate> *uwb_fix;
