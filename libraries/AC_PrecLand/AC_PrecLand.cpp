@@ -359,8 +359,7 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
                 } else {
                     float NIS_x = _ekf_x.getPosNIS(_target_pos_rel_meas_NED.x, xy_pos_var);
                     float NIS_y = _ekf_y.getPosNIS(_target_pos_rel_meas_NED.y, xy_pos_var);
-                    if (MAX(NIS_x, NIS_y) < 3.0f || _outlier_reject_count >= 3) {
-                        _outlier_reject_count = 0;
+                    if (MAX(NIS_x, NIS_y) < 3.0f) {
                         _ekf_x.fusePos(_target_pos_rel_meas_NED.x, xy_pos_var);
                         _ekf_y.fusePos(_target_pos_rel_meas_NED.y, xy_pos_var);
                         _last_update_ms = AP_HAL::millis();
