@@ -356,6 +356,9 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
                     _last_update_ms = AP_HAL::millis();
                     _estimator_initialized = true;
                     _estimator_init_ms = AP_HAL::millis();
+                    
+                    _target_pos_rel_out_NE = Vector2f(_ekf_x.getPos(), _ekf_y.getPos());
+                    _target_vel_rel_out_NE = Vector2f(_ekf_x.getVel(), _ekf_y.getVel());
                 } else {
                     float NIS_x = _ekf_x.getPosNIS(_target_pos_rel_meas_NED.x, xy_pos_var);
                     float NIS_y = _ekf_y.getPosNIS(_target_pos_rel_meas_NED.y, xy_pos_var);
@@ -379,7 +382,7 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
             }
 
             // Output prediction
-            if (target_acquired()) {
+            if (_estimator_initialized) {
                 _target_pos_rel_est_NE.x = _ekf_x.getPos();
                 _target_pos_rel_est_NE.y = _ekf_y.getPos();
                 _target_vel_rel_est_NE.x = _ekf_x.getVel();
@@ -448,16 +451,16 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
 
 void AC_PrecLand::run_output_prediction()
 {
-    _target_pos_rel_out_NE = _target_pos_rel_est_NE;
-    _target_vel_rel_out_NE = _target_vel_rel_est_NE;
+    Vector2f target_pos_rel_est_corrected_NE = _target_pos_rel_est_NE;
+    Vector2f target_vel_rel_est_corrected_NE = _target_vel_rel_est_NE;
 
     // Predict forward from delayed time horizon
-    for (uint8_t i=1; i<_inertial_history->available(); i++) {
-        const struct inertial_data_frame_s *inertial_data = (*_inertial_history)[i];
-        _target_vel_rel_out_NE.x -= inertial_data->correctedVehicleDeltaVelocityNED.x;
-        _target_vel_rel_out_NE.y -= inertial_data->correctedVehicleDeltaVelocityNED.y;
-        _target_pos_rel_out_NE.x += _target_vel_rel_out_NE.x * inertial_data->dt;
-        _target_pos_rel_out_NE.y += _target_vel_rel_out_NE.y * inertial_data->dt;
+    for (uint8_t i=1; i<_inertial_history.size(); i++) {
+        const struct inertial_data_frame_s& inertial_data = _inertial_history.peek(i);
+        target_vel_rel_est_corrected_NE.x -= inertial_data.correctedVehicleDeltaVelocityNED.x;
+        target_vel_rel_est_corrected_NE.y -= inertial_data.correctedVehicleDeltaVelocityNED.y;
+        target_pos_rel_est_corrected_NE.x += target_vel_rel_est_corrected_NE.x * inertial_data.dt;
+        target_pos_rel_est_corrected_NE.y += target_vel_rel_est_corrected_NE.y * inertial_data.dt;
     }
 
     const AP_AHRS &_ahrs = AP::ahrs();
@@ -467,23 +470,34 @@ void AC_PrecLand::run_output_prediction()
 
     // Apply position correction for CG offset from IMU
     Vector3f imu_pos_ned = Tbn * accel_body_offset;
-    _target_pos_rel_out_NE.x += imu_pos_ned.x;
-    _target_pos_rel_out_NE.y += imu_pos_ned.y;
+    target_pos_rel_est_corrected_NE.x += imu_pos_ned.x;
+    target_pos_rel_est_corrected_NE.y += imu_pos_ned.y;
 
     // Apply position correction for body-frame horizontal camera offset from CG, so that vehicle lands lens-to-target
     Vector3f cam_pos_horizontal_ned = Tbn * Vector3f(_cam_offset.get().x, _cam_offset.get().y, 0);
-    _target_pos_rel_out_NE.x -= cam_pos_horizontal_ned.x;
-    _target_pos_rel_out_NE.y -= cam_pos_horizontal_ned.y;
+    target_pos_rel_est_corrected_NE.x -= cam_pos_horizontal_ned.x;
+    target_pos_rel_est_corrected_NE.y -= cam_pos_horizontal_ned.y;
 
     // Apply velocity correction for IMU offset from CG
     Vector3f vel_ned_rel_imu = Tbn * (_ahrs.get_gyro() % (-accel_body_offset));
-    _target_vel_rel_out_NE.x -= vel_ned_rel_imu.x;
-    _target_vel_rel_out_NE.y -= vel_ned_rel_imu.y;
+    target_vel_rel_est_corrected_NE.x -= vel_ned_rel_imu.x;
+    target_vel_rel_est_corrected_NE.y -= vel_ned_rel_imu.y;
 
     // Apply land offset
     Vector3f land_ofs_ned_m = _ahrs.get_rotation_body_to_ned() * Vector3f(_land_ofs_cm_x,_land_ofs_cm_y,0) * 0.01f;
-    _target_pos_rel_out_NE.x += land_ofs_ned_m.x;
-    _target_pos_rel_out_NE.y += land_ofs_ned_m.y;
+    target_pos_rel_est_corrected_NE.x += land_ofs_ned_m.x;
+    target_pos_rel_est_corrected_NE.y += land_ofs_ned_m.y;
+        
+    const struct inertial_data_frame_s& latest_inertial_data = _inertial_history.peek(_inertial_history.size()-1);
+    
+    _target_pos_rel_out_NE += _target_vel_rel_est_NE * latest_inertial_data.dt;
+    _target_vel_rel_out_NE += -Vector2f(latest_inertial_data.correctedVehicleDeltaVelocityNED.x, latest_inertial_data.correctedVehicleDeltaVelocityNED.y);
+    
+    const float tc = 0.3f;
+    float alpha = latest_inertial_data.dt/(latest_inertial_data.dt+tc);
+        
+    _target_pos_rel_out_NE += (target_pos_rel_est_corrected_NE - _target_pos_rel_out_NE) * alpha;
+    _target_vel_rel_out_NE += (target_vel_rel_est_corrected_NE - _target_vel_rel_out_NE) * alpha;
 }
 
 // send landing target mavlink message to ground station
