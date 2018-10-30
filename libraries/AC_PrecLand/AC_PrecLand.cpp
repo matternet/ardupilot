@@ -343,7 +343,7 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
 
             // Update if a new Line-Of-Sight measurement is available
             if (construct_pos_meas_using_rangefinder(rangefinder_alt_m, rangefinder_alt_valid)) {
-                float xy_pos_var = sq(_target_pos_rel_meas_NED.z*(0.01f + 0.01f*AP::ahrs().get_gyro().length()) + 0.02f);
+                float xy_pos_var = sq(_target_pos_rel_meas_NED.z*(0.02f + 0.02f*AP::ahrs().get_gyro().length()) + 0.02f);
                 if (!_estimator_initialized) {
                     // reset filter state
                     if (inertial_data_delayed->inertialNavVelocityValid) {
