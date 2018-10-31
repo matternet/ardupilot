@@ -30,6 +30,7 @@ private:
     bool timer(void);
 
     bool sync_frame_start(void);
+    bool sync_frame_once(void);
     bool read_block(struct frame &irframe);
     void read_frames(void);
 
