@@ -1,5 +1,3 @@
-    ///---------------------- Check all the " . " that were replaced with  " -> " ---------------------------------------///
-
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -49,7 +47,9 @@ void print_buffer() {
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
     printf("Buffer:");  
 //    printf("[%u, %u, %u, %u], ", (unsigned)writebuf.blobs[writebuf.count].center_x, (unsigned)writebuf.blobs[writebuf.count].center_y, (unsigned)writebuf.blobs[writebuf.count].width, (unsigned)writebuf.blobs[writebuf.count].height);
-    printf("[%u, %u, %u, %u], ", (unsigned)writebuf.blobs[1].center_x, (unsigned)writebuf.blobs[1].center_y, (unsigned)writebuf.blobs[1].width, (unsigned)writebuf.blobs[1].height);
+    for (size_t i=0; i<writebuf.count; i++) {
+        printf("[%u, %u, %u, %u], ", (unsigned)writebuf.blobs[i].center_x, (unsigned)writebuf.blobs[i].center_y, (unsigned)writebuf.blobs[i].width, (unsigned)writebuf.blobs[i].height);
+    }
     printf("   -   Count: %u\n", (unsigned)writebuf.count);
 }
 
