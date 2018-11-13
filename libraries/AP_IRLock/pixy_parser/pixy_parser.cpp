@@ -1,11 +1,33 @@
+/*
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * pixy_parser.cpp
+ * *
+ */
+
+#include "pixy_parser.h"
+
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
-#define PIXY_BUF_SIZE 17
 
 enum message_validity_t {
     MESSAGE_EMPTY,
@@ -15,47 +37,37 @@ enum message_validity_t {
     MESSAGE_VALID_BLOCK
 };
 
-static uint8_t pixy_buf[PIXY_BUF_SIZE];
-static size_t pixy_len;
-static uint8_t blob_buffer_write_idx;
-static size_t bytes_to_sof;
-static size_t bytes_to_block;
 
-typedef struct {
-    uint16_t center_x;
-    uint16_t center_y;
-    uint16_t width;
-    uint16_t height;
-} pixy_blob;
+pixy_parser::pixy_parser() {
+    PIXY_BUF_SIZE = 17;
+    pixy_buf[PIXY_BUF_SIZE]= {};
+    pixy_len = 0;
+    blob_buffer_write_idx = 0;
+    bytes_to_sof = 0;
+    bytes_to_block = 0;
+}
 
+pixy_parser::~pixy_parser() { }
 
-static struct blob_buffer {    //Frame (full of blobs)   
-    pixy_blob blobs[10];
-    size_t count;
-} blob_buffer[2];
-
-
-void empty_pixyBuf() {
+void pixy_parser::empty_pixyBuf() {
     for (size_t i=0; i<pixy_len; i++) {
         pixy_buf[i] = 0;    
     }
     pixy_len = 0;
 }
 
-
-void print_buffer() {
+void pixy_parser::print_buffer() {
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
     printf("Buffer:");  
 //    printf("[%u, %u, %u, %u], ", (unsigned)writebuf.blobs[writebuf.count].center_x, (unsigned)writebuf.blobs[writebuf.count].center_y, (unsigned)writebuf.blobs[writebuf.count].width, (unsigned)writebuf.blobs[writebuf.count].height);
     for (size_t i=0; i<writebuf.count; i++) {
         printf("[%u, %u, %u, %u], ", (unsigned)writebuf.blobs[i].center_x, (unsigned)writebuf.blobs[i].center_y, (unsigned)writebuf.blobs[i].width, (unsigned)writebuf.blobs[i].height);
     }
-    printf("   -   Count: %u\n", (unsigned)writebuf.count);
+    probablyrintf("   -   Count: %u\n", (unsigned)writebuf.count);
 }
 
-
 // - Write Buffer
-bool write_buffer(const pixy_blob& blob1) {
+bool pixy_parser::write_buffer(const pixy_blob& blob1) {
     printf("Writing Main Buffer: Writing to %u\n", blob_buffer_write_idx);
 //    struct blob_buffer* writebuf = &blob_buffer[blob_buffer_write_idx];
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
@@ -70,7 +82,7 @@ bool write_buffer(const pixy_blob& blob1) {
 }
 
 // Blob buffer indexing swap
-void swap_buffer() {
+void pixy_parser::swap_buffer() {
     blob_buffer_write_idx = (blob_buffer_write_idx+1)%2;
     printf("Swapping Main Buffer: Swapped to %u\n", blob_buffer_write_idx);
 //    struct blob_buffer* writebuf = &blob_buffer[blob_buffer_write_idx];
@@ -79,9 +91,7 @@ void swap_buffer() {
     print_buffer();
 }
 
-
 // - read blob i:
-
 const pixy_blob* read_buffer(size_t i) {
     printf("Reading Main Buffer: Reading from %u\n", (blob_buffer_write_idx+1)%2);
 //    struct blob_buffer* readbuf = &blob_buffer[(blob_buffer_write_idx+1)%2];
@@ -175,9 +185,8 @@ static enum message_validity_t check_pixy_message(size_t pixy_len) {
     }
 }
 
-void recv_byte_pixy(uint8_t byte) {
+void pixy_parser::recv_byte_pixy(uint8_t byte) {
 //    printf("INSIDE recv_byte_pixy:-\n");
-
 // Read 2 bytes
     pixy_blob blob1;    //%%%%%%%%%%%%%%%%%%%%$$$$$$$$$$$$$$$$$$$$$$$$-------------- should I put struct as prefix or not?-------------------------%%%%%%%%%$$$$$$$$$
 
@@ -254,21 +263,4 @@ void recv_byte_pixy(uint8_t byte) {
             swap_buffer();  //swap buffer
         }        
     }    
-}
-
-int main() {
-    uint8_t input_bytes[] = {0x55, 0xAA, 0x55, 0xAA, 0x0F, 0x01, 0x01, 0x00, 0x68, 0x00, 0x52, 0x00, 0x24, 0x00, 0x30, 0x00, 0x55, 0xAA, 0x90, 0x01, 0x01, 0x00, 0xE5, 0x00, 0x56, 0x00, 0x25, 0x00, 0x2F, 0x00, 0x55, 0xAA, 0x55, 0xAA, 0x17, 0x01, 0x01, 0x00, 0x69, 0x00, 0x56, 0x00, 0x27, 0x00, 0x30, 0x00, 0x55, 0xAA, 0x17, 0x01, 0xF1, 0xE0, 0x09, 0x10, 0x46, 0x00, 0x27, 0xE0, 0x00, 0xF0, 0x55, 0xAA, 0x90, 0x01, 0x01, 0x00, 0xE5, 0x00, 0x56, 0x00, 0x25, 0x00, 0x2F, 0x00, 0x55, 0xAA, 0x90, 0x01, 0x01, 0x00, 0xE5, 0x00, 0x56, 0x00, 0x25, 0x00, 0x2F, 0x00, 0x55, 0xAA, 0x00, 0x01, 0xF1, 0x0A, 0xE0, 0x10, 0x55, 0x00, 0x15, 0x11, 0x2F, 0x00, 0x55, 0xAA, 0x55, 0xAA, 0x0F, 0x01, 0x01, 0x00, 0x68, 0x00, 0x52, 0x00, 0x24, 0x00, 0x30, 0x00};  //array of 15 bytes of SOF 
-//    uint8_t input_bytes[] = {85,  170,  85,   170,  15,   1,    1,    0,    104,   0,    82,   0,   36,    0,   48,   0,    85,  170,  144,   1,     1,    0,   229,   0,   86,    0,   37,   0,    47,    0,   85,   170,   85,  170,  23,    1,    1,   0,    105,  0,     86,   0,    39,   0,   48,    0,   85,   170,  23,   1,   241,  224,   9,    16,   70,    0,   39,   224,  0,   240,  124   };  //array of 15 bytes of SOF 
-
-    for (size_t i=0; i<=sizeof(input_bytes); i++) {
-        printf("%u, ", (unsigned)input_bytes[i]);
-    }
-
-    uint8_t input_bytes2[] = {};
-    for (size_t i=0; i<=sizeof(input_bytes); i++) {
-//        printf("Calling recv_byte_pixy : %d       :  %u\n", i, (unsigned)input_bytes[i]);
-        printf("\nNEW BYTE IN:\n");
-        recv_byte_pixy(input_bytes[i]);
-    }
-    return 0;
 }
