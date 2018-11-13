@@ -47,7 +47,7 @@ void AP_IRLock_I2C::init(int8_t bus) {
     sem = hal.util->new_semaphore();
 
     // read at 50Hz
-    printf("Starting IRLock on I2C\n");
+//    printf("Initializing IRLock on I2C\n");
 
     dev->register_periodic_callback(20000, FUNCTOR_BIND_MEMBER(&AP_IRLock_I2C::read_frames, void));
 }
@@ -57,7 +57,7 @@ void AP_IRLock_I2C::init(int8_t bus) {
    a frame
 */
 bool AP_IRLock_I2C::sync_frame_start(void) {
-    printf("\nSYNC-FRAME-START()");
+    printf("\nSYNC-FRAME-START():- ");
 
     uint32_t sync_word;
     if (!dev->transfer(nullptr, 0, (uint8_t *)&sync_word, 4)) {
@@ -67,20 +67,18 @@ bool AP_IRLock_I2C::sync_frame_start(void) {
     // record sensor successfully responded to I2C request
     _last_read_ms = AP_HAL::millis();
 
-    printf("\nSYNC_WORD BEFORE: 0x%04x \n", sync_word);
-
-//    printf("\nSYNC_BYTE BEFORE: 0x%04x \n", sync_byte);
+    printf("\nSYNC_WORD BEFORE: 0x%04x", sync_word);
 
     uint8_t count=40;
 
     int temp=0;
     while (temp < 9 && sync_word != IRLOCK_SYNC && sync_word != 0) {  
         temp ++;
-        printf("\nTemp: %u\n", temp);
+//        printf("\nTemp: %u\n", temp);
     }
 
     while (count-- && sync_word != IRLOCK_SYNC) {// && sync_word != 0) {
-        printf("\nWhile Count:\n");
+//        printf("\nWhile Count:\n");
 
         uint8_t sync_byte;
         if (!dev->transfer(nullptr, 0, &sync_byte, 1)) {
@@ -91,38 +89,35 @@ bool AP_IRLock_I2C::sync_frame_start(void) {
         }
         sync_word = (sync_word>>8)   | (uint32_t(sync_byte)<<24);
 
-        printf("\nSYNC_WORD: 0x%04x \n", sync_word);
+        printf("\nSYNC_WORD: 0x%04x", sync_word);
 //        hal.console->printf("\nSYNC_WORD: 0x%04x \n", sync_word);
     }
 
-    printf("\nSYNC_WORD AFTER: 0x%04x \n", sync_word);
-
-//    printf("\nSYNC_BYTE AFTER: 0x%u \n", sync_byte);
+    printf("\nSYNC_WORD AFTER: 0x%04x", sync_word);
 
     return sync_word == IRLOCK_SYNC;
 }
 
 
 bool AP_IRLock_I2C::sync_frame_once(void) {
-    printf("\nSYNC-FRAME-ONCE():-");
+    printf("\n\nSYNC-FRAME-ONCE():-");
 
     uint32_t sync_word;
-    if (!dev->transfer(nullptr, 0, (uint8_t *)&sync_word, 4)) {
+    if (!dev->transfer(nullptr, 0, (uint8_t *)&sync_word, 4)) { //I think this conditional makes sure if the I/P byte length is atleast 4 bytes
+        printf("\n1st condition FAIL, frame END");
         return false;
     }
 
     // record sensor successfully responded to I2C request
     _last_read_ms = AP_HAL::millis();
 
-    printf("\nSYNC_WORD BEFORE: 0x%04x \n", sync_word);
-
-//    printf("\nSYNC_BYTE BEFORE: 0x%04x \n", sync_byte);
+    printf("\nSYNC_WORD BEFORE: 0x%04x", sync_word);
 
 //    uint8_t count=40;
     uint8_t count = 0;
     while (sync_word != IRLOCK_SYNC) {// && sync_word != 0) {
         count +=1;
-        printf("\nWhile Count:%u\n", count);
+//        printf("\nWhile Count:%u\n", count);
 
         uint8_t sync_byte;
         if (!dev->transfer(nullptr, 0, &sync_byte, 1)) {
@@ -133,15 +128,15 @@ bool AP_IRLock_I2C::sync_frame_once(void) {
         }
         sync_word = (sync_word>>8)   | (uint32_t(sync_byte)<<24);
 
-        printf("\nSYNC_WORD PROCESSED: 0x%04x \n", sync_word);
+       printf("\nSYNC_WORD PROCESSED: 0x%04x ", sync_word);
 //        hal.console->printf("\nSYNC_WORD: 0x%04x \n", sync_word);
     }
 
-    printf("\nSYNC_WORD AFTER: 0x%04x \n", sync_word);
-
-//    printf("\nSYNC_BYTE AFTER: 0x%u \n", sync_byte);
+    printf("\nSYNC_WORD AFTER: 0x%04x ", sync_word);
+    printf("\nSYNC-FRAME-END!");
 
     return sync_word == IRLOCK_SYNC;
+
 }
 
 
@@ -168,13 +163,16 @@ bool AP_IRLock_I2C::read_block(struct frame &irframe) {
 
     // record sensor successfully responded to I2C request
     _last_read_ms = AP_HAL::millis();
+    
+    printf("\nBLOCK:- \nCRC: 0x%04x - SIGN: 0x%04x - X: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x", irframe.checksum, irframe.signature, irframe.pixel_x, irframe.pixel_y, irframe.pixel_size_x, irframe.pixel_size_y);
 
     /* check crc */
     uint32_t crc = irframe.signature + irframe.pixel_x + irframe.pixel_y + irframe.pixel_size_x + irframe.pixel_size_y;
     if (crc != irframe.checksum) {
-        // printf("bad crc 0x%04x 0x%04x\n", crc, irframe.checksum);
+        printf("\nBAD CRC 0x%04x 0x%04x", crc, irframe.checksum);
         return false;
     }
+    printf("\nGOOD CRC 0x%04x 0x%04x", crc, irframe.checksum);
     return true;
 }
 
@@ -243,3 +241,4 @@ bool AP_IRLock_I2C::update() {
     // return true if new data found
     return new_data;
 }
+    
