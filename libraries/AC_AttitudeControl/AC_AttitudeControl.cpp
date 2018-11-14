@@ -114,7 +114,6 @@ void AC_AttitudeControl::relax_attitude_controllers()
     // TODO add _ahrs.get_quaternion()
     _attitude_target_quat.from_rotation_matrix(_ahrs.get_rotation_body_to_ned());
     _attitude_target_quat.to_euler(_attitude_target_euler_angle.x, _attitude_target_euler_angle.y, _attitude_target_euler_angle.z);
-    _attitude_ang_error.initialise();
 
     // Initialize the angular rate variables to the current rate
     _attitude_target_ang_vel = _ahrs.get_gyro();
