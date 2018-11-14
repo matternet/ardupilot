@@ -7,6 +7,7 @@
 #include "AC_PrecLand_IRLock.h"
 #include "AC_PrecLand_SITL_Gazebo.h"
 #include "AC_PrecLand_SITL.h"
+#include <DataFlash/DataFlash.h>
 
 #include <AP_AHRS/AP_AHRS.h>
 
@@ -411,6 +412,8 @@ bool AC_PrecLand::retrieve_los_meas(Vector3f& target_vec_unit_body)
         );
 
         target_vec_unit_body = Rz*target_vec_unit_body;
+        
+        DataFlash_Class::instance()->Log_Write("LOSM", "TimeUS,LOSx,LOSy,LOSz", "Qfff", AP_HAL::micros64(), target_vec_unit_body.x, target_vec_unit_body.y, target_vec_unit_body.z);
         return true;
     } else {
         return false;
