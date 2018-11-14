@@ -153,7 +153,6 @@ void AC_AttitudeControl::relax_attitude_controllers()
     // Initialize the attitude variables to the current attitude
     _ahrs.get_quat_body_to_ned(_attitude_target_quat);
     _attitude_target_quat.to_euler(_attitude_target_euler_angle.x, _attitude_target_euler_angle.y, _attitude_target_euler_angle.z);
-    _attitude_ang_error.initialise();
 
     // Initialize the angular rate variables to the current rate
     _attitude_target_ang_vel = _ahrs.get_gyro();
