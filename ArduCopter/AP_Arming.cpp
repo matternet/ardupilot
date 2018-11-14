@@ -538,6 +538,10 @@ bool AP_Arming_Copter::mandatory_gps_checks(bool display_failure)
         check_failed(display_failure, "EKF-home variance");
         return false;
     }
+    
+    if (!compass_checks(display_failure)) {
+        return false;
+    }
 
     // if we got here all must be ok
     return true;
