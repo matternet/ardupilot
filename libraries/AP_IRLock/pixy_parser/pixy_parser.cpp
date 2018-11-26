@@ -29,44 +29,39 @@
 #include <stdbool.h>
 
 
-enum message_validity_t {
-    MESSAGE_EMPTY,
-    MESSAGE_INVALID,
-    MESSAGE_INCOMPLETE,
-    MESSAGE_VALID_SOF,
-    MESSAGE_VALID_BLOCK
-};
-
-
-pixy_parser::pixy_parser() {
-    PIXY_BUF_SIZE = 17;
-    pixy_buf[PIXY_BUF_SIZE]= {};
-    pixy_len = 0;
-    blob_buffer_write_idx = 0;
-    bytes_to_sof = 0;
-    bytes_to_block = 0;
+// Constructor - pixy_parser
+pixy_parser::pixy_parser(size_t a, uint8_t b[17], size_t c, uint8_t d, size_t e, size_t f) {
+    pixy_buf_size = a;
+    pixy_buf[17]= {};
+    pixy_len = c;
+    blob_buffer_write_idx = d;
+    bytes_to_sof = e;
+    bytes_to_block = f;
 }
 
+// Destructor - pixy_parser
 pixy_parser::~pixy_parser() { }
 
+// Method - empty_pixyBuf
 void pixy_parser::empty_pixyBuf() {
     for (size_t i=0; i<pixy_len; i++) {
-        pixy_buf[i] = 0;    
+        pixy_buf[i] = 0;
     }
     pixy_len = 0;
 }
 
+// Method - print_buffer
 void pixy_parser::print_buffer() {
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
-    printf("Buffer:");  
+    printf("Buffer:");
 //    printf("[%u, %u, %u, %u], ", (unsigned)writebuf.blobs[writebuf.count].center_x, (unsigned)writebuf.blobs[writebuf.count].center_y, (unsigned)writebuf.blobs[writebuf.count].width, (unsigned)writebuf.blobs[writebuf.count].height);
     for (size_t i=0; i<writebuf.count; i++) {
         printf("[%u, %u, %u, %u], ", (unsigned)writebuf.blobs[i].center_x, (unsigned)writebuf.blobs[i].center_y, (unsigned)writebuf.blobs[i].width, (unsigned)writebuf.blobs[i].height);
     }
-    probablyrintf("   -   Count: %u\n", (unsigned)writebuf.count);
+    printf("   -   Count: %u\n", (unsigned)writebuf.count);
 }
 
-// - Write Buffer
+// Method - write_buffer
 bool pixy_parser::write_buffer(const pixy_blob& blob1) {
     printf("Writing Main Buffer: Writing to %u\n", blob_buffer_write_idx);
 //    struct blob_buffer* writebuf = &blob_buffer[blob_buffer_write_idx];
@@ -81,6 +76,7 @@ bool pixy_parser::write_buffer(const pixy_blob& blob1) {
     return true;
 }
 
+// Method - swap_buffer
 // Blob buffer indexing swap
 void pixy_parser::swap_buffer() {
     blob_buffer_write_idx = (blob_buffer_write_idx+1)%2;
@@ -91,18 +87,20 @@ void pixy_parser::swap_buffer() {
     print_buffer();
 }
 
+// Method - read_buffer
 // - read blob i:
-const pixy_blob* read_buffer(size_t i) {
+const pixy_parser::pixy_blob* pixy_parser::read_buffer(size_t i) {
     printf("Reading Main Buffer: Reading from %u\n", (blob_buffer_write_idx+1)%2);
 //    struct blob_buffer* readbuf = &blob_buffer[(blob_buffer_write_idx+1)%2];
     struct blob_buffer& readbuf = blob_buffer[(blob_buffer_write_idx+1)%2];
     if (i >= readbuf.count) {
-        return NULL;  
-    } 
+        return NULL;
+    }
     return &readbuf.blobs[i];
 }
 
-static enum message_validity_t check_pixy_message(size_t pixy_len) {
+// Method - check_pixy_message
+enum pixy_parser::message_validity_t pixy_parser::check_pixy_message(size_t pixy_len) {
 //    printf("INSIDE CHECK_PIXY_MSG:%u\n", (unsigned)pixy_len);
 
     if (pixy_len == 0) {
@@ -119,8 +117,8 @@ static enum message_validity_t check_pixy_message(size_t pixy_len) {
     if (pixy_buf[2] == 0x55 && pixy_buf[3] == 0xAA) {
         bytes_to_sof = 16 - pixy_len;
         if (bytes_to_sof == 0) {
-            printf("SOF COMPLETE!\n");    
-        } 
+            printf("SOF COMPLETE!\n");
+        }
         else {
             printf("Need %u more bytes to complete a SOF\n", (unsigned)bytes_to_sof);
         }
@@ -128,28 +126,28 @@ static enum message_validity_t check_pixy_message(size_t pixy_len) {
     if (pixy_buf[2] != 0x55 && pixy_buf[3] != 0xAA) {
         bytes_to_block = 14 - pixy_len;
         if (bytes_to_block == 0) {
-            printf("BLOCK COMPLETE!\n");    
-        } 
+            printf("BLOCK COMPLETE!\n");
+        }
         else {
             printf("Need %u more bytes to complete a Block\n", (unsigned)bytes_to_sof);
         }
     }
-    if (pixy_len < 14) {     // Looks for at least 14 bytes i.e. "sync+blob_data" = 2+12 bytes)  
+    if (pixy_len < 14) {     // Looks for at least 14 bytes i.e. "sync+blob_data" = 2+12 bytes)
         printf("Message Length less than 14.. Message Incomplete!\n");
-        return MESSAGE_INCOMPLETE;  
+        return MESSAGE_INCOMPLETE;
     }
 
-    if (pixy_buf[2] == 0x55 && pixy_buf[3] == 0xAA) {    
+    if (pixy_buf[2] == 0x55 && pixy_buf[3] == 0xAA) {
 
         printf("2 syncs available and size >= 14..\n");
 
-        if (pixy_len >= 16) {    
+        if (pixy_len >= 16) {
 
             printf("PixyLen Greater than or equal to 16 with 2 syncs, calculating crc....\n");
             /* check crc */
-            uint16_t crc_calculated = 0;    //addition of all the message fields from 5 to 15 
+            uint16_t crc_calculated = 0;    //addition of all the message fields from 5 to 15
             for (size_t i = 6; i <= 15; i+=2) {
-                uint16_t word = pixy_buf[i] | (uint16_t)pixy_buf[i+1]<<8; 
+                uint16_t word = pixy_buf[i] | (uint16_t)pixy_buf[i+1]<<8;
                 crc_calculated += word;
             }
 
@@ -158,23 +156,23 @@ static enum message_validity_t check_pixy_message(size_t pixy_len) {
             if (crc_provided != crc_calculated) {
                 printf("CRC Failed Message Invalid!\n");
                 return MESSAGE_INVALID;
-            }            
+            }
             return MESSAGE_VALID_SOF;
         } else {
-            return MESSAGE_INCOMPLETE;  
+            return MESSAGE_INCOMPLETE;
         }
 
 
     } else {
        printf("Only 1 SYNC available and size < 16, calculating CRC....\n");
 
-        uint16_t crc_calculated = 0;    //addition of all the message fields from 5 to 15 
+        uint16_t crc_calculated = 0;    //addition of all the message fields from 5 to 15
         for (size_t i = 4; i <= 13; i+=2) {
-            uint16_t word = pixy_buf[i] | (uint16_t)pixy_buf[i+1]<<8; 
+            uint16_t word = pixy_buf[i] | (uint16_t)pixy_buf[i+1]<<8;
             crc_calculated += word;
         }
         uint16_t crc_provided;  //Getting true crc by concatinating 4 & 5 message fields(original crc) into a single 16 bit
-        crc_provided = pixy_buf[2] | (uint16_t)pixy_buf[3]<<8;        
+        crc_provided = pixy_buf[2] | (uint16_t)pixy_buf[3]<<8;
         printf("Crc calculated: %u Crc provided: %u\n", (unsigned)crc_calculated, (unsigned)crc_provided);
 
         if (crc_provided != crc_calculated) {
@@ -185,6 +183,7 @@ static enum message_validity_t check_pixy_message(size_t pixy_len) {
     }
 }
 
+// Method - recv_byte_pixy
 void pixy_parser::recv_byte_pixy(uint8_t byte) {
 //    printf("INSIDE recv_byte_pixy:-\n");
 // Read 2 bytes
@@ -195,18 +194,18 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
     printf("The byte inputted is: %u and pixylen is %u\n", byte, (unsigned)pixy_len);
     pixy_buf[pixy_len++] = byte;        // Append byte to buffer
 
-    enum message_validity_t validity = check_pixy_message(pixy_len);    // Call parser 
+    enum message_validity_t validity = check_pixy_message(pixy_len);    // Call parser
     printf("Validity Check Call: %d (0:empty 1:invalid 2:incomplete 3:valid_SOF 4:valid_block)\n", validity);
     printf("Pixy Len: %u\n", (unsigned)pixy_len);
-    printf("Pixy_buf: ");   
+    printf("Pixy_buf: ");
     for (size_t i=0; i<17; i++) {
         printf("%u, ", pixy_buf[i]);
-    }   
+    }
     printf("\n");
 
     if (validity == MESSAGE_VALID_SOF) {
 //        pixy_frame_received(pixy_len, pixy_buf);
-        
+
         if (!(writebuf.count >= 10)) {
             if (writebuf.count != 0) {
                 swap_buffer();  //swap buffer
@@ -238,7 +237,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
     if (validity == MESSAGE_VALID_BLOCK) {     ///-----------------------------how can I store the block inside a frame?-----------------
         if (!(writebuf.count >= 10)) {
             blob1.center_x = pixy_buf[6] | (uint16_t)pixy_buf[7]<<8; //Extract blob information
-            blob1.center_x = pixy_buf[8] | (uint16_t)pixy_buf[9]<<8; 
+            blob1.center_x = pixy_buf[8] | (uint16_t)pixy_buf[9]<<8;
             blob1.width = pixy_buf[10] | (uint16_t)pixy_buf[11]<<8;
             blob1.height = pixy_buf[12] | (uint16_t)pixy_buf[13]<<8;
             printf("@@@SEE THIS----   [%u, %u, %u, %u], ", (unsigned)blob1.center_x, (unsigned)blob1.center_y, (unsigned)blob1.width, (unsigned)blob1.height);
@@ -261,6 +260,6 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
 
         if (writebuf.count < 10 && writebuf.count != 0) {
             swap_buffer();  //swap buffer
-        }        
-    }    
+        }
+    }
 }
