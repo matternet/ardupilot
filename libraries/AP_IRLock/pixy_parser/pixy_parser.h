@@ -13,6 +13,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#define PIXY_PARSER_PIXY_BUF_SIZE 17
+
 /*
     pixy_buf_size = 17;
     pixy_buf[17]= {};
@@ -24,7 +26,7 @@
 */
 class pixy_parser {
     public:
-        pixy_parser(size_t, uint8_t[], size_t, uint8_t, size_t, size_t);
+        pixy_parser();
         ~pixy_parser();
         void empty_pixyBuf(void);
         void print_buffer(void);
@@ -57,8 +59,7 @@ class pixy_parser {
         const pixy_blob* read_buffer(size_t i);
         enum message_validity_t check_pixy_message(size_t pixy_len);
 
-        size_t pixy_buf_size;
-        uint8_t pixy_buf[17];
+        uint8_t pixy_buf[PIXY_PARSER_PIXY_BUF_SIZE];
         size_t pixy_len;
         uint8_t blob_buffer_write_idx;
         size_t bytes_to_sof;
