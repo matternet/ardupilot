@@ -34,6 +34,7 @@
 #include <uavcan/equipment/indication/RGB565.hpp>
 
 #include <uavcan/equipment/power/BatteryInfo.hpp>
+#include <uavcan/protocol/NodeStatus.hpp>
 #include <com/matternet/equipment/uwb/RangeObservation.hpp>
 
 extern const AP_HAL::HAL& hal;
@@ -88,6 +89,12 @@ const AP_Param::GroupInfo AP_UAVCAN::var_info[] = {
 #define CAN_PERIODIC_TX_TIMEOUT_MS 2
 
 struct precland_uwb_range_s precland_uwb_range;
+
+static void node_status_cb(const uavcan::ReceivedDataStructure<uavcan::protocol::NodeStatus>& msg) {
+    if (DataFlash_Class::instance()) {
+        DataFlash_Class::instance()->Log_Write("CSTA", "TimeUS,Src,Up,Hlt,Mode,SubMode,VStat", "QBIBBBH", AP_HAL::micros64(), msg.getSrcNodeID(), msg.uptime_sec, msg.health, msg.mode, msg.sub_mode, msg.vendor_specific_status_code);
+    }
+}
 
 static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equipment::uwb::RangeObservation>& msg) {
     precland_uwb_range.valid = true;
@@ -494,6 +501,19 @@ bool AP_UAVCAN::try_init(void)
 
     uavcan::Subscriber<uavcan::equipment::gnss::Fix> *gnss_fix;
     gnss_fix = new uavcan::Subscriber<uavcan::equipment::gnss::Fix>(*node);
+
+
+    uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation> *uwb_range;
+    uwb_range = new uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation>(*node);
+
+    uavcan::Subscriber<uavcan::protocol::NodeStatus> *node_status;
+    node_status = new uavcan::Subscriber<uavcan::protocol::NodeStatus>(*node);
+
+    const int node_status_start_res = node_status->start(node_status_cb);
+    if (node_status_start_res < 0) {
+        debug_uavcan(1, "UAVCAN node status subscriber start problem\n\r");
+        return false;
+    }
 
     uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation> *uwb_range;
     uwb_range = new uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation>(*node);
