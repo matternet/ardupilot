@@ -18,6 +18,12 @@
  * *
  */
 
+#ifdef PIXY_PARSER_USE_ASSERT
+#define PIXY_PARSER_ASSERT(x) {assert(x);}
+#else
+#define PIXY_PARSER_ASSERT(x) {}
+#endif
+
 #include "pixy_parser.h"
 
 #include <stdint.h>
@@ -27,16 +33,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <assert.h>
 
 
 // Constructor - pixy_parser
-pixy_parser::pixy_parser(size_t a, uint8_t b[17], size_t c, uint8_t d, size_t e, size_t f) {
-    pixy_buf_size = a;
-    pixy_buf[17]= {};
-    pixy_len = c;
-    blob_buffer_write_idx = d;
-    bytes_to_sof = e;
-    bytes_to_block = f;
+pixy_parser::pixy_parser() {
+    pixy_len = 0;
+    blob_buffer_write_idx = 0;
+    bytes_to_sof = 0;
+    bytes_to_block = 0;
+    blob_buffer[blob_buffer_write_idx].count = 0;
 }
 
 // Destructor - pixy_parser
@@ -48,6 +54,11 @@ void pixy_parser::empty_pixyBuf() {
         pixy_buf[i] = 0;
     }
     pixy_len = 0;
+
+    printf("\n--------------------------AFTER EMPTY: ");
+    for (size_t i=0; i<pixy_len; i++) {
+        printf("%u, ", (unsigned)pixy_buf[i]);
+    }
 }
 
 // Method - print_buffer
@@ -62,15 +73,15 @@ void pixy_parser::print_buffer() {
 }
 
 // Method - write_buffer
-bool pixy_parser::write_buffer(const pixy_blob& blob1) {
+bool pixy_parser::write_buffer(const pixy_blob& received_blob) {
     printf("Writing Main Buffer: Writing to %u\n", blob_buffer_write_idx);
 //    struct blob_buffer* writebuf = &blob_buffer[blob_buffer_write_idx];
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
     if (writebuf.count >= 10) {
         return false;
     }
-    writebuf.blobs[writebuf.count] = blob1;
-    printf("SEE THIS----   [%u, %u, %u, %u], ", (unsigned)blob1.center_x, (unsigned)blob1.center_y, (unsigned)blob1.width, (unsigned)blob1.height);
+    writebuf.blobs[writebuf.count] = received_blob;
+    printf("SEE THIS----   [%u, %u, %u, %u], ", (unsigned)received_blob.center_x, (unsigned)received_blob.center_y, (unsigned)received_blob.width, (unsigned)received_blob.height);
     writebuf.count++;
     print_buffer();
     return true;
@@ -187,70 +198,64 @@ enum pixy_parser::message_validity_t pixy_parser::check_pixy_message(size_t pixy
 void pixy_parser::recv_byte_pixy(uint8_t byte) {
 //    printf("INSIDE recv_byte_pixy:-\n");
 // Read 2 bytes
-    pixy_blob blob1;    //%%%%%%%%%%%%%%%%%%%%$$$$$$$$$$$$$$$$$$$$$$$$-------------- should I put struct as prefix or not?-------------------------%%%%%%%%%$$$$$$$$$
+    //%%%%%%%%%%%%%%%%%%%%$$$$$$$$$$$$$$$$$$$$$$$$-------------- should I put struct as prefix or not?-------------------------%%%%%%%%%$$$$$$$$$
 
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
 
     printf("The byte inputted is: %u and pixylen is %u\n", byte, (unsigned)pixy_len);
+
+    PIXY_PARSER_ASSERT(pixy_len < PIXY_PARSER_PIXY_BUF_SIZE);
+    if (pixy_len >= PIXY_PARSER_PIXY_BUF_SIZE) {
+        // This should never happen.
+        empty_pixyBuf();
+    }
+
     pixy_buf[pixy_len++] = byte;        // Append byte to buffer
 
     enum message_validity_t validity = check_pixy_message(pixy_len);    // Call parser
     printf("Validity Check Call: %d (0:empty 1:invalid 2:incomplete 3:valid_SOF 4:valid_block)\n", validity);
     printf("Pixy Len: %u\n", (unsigned)pixy_len);
     printf("Pixy_buf: ");
-    for (size_t i=0; i<17; i++) {
+    for (size_t i=0; i<PIXY_PARSER_PIXY_BUF_SIZE; i++) {
         printf("%u, ", pixy_buf[i]);
     }
     printf("\n");
 
     if (validity == MESSAGE_VALID_SOF) {
-//        pixy_frame_received(pixy_len, pixy_buf);
-
         if (!(writebuf.count >= 10)) {
+            pixy_blob received_blob;
+            received_blob.center_x = pixy_buf[8] | (uint16_t)pixy_buf[9]<<8;    //Extract blob information
+            received_blob.center_y = pixy_buf[10] | (uint16_t)pixy_buf[11]<<8;
+            received_blob.width = pixy_buf[12] | (uint16_t)pixy_buf[13]<<8;
+            received_blob.height = pixy_buf[14] | (uint16_t)pixy_buf[15]<<8;
+
             if (writebuf.count != 0) {
                 swap_buffer();  //swap buffer
 
-                blob1.center_x = pixy_buf[8] | (uint16_t)pixy_buf[9]<<8;    //Extract blob information
-                blob1.center_y = pixy_buf[10] | (uint16_t)pixy_buf[11]<<8;
-                blob1.width = pixy_buf[12] | (uint16_t)pixy_buf[13]<<8;
-                blob1.height = pixy_buf[14] | (uint16_t)pixy_buf[15]<<8;
-
                 writebuf.count = 0;     //Turn the count to 0
-                printf("@@@SEE THIS----   [%u, %u, %u, %u], ", (unsigned)blob1.center_x, (unsigned)blob1.center_y, (unsigned)blob1.width, (unsigned)blob1.height);
+                printf("@@@SEE THIS----   [%u, %u, %u, %u], ", (unsigned)received_blob.center_x, (unsigned)received_blob.center_y, (unsigned)received_blob.width, (unsigned)received_blob.height);
 
-                write_buffer(blob1);  //Writing inside the buffer(the count increment happens inside the write_buffer())
-                empty_pixyBuf();    //Emptying The pixy_buf once read the SOF into 'writebuf'
-
+                write_buffer(received_blob);  //Writing inside the buffer(the count increment happens inside the write_buffer())
             }
             else {
-                write_buffer(blob1);    //Writing inside the buffer(the count increment happens inside the write_buffer())
-                empty_pixyBuf();    //Emptying The pixy_buf once read the SOF into 'writebuf'
-
-                printf("\n--------------------------AFTER EMPTY: ");
-                for (int i=0; i<pixy_len; i++) {
-                    printf("%u, ", (unsigned)pixy_buf[i]);
-                }
+                write_buffer(received_blob);    //Writing inside the buffer(the count increment happens inside the write_buffer())
             }
         }
+        empty_pixyBuf();
     }
 
     if (validity == MESSAGE_VALID_BLOCK) {     ///-----------------------------how can I store the block inside a frame?-----------------
         if (!(writebuf.count >= 10)) {
-            blob1.center_x = pixy_buf[6] | (uint16_t)pixy_buf[7]<<8; //Extract blob information
-            blob1.center_x = pixy_buf[8] | (uint16_t)pixy_buf[9]<<8;
-            blob1.width = pixy_buf[10] | (uint16_t)pixy_buf[11]<<8;
-            blob1.height = pixy_buf[12] | (uint16_t)pixy_buf[13]<<8;
-            printf("@@@SEE THIS----   [%u, %u, %u, %u], ", (unsigned)blob1.center_x, (unsigned)blob1.center_y, (unsigned)blob1.width, (unsigned)blob1.height);
+            pixy_blob received_blob;
+            received_blob.center_x = pixy_buf[6] | (uint16_t)pixy_buf[7]<<8; //Extract blob information
+            received_blob.center_x = pixy_buf[8] | (uint16_t)pixy_buf[9]<<8;
+            received_blob.width = pixy_buf[10] | (uint16_t)pixy_buf[11]<<8;
+            received_blob.height = pixy_buf[12] | (uint16_t)pixy_buf[13]<<8;
+            printf("@@@SEE THIS----   [%u, %u, %u, %u], ", (unsigned)received_blob.center_x, (unsigned)received_blob.center_y, (unsigned)received_blob.width, (unsigned)received_blob.height);
 
-            write_buffer(blob1);  //Writing inside the buffer
-            empty_pixyBuf();    //Emptying The pixy_buf once read the SOF into 'writebuf'
-
-            printf("\n------------------------------AFTER EMPTY: ");
-            for (int i=0; i<pixy_len; i++) {
-                printf("%u, ", (unsigned)pixy_buf[i]);
-            }
-
+            write_buffer(received_blob);  //Writing inside the buffer
         }
+        empty_pixyBuf();    //Emptying The pixy_buf once read the SOF into 'writebuf'
     }
 
     if (validity == MESSAGE_INVALID) {  // If message invalid, wait and read 2 bytes
