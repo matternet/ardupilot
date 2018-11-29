@@ -1,3 +1,4 @@
+
 /*
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -111,7 +112,7 @@ const pixy_parser::pixy_blob* pixy_parser::read_buffer(size_t i) {
 }
 
 // Method - check_pixy_message
-enum pixy_parser::message_validity_t pixy_parser::check_pixy_message(size_t pixy_len) {
+enum pixy_parser::message_validity_t pixy_parser::check_pixy_message() {
 //    printf("INSIDE CHECK_PIXY_MSG:%u\n", (unsigned)pixy_len);
 
     if (pixy_len == 0) {
@@ -202,6 +203,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
 
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
 
+
     printf("The byte inputted is: %u and pixylen is %u\n", byte, (unsigned)pixy_len);
 
     PIXY_PARSER_ASSERT(pixy_len < PIXY_PARSER_PIXY_BUF_SIZE);
@@ -212,7 +214,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
 
     pixy_buf[pixy_len++] = byte;        // Append byte to buffer
 
-    enum message_validity_t validity = check_pixy_message(pixy_len);    // Call parser
+    enum message_validity_t validity = check_pixy_message();    // Call parser
     printf("Validity Check Call: %d (0:empty 1:invalid 2:incomplete 3:valid_SOF 4:valid_block)\n", validity);
     printf("Pixy Len: %u\n", (unsigned)pixy_len);
     printf("Pixy_buf: ");
@@ -248,7 +250,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
         if (!(writebuf.count >= 10)) {
             pixy_blob received_blob;
             received_blob.center_x = pixy_buf[6] | (uint16_t)pixy_buf[7]<<8; //Extract blob information
-            received_blob.center_x = pixy_buf[8] | (uint16_t)pixy_buf[9]<<8;
+            received_blob.center_y = pixy_buf[8] | (uint16_t)pixy_buf[9]<<8;
             received_blob.width = pixy_buf[10] | (uint16_t)pixy_buf[11]<<8;
             received_blob.height = pixy_buf[12] | (uint16_t)pixy_buf[13]<<8;
             printf("@@@SEE THIS----   [%u, %u, %u, %u], ", (unsigned)received_blob.center_x, (unsigned)received_blob.center_y, (unsigned)received_blob.width, (unsigned)received_blob.height);
@@ -261,7 +263,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
     if (validity == MESSAGE_INVALID) {  // If message invalid, wait and read 2 bytes
         pixy_len--;     ///----------------------------------------QUES----------------------------------------------
         memmove(pixy_buf, pixy_buf+1, pixy_len);    // This discards the first block of the pixy_buf and makes pixy_buf have everything except the fisrt block value
-        validity = check_pixy_message(pixy_len);
+        validity = check_pixy_message();
 
         if (writebuf.count < 10 && writebuf.count != 0) {
             swap_buffer();  //swap buffer

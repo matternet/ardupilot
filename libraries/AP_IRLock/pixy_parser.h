@@ -1,3 +1,4 @@
+
 /*
  * pixy_parser.h
  *
@@ -26,20 +27,25 @@
 */
 class pixy_parser {
     public:
-        pixy_parser();
-        ~pixy_parser();
-        void empty_pixyBuf(void);
-        void print_buffer(void);
-        void swap_buffer(void);
-        void recv_byte_pixy(uint8_t byte);
 
-    private:
         typedef struct {
             uint16_t center_x;
             uint16_t center_y;
             uint16_t width;
             uint16_t height;
         } pixy_blob;
+
+        pixy_parser();
+        ~pixy_parser();
+        void empty_pixyBuf(void);
+        void print_buffer(void);
+        void swap_buffer(void);
+        void recv_byte_pixy(uint8_t byte);
+        const pixy_blob* read_buffer(size_t i);
+
+
+
+    private:
 
         struct blob_buffer {    //Frame (full of blobs)
             pixy_blob blobs[10];
@@ -56,8 +62,7 @@ class pixy_parser {
         };
 
         bool write_buffer(const pixy_blob& blob1);
-        const pixy_blob* read_buffer(size_t i);
-        enum message_validity_t check_pixy_message(size_t pixy_len);
+        enum message_validity_t check_pixy_message();
 
         uint8_t pixy_buf[PIXY_PARSER_PIXY_BUF_SIZE];
         size_t pixy_len;

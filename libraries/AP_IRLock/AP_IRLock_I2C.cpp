@@ -3,12 +3,10 @@
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -28,9 +26,9 @@
 
 extern const AP_HAL::HAL& hal;
 
-#define IRLOCK_I2C_ADDRESS		0x54
+#define IRLOCK_I2C_ADDRESS      0x54
 
-#define IRLOCK_SYNC			0xAA55AA55
+#define IRLOCK_SYNC         0xAA55AA55
 
 #define IRLOCK_SYNC1         0xAA55
 
@@ -56,88 +54,6 @@ void AP_IRLock_I2C::init(int8_t bus) {
    synchronise with frame start. We expect 0xAA55AA55 at the start of
    a frame
 */
-bool AP_IRLock_I2C::sync_frame_start(void) {
-    printf("\nSYNC-FRAME-START():- ");
-
-    uint32_t sync_word;
-    if (!dev->transfer(nullptr, 0, (uint8_t *)&sync_word, 4)) {
-        return false;
-    }
-
-    // record sensor successfully responded to I2C request
-    _last_read_ms = AP_HAL::millis();
-
-    printf("\nSYNC_WORD BEFORE: 0x%04x", sync_word);
-
-    uint8_t count=40;
-
-    int temp=0;
-    while (temp < 9 && sync_word != IRLOCK_SYNC && sync_word != 0) {  
-        temp ++;
-//        printf("\nTemp: %u\n", temp);
-    }
-
-    while (count-- && sync_word != IRLOCK_SYNC) {// && sync_word != 0) {
-//        printf("\nWhile Count:\n");
-
-        uint8_t sync_byte;
-        if (!dev->transfer(nullptr, 0, &sync_byte, 1)) {
-            return false;
-        }
-        if (sync_byte == 0) {
-            break;
-        }
-        sync_word = (sync_word>>8)   | (uint32_t(sync_byte)<<24);
-
-        printf("\nSYNC_WORD: 0x%04x", sync_word);
-//        hal.console->printf("\nSYNC_WORD: 0x%04x \n", sync_word);
-    }
-
-    printf("\nSYNC_WORD AFTER: 0x%04x", sync_word);
-
-    return sync_word == IRLOCK_SYNC;
-}
-
-
-bool AP_IRLock_I2C::sync_frame_once(void) {
-    printf("\n\nSYNC-FRAME-ONCE():-");
-
-    uint32_t sync_word;
-    if (!dev->transfer(nullptr, 0, (uint8_t *)&sync_word, 4)) { //I think this conditional makes sure if the I/P byte length is atleast 4 bytes
-        printf("\n1st condition FAIL, frame END");
-        return false;
-    }
-
-    // record sensor successfully responded to I2C request
-    _last_read_ms = AP_HAL::millis();
-
-    printf("\nSYNC_WORD BEFORE: 0x%04x", sync_word);
-
-//    uint8_t count=40;
-    uint8_t count = 0;
-    while (sync_word != IRLOCK_SYNC) {// && sync_word != 0) {
-        count +=1;
-//        printf("\nWhile Count:%u\n", count);
-
-        uint8_t sync_byte;
-        if (!dev->transfer(nullptr, 0, &sync_byte, 1)) {
-            return false;
-        }
-        if (sync_byte == 0) {
-            break;
-        }
-        sync_word = (sync_word>>8)   | (uint32_t(sync_byte)<<24);
-
-       printf("\nSYNC_WORD PROCESSED: 0x%04x ", sync_word);
-//        hal.console->printf("\nSYNC_WORD: 0x%04x \n", sync_word);
-    }
-
-    printf("\nSYNC_WORD AFTER: 0x%04x ", sync_word);
-    printf("\nSYNC-FRAME-END!");
-
-    return sync_word == IRLOCK_SYNC;
-
-}
 
 
 
@@ -153,50 +69,45 @@ void AP_IRLock_I2C::pixel_to_1M_plane(float pix_x, float pix_y, float &ret_x, fl
                                                             4.79331390531725e-6f*((pix_y - 100.0f)*(pix_y - 100.0f)) - 1.0f);
 }
 
-/*
-  read a frame from sensor
-*/
-bool AP_IRLock_I2C::read_block(struct frame &irframe) {
-    if (!dev->transfer(nullptr, 0, (uint8_t*)&irframe, sizeof(irframe))) {
-        return false;
-    }
 
-    // record sensor successfully responded to I2C request
-    _last_read_ms = AP_HAL::millis();
-    
-    printf("\nBLOCK:- \nCRC: 0x%04x - SIGN: 0x%04x - X: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x", irframe.checksum, irframe.signature, irframe.pixel_x, irframe.pixel_y, irframe.pixel_size_x, irframe.pixel_size_y);
-
-    /* check crc */
-    uint32_t crc = irframe.signature + irframe.pixel_x + irframe.pixel_y + irframe.pixel_size_x + irframe.pixel_size_y;
-    if (crc != irframe.checksum) {
-        printf("\nBAD CRC 0x%04x 0x%04x", crc, irframe.checksum);
-        return false;
-    }
-    printf("\nGOOD CRC 0x%04x 0x%04x", crc, irframe.checksum);
-    return true;
-}
 
 void AP_IRLock_I2C::read_frames(void) {
     uint8_t buf[142];
-    dev->transfer(nullptr, 0, buf, 142);
+    dev->transfer(nullptr, 0, buf, 16);
+    const pixy_parser::pixy_blob* temp;
+
+    for (size_t i=0; i<16; i++) {
+        pixyObj.recv_byte_pixy(buf[i]);
+        temp = pixyObj.read_buffer(i);
+        printf("\n\n\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", temp->center_x, temp->center_y, temp->width, temp->height);
+    }
+
+    printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&------------------OUT");
+    printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", temp->center_x, temp->center_y, temp->width, temp->height);
+
+
+//    pixyObj.pixy_blob* temp = pixyObj.read_buffer(i);
+
+
+
+
+
     // printf("\nSTART: \n");
-
-
-    if (!sync_frame_once()) {  //It just sync's the frame
-        return;
-    }
+//    if (!sync_frame_once()) {  //It just sync's the frame
+//        return;
+//    }
  
-    struct frame irframe;
+//    struct frame irframe;
     
-    if (!read_block(irframe)) { // Try reading blobs until I get a sync (Nope! does not work!)  
-        return;
-    }
+//    if (!read_block(irframe)) { // Try reading blobs until I get a sync (Nope! does not work!)  
+//        return;
+//    }
 
 
-    int16_t corner1_pix_x = irframe.pixel_x - irframe.pixel_size_x/2;
-    int16_t corner1_pix_y = irframe.pixel_y - irframe.pixel_size_y/2;
-    int16_t corner2_pix_x = irframe.pixel_x + irframe.pixel_size_x/2;
-    int16_t corner2_pix_y = irframe.pixel_y + irframe.pixel_size_y/2;
+    int16_t corner1_pix_x = temp->center_x - temp->width/2;
+    int16_t corner1_pix_y = temp->center_y - temp->height/2;
+    int16_t corner2_pix_x = temp->center_x + temp->width/2;
+    int16_t corner2_pix_y = temp->center_y + temp->height/2;
 
     float corner1_pos_x, corner1_pos_y, corner2_pos_x, corner2_pos_y;
     pixel_to_1M_plane(corner1_pix_x, corner1_pix_y, corner1_pos_x, corner1_pos_y);
@@ -212,16 +123,6 @@ void AP_IRLock_I2C::read_frames(void) {
         sem->give();
     }
 
-#if 0
-    // debugging
-    static uint32_t lastt;
-    if (_target_info.timestamp - lastt > 2000) {
-        lastt = _target_info.timestamp;
-        printf("pos_x:%.5f pos_y:%.5f size_x:%.6f size_y:%.5f\n", 
-               _target_info.pos_x, _target_info.pos_y,
-               _target_info.size_x, _target_info.size_y);
-    }
-#endif
 }
 
 // retrieve latest sensor data - returns true if new data is available
@@ -241,4 +142,3 @@ bool AP_IRLock_I2C::update() {
     // return true if new data found
     return new_data;
 }
-    
