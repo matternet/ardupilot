@@ -28,9 +28,7 @@ extern const AP_HAL::HAL& hal;
 
 #define IRLOCK_I2C_ADDRESS      0x54
 
-#define IRLOCK_SYNC         0xAA55AA55
 
-#define IRLOCK_SYNC1         0xAA55
 
 void AP_IRLock_I2C::init(int8_t bus) {
     if (bus < 0) {
@@ -41,22 +39,11 @@ void AP_IRLock_I2C::init(int8_t bus) {
     if (!dev) {
         return;
     }
-
     sem = hal.util->new_semaphore();
 
-    // read at 50Hz
 //    printf("Initializing IRLock on I2C\n");
-
-    dev->register_periodic_callback(20000, FUNCTOR_BIND_MEMBER(&AP_IRLock_I2C::read_frames, void));
+    dev->register_periodic_callback(200, FUNCTOR_BIND_MEMBER(&AP_IRLock_I2C::read_frames, void));
 }
-
-/*
-   synchronise with frame start. We expect 0xAA55AA55 at the start of
-   a frame
-*/
-
-
-
 
 /*
   converts IRLOCK pixels to a position on a normal plane 1m in front of the lens
@@ -72,37 +59,22 @@ void AP_IRLock_I2C::pixel_to_1M_plane(float pix_x, float pix_y, float &ret_x, fl
 
 
 void AP_IRLock_I2C::read_frames(void) {
-    uint8_t buf[142];
+    uint8_t buf[16];
     dev->transfer(nullptr, 0, buf, 16);
-    const pixy_parser::pixy_blob* temp;
 
     for (size_t i=0; i<16; i++) {
         pixyObj.recv_byte_pixy(buf[i]);
-        temp = pixyObj.read_buffer(i);
-        printf("\n\n\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", temp->center_x, temp->center_y, temp->width, temp->height);
     }
 
-    printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&------------------OUT");
-    printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", temp->center_x, temp->center_y, temp->width, temp->height);
+    const pixy_parser::pixy_blob* temp;
+    temp = pixyObj.read_buffer(0);
 
-
-//    pixyObj.pixy_blob* temp = pixyObj.read_buffer(i);
-
-
-
-
-
-    // printf("\nSTART: \n");
-//    if (!sync_frame_once()) {  //It just sync's the frame
-//        return;
-//    }
- 
-//    struct frame irframe;
-    
-//    if (!read_block(irframe)) { // Try reading blobs until I get a sync (Nope! does not work!)  
-//        return;
-//    }
-
+    if (temp != nullptr) {
+        printf("\n\n\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", temp->center_x, temp->center_y, temp->width, temp->height);
+    }
+//}
+//    printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&------------------OUT");
+//    printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", temp->center_x, temp->center_y, temp->width, temp->height);
 
     int16_t corner1_pix_x = temp->center_x - temp->width/2;
     int16_t corner1_pix_y = temp->center_y - temp->height/2;
@@ -122,6 +94,12 @@ void AP_IRLock_I2C::read_frames(void) {
         _target_info.size_y = corner2_pos_y-corner1_pos_y;
         sem->give();
     }
+
+
+//
+//    }
+//
+
 
 }
 
