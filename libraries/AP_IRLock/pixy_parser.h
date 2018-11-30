@@ -27,6 +27,7 @@
 */
 class pixy_parser {
     public:
+        bool if_swap_buffer;
 
         typedef struct {
             uint16_t center_x;
@@ -72,7 +73,7 @@ class pixy_parser {
 };
 
 
-
+     
 
 
 

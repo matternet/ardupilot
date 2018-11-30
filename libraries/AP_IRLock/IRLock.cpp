@@ -1,3 +1,4 @@
+
 /*
  * IRLock.cpp
  *
@@ -17,8 +18,8 @@ bool IRLock::get_angle_to_target_rad(float &x_angle_rad, float &y_angle_rad) con
     }
 
     // use data from first (largest) object
-    x_angle_rad = atanf(_target_info.pos_x);
-    y_angle_rad = atanf(_target_info.pos_y);
+    x_angle_rad = atanf(_target_info[0].pos_x);
+    y_angle_rad = atanf(_target_info[0].pos_y);
     return true;
 }
 
@@ -32,8 +33,8 @@ bool IRLock::get_unit_vector_body(Vector3f& ret) const
     }
 
     // use data from first (largest) object
-    ret.x = -_target_info.pos_y;
-    ret.y = _target_info.pos_x;
+    ret.x = -_target_info[0].pos_y;
+    ret.y = _target_info[0].pos_x;
     ret.z = 1.0f;
     ret /= ret.length();
     return true;
