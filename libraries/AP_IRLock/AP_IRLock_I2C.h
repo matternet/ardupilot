@@ -23,7 +23,9 @@ private:
 
     void read_frames(void);
     void pixel_to_1M_plane(float pix_x, float pix_y, float &ret_x, float &ret_y);
+//    void convert_pixy_data(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 
     AP_HAL::Semaphore *sem;
     uint32_t _last_read_ms;
+    size_t target_count;
 };

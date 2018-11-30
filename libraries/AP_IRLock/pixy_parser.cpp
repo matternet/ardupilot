@@ -44,7 +44,7 @@ pixy_parser::pixy_parser() {
     bytes_to_sof = 0;
     bytes_to_block = 0;
     blob_buffer[blob_buffer_write_idx].count = 0;
-//    if_swap_buffer = 0;
+    if_swap_buffer = 0;
 }
 
 // Destructor - pixy_parser
@@ -201,6 +201,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
 //    // printf("INSIDE recv_byte_pixy:-\n");
 // Read 2 bytes
     //%%%%%%%%%%%%%%%%%%%%$$$$$$$$$$$$$$$$$$$$$$$$-------------- should I put struct as prefix or not?-------------------------%%%%%%%%%$$$$$$$$$
+//    printf("\n----  IF_SWAP BEFORE:  %d", if_swap_buffer);
 
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
 
@@ -234,7 +235,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
 
             if (writebuf.count != 0) {
                 swap_buffer();  //swap buffer
-//                if_swap_buffer = 1; 
+                if_swap_buffer = 1; 
 
                 writebuf.count = 0;     //Turn the count to 0
                 // printf("@@@SEE THIS----   [%u, %u, %u, %u], ", (unsigned)received_blob.center_x, (unsigned)received_blob.center_y, (unsigned)received_blob.width, (unsigned)received_blob.height);
@@ -269,7 +270,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
 
         if (writebuf.count < 10 && writebuf.count != 0) {
             swap_buffer();  //swap buffer
-//            if_swap_buffer = 1;
+            if_swap_buffer = 1;
         }
     }
 }

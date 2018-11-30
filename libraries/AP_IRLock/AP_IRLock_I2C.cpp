@@ -56,44 +56,79 @@ void AP_IRLock_I2C::pixel_to_1M_plane(float pix_x, float pix_y, float &ret_x, fl
                                                             4.79331390531725e-6f*((pix_y - 100.0f)*(pix_y - 100.0f)) - 1.0f);
 }
 
+//void AP_IRLock_I2C::convert_pixy_data(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+//}
 
 
 void AP_IRLock_I2C::read_frames(void) {
     uint8_t buf[16];
     dev->transfer(nullptr, 0, buf, 16);
 
+    pixyObj.if_swap_buffer = 0;
+
     for (size_t i=0; i<16; i++) {
         pixyObj.recv_byte_pixy(buf[i]);
     }
 
-    const pixy_parser::pixy_blob* temp;
-    temp = pixyObj.read_buffer(0);
+                    // if (pixy parser just swapped buffers) {  ----------$$
+                    //    take semaphore                    -----------$$
+                    //    CONVERT frame
+                    // copy frame data from pixy parser to target info array
+                    //    update target_count
+                    //    update frame_timestamp_us    ->    uint32_t timestamp_us = micros();
+                    //    give semaphore
+        // }
+    
 
-    if (temp != nullptr) {
-        printf("\n\n\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", temp->center_x, temp->center_y, temp->width, temp->height);
-    }
+    //    printf("\n----IF_SWAP:  %d", pixyObj.if_swap_buffer);
+    if (pixyObj.if_swap_buffer) {        
+        if (sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {   //    take semaphore
+
+            const pixy_parser::pixy_blob* temp;
+            temp = pixyObj.read_buffer(0);
+
+            if (temp != nullptr) {
+                printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", temp->center_x, temp->center_y, temp->width, temp->height);
+
+//                convert_pixy_data(temp->center_x, temp->center_y, temp->width, temp->height);   //    CONVERT frame
+
+//---------------------
+                int16_t corner1_pix_x = temp->center_x - temp->width/2;
+                int16_t corner1_pix_y = temp->center_y - temp->height/2;
+                int16_t corner2_pix_x = temp->center_x + temp->width/2;
+                int16_t corner2_pix_y = temp->center_y + temp->height/2;
+                float corner1_pos_x, corner1_pos_y, corner2_pos_x, corner2_pos_y;
+                pixel_to_1M_plane(corner1_pix_x, corner1_pix_y, corner1_pos_x, corner1_pos_y);
+                pixel_to_1M_plane(corner2_pix_x, corner2_pix_y, corner2_pos_x, corner2_pos_y);
+//---------------------
+
+                _target_info[target_count].pos_x = 0.5f*(corner1_pos_x+corner2_pos_x);      // copy frame data from pixy parser to target info array
+                _target_info[target_count].pos_y = 0.5f*(corner1_pos_y+corner2_pos_y);
+                _target_info[target_count].size_x = corner2_pos_x-corner1_pos_x;
+                _target_info[target_count].size_x = corner2_pos_y-corner1_pos_y;
+
+                target_count++;     //    update target_count
+                
+                _target_info[target_count].timestamp = AP_HAL::micros();       //    update frame_timestamp_us
+
+                sem->give();    //    give semaphore
+
+            } 
+        }
+    }   
+
+
+/*
+                    copy_pixy_data_to_target();
+                }
+            }            
+        }
+
+*/
+
 //}
 //    printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&------------------OUT");
 //    printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", temp->center_x, temp->center_y, temp->width, temp->height);
-
-    int16_t corner1_pix_x = temp->center_x - temp->width/2;
-    int16_t corner1_pix_y = temp->center_y - temp->height/2;
-    int16_t corner2_pix_x = temp->center_x + temp->width/2;
-    int16_t corner2_pix_y = temp->center_y + temp->height/2;
-
-    float corner1_pos_x, corner1_pos_y, corner2_pos_x, corner2_pos_y;
-    pixel_to_1M_plane(corner1_pix_x, corner1_pix_y, corner1_pos_x, corner1_pos_y);
-    pixel_to_1M_plane(corner2_pix_x, corner2_pix_y, corner2_pos_x, corner2_pos_y);
-
-    if (sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
-        /* convert to angles */
-        _target_info.timestamp = AP_HAL::millis();
-        _target_info.pos_x = 0.5f*(corner1_pos_x+corner2_pos_x);
-        _target_info.pos_y = 0.5f*(corner1_pos_y+corner2_pos_y);
-        _target_info.size_x = corner2_pos_x-corner1_pos_x;
-        _target_info.size_y = corner2_pos_y-corner1_pos_y;
-        sem->give();
-    }
 
 
 //
@@ -110,10 +145,10 @@ bool AP_IRLock_I2C::update() {
         return false;
     }
     if (sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
-        if (_last_update_ms != _target_info.timestamp) {
+        if (_last_update_ms != _target_info[0].timestamp) {
             new_data = true;
         }
-        _last_update_ms = _target_info.timestamp;
+        _last_update_ms = _target_info[0].timestamp;
         _flags.healthy = (AP_HAL::millis() - _last_read_ms < 100);
         sem->give();
     }

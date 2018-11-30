@@ -1,3 +1,4 @@
+
 /*
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -60,7 +61,7 @@ protected:
     uint32_t _last_update_ms;
 
     // irlock_target_info is a duplicate of the PX4Firmware irlock_s structure
-    typedef struct {
+    struct irlock_target_info {
         uint32_t timestamp;   // milliseconds since system start
         float pos_x;          // x-axis distance from center of image to center of target in units of tan(theta)
         float pos_y;          // y-axis distance from center of image to center of target in units of tan(theta)
@@ -68,5 +69,6 @@ protected:
         float size_y;         // size of target along y-axis in units of tan(theta)
     } irlock_target_info;
 
-    irlock_target_info _target_info;
+    struct irlock_target_info _target_info[10];
+
 };
