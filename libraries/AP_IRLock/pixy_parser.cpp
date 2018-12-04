@@ -180,7 +180,7 @@ bool pixy_parser::recv_byte_pixy(uint8_t byte) {
 //    // printf("INSIDE recv_byte_pixy:-\n");
 // Read 2 bytes
 //    printf("\n----  IF_SWAP BEFORE:  %d", if_swap_buffer);
-
+    bool if_swap = 0;
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
 
 
@@ -213,13 +213,14 @@ bool pixy_parser::recv_byte_pixy(uint8_t byte) {
 
             if (writebuf.count != 0) {
                 swap_buffer();  //swap buffer
-                if_swap_buffer = 1; 
+//                if_swap_buffer = 1;
+                if_swap = 1;
 
                 writebuf.count = 0;     //Turn the count to 0
                 // printf("@@@SEE THIS----   [%u, %u, %u, %u], ", (unsigned)received_blob.center_x, (unsigned)received_blob.center_y, (unsigned)received_blob.width, (unsigned)received_blob.height);
 
                 write_buffer(received_blob);  //Writing inside the buffer(the count increment happens inside the write_buffer())
-                return true;
+//                return true;
             }
             else {
                 write_buffer(received_blob);    //Writing inside the buffer(the count increment happens inside the write_buffer())
@@ -249,9 +250,10 @@ bool pixy_parser::recv_byte_pixy(uint8_t byte) {
 
         if (writebuf.count < PIXY_PARSER_MAX_BLOBS && writebuf.count != 0) {
             swap_buffer();  //swap buffer
-            if_swap_buffer = 1;
-            return true;
+//            if_swap_buffer = 1;
+            if_swap = 1;
+//            return true;
         }
     }
-    return false;
+    return if_swap;
 }

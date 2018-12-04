@@ -1,4 +1,4 @@
-/*
+    /*
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
@@ -31,6 +31,7 @@ extern const AP_HAL::HAL& hal;
 
 
 void AP_IRLock_I2C::init(int8_t bus) {
+    // printf("\nINIT");
     if (bus < 0) {
         // default to i2c external bus
         bus = 1;
@@ -41,8 +42,9 @@ void AP_IRLock_I2C::init(int8_t bus) {
     }
     sem = hal.util->new_semaphore();
 
-//    printf("Initializing IRLock on I2C\n");
+//    // printf("Initializing IRLock on I2C\n");
     dev->register_periodic_callback(200, FUNCTOR_BIND_MEMBER(&AP_IRLock_I2C::read_frames, void));
+    // printf("\nINIT END -----");
 }
 
 /*
@@ -50,13 +52,17 @@ void AP_IRLock_I2C::init(int8_t bus) {
   based on a characterization of IR-LOCK with the standard lens, focused such that 2.38mm of threads are exposed
  */
 void AP_IRLock_I2C::pixel_to_1M_plane(float pix_x, float pix_y, float &ret_x, float &ret_y) {
+    // printf("\nPIXEL TO 1M PLANE");
+
     ret_x = (-0.00293875727162397f*pix_x + 0.470201163459835f)/(4.43013552642296e-6f*((pix_x - 160.0f)*(pix_x - 160.0f)) +
                                                                 4.79331390531725e-6f*((pix_y - 100.0f)*(pix_y - 100.0f)) - 1.0f);
     ret_y = (-0.003056843086277f*pix_y + 0.3056843086277f)/(4.43013552642296e-6f*((pix_x - 160.0f)*(pix_x - 160.0f)) +
                                                             4.79331390531725e-6f*((pix_y - 100.0f)*(pix_y - 100.0f)) - 1.0f);
+    // printf("\nPIXEL TO 1M PLANE END-----");
 }
 
 void AP_IRLock_I2C::copy_frame_from_parser() {
+    // printf("\nCOPY FRAME FROM PARSER");
     for (size_t i=0; i<10; i++) {
         pixy_parser::pixy_blob blob; 
         if (!pixyObj.read_buffer(i, blob)) {
@@ -78,33 +84,43 @@ void AP_IRLock_I2C::copy_frame_from_parser() {
 
         target_count = i+1;
 
-//            printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", blob.center_x, blob.center_y, blob.width, blob.height);
-            printf("\nBLOCK:- \nX: %03u - Y: %03u - W: %03u - H: %03u\n\n\n", blob.center_x, blob.center_y, blob.width, blob.height);
+//            // printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", blob.center_x, blob.center_y, blob.width, blob.height);
+            // printf("\nBLOCK:- \nX: %03u - Y: %03u - W: %03u - H: %03u\n\n\n", blob.center_x, blob.center_y, blob.width, blob.height);
 
     }
     _frame_timestamp = AP_HAL::micros();                    // 6. update frame_timestamp_us
+    // printf("\nCOPY FRAME FROM PARSER END----");
+
 }
 
 void AP_IRLock_I2C::read_frames(void) {
+    // printf("\nREAD FRAMES");
     uint8_t buf[16];
     dev->transfer(nullptr, 0, buf, 16);
+    // printf("\nUPDATE CALL AFTER");
 
     for (size_t i=0; i<16; i++) {
         if (pixyObj.recv_byte_pixy(buf[i])) {
+            // printf("\nREAD FRAMES BEFORE SEMAPHORE");
+
             if (sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {   // 2.  take semaphore
                 copy_frame_from_parser();
                 sem->give();                                                                // 7. give semaphore
+                // printf("\nGIVE SEMAPHORE");
+    
             }
         }
     }
+    // printf("\nREAD FRAMES END -----");
 
-//    printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&------------------OUT");
-//    printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", blob.center_x, blob.center_y, blob.width, blob.height);
+//    // printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&------------------OUT");
+//    // printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", blob.center_yr_x, blob.center_y, blob.width, blob.height);
 
 }
 
 // retrieve latest sensor data - returns true if new data is available
 bool AP_IRLock_I2C::update() {
+    // printf("\nUPDATE");
     bool new_data = false;
     if (!dev || !sem) {
         return false;
@@ -118,5 +134,6 @@ bool AP_IRLock_I2C::update() {
         sem->give();
     }
     // return true if new data found
+    // printf("\nUPDATE END ----");
     return new_data;
-}
+}   
