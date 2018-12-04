@@ -59,16 +59,16 @@ protected:
 
     // internals
     uint32_t _last_update_ms;
+    uint32_t _frame_timestamp;   // milliseconds since system start
 
     // irlock_target_info is a duplicate of the PX4Firmware irlock_s structure
-    struct irlock_target_info {
-        uint32_t timestamp;   // milliseconds since system start
+    typedef struct {
         float pos_x;          // x-axis distance from center of image to center of target in units of tan(theta)
         float pos_y;          // y-axis distance from center of image to center of target in units of tan(theta)
         float size_x;         // size of target along x-axis in units of tan(theta)
         float size_y;         // size of target along y-axis in units of tan(theta)
     } irlock_target_info;
 
-    struct irlock_target_info _target_info[10];
+    irlock_target_info _target_info[10];
 
 };

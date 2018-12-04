@@ -22,8 +22,8 @@ private:
     AP_HAL::OwnPtr<AP_HAL::Device> dev;
 
     void read_frames(void);
+    void copy_frame_from_parser(void);
     void pixel_to_1M_plane(float pix_x, float pix_y, float &ret_x, float &ret_y);
-//    void convert_pixy_data(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 
     AP_HAL::Semaphore *sem;
     uint32_t _last_read_ms;
