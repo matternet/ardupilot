@@ -41,14 +41,8 @@
 pixy_parser::pixy_parser() {
     pixy_len = 0;
     blob_buffer_write_idx = 0;
-    bytes_to_sof = 0;
-    bytes_to_block = 0;
     blob_buffer[blob_buffer_write_idx].count = 0;
-    if_swap_buffer = 0;
 }
-
-// Destructor - pixy_parser
-pixy_parser::~pixy_parser() { }
 
 // Method - empty_pixyBuf
 void pixy_parser::empty_pixyBuf() {
@@ -79,7 +73,7 @@ bool pixy_parser::write_buffer(const pixy_blob& received_blob) {
     // printf("Writing Main Buffer: Writing to %u\n", blob_buffer_write_idx);
 //    struct blob_buffer* writebuf = &blob_buffer[blob_buffer_write_idx];
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
-    if (writebuf.count >= 10) {
+    if (writebuf.count >= PIXY_PARSER_MAX_BLOBS) {
         return false;
     }
     writebuf.blobs[writebuf.count] = received_blob;
@@ -102,17 +96,19 @@ void pixy_parser::swap_buffer() {
 
 // Method - read_buffer
 // - read blob i:
-const pixy_parser::pixy_blob* pixy_parser::read_buffer(size_t i) {
+ bool pixy_parser::read_buffer(size_t i, pixy_parser::pixy_blob& ret) {
     // printf("Reading Main Buffer: Reading from %u\n", (blob_buffer_write_idx+1)%2);
 //    struct blob_buffer* readbuf = &blob_buffer[(blob_buffer_write_idx+1)%2];
     struct blob_buffer& readbuf = blob_buffer[(blob_buffer_write_idx+1)%2];
-    if (i >= readbuf.count) {
-        return NULL;
+    if ( i >= PIXY_PARSER_MAX_BLOBS || i >= readbuf.count) {
+        return false;
     }
-    return &readbuf.blobs[i];
+    ret = readbuf.blobs[i];
+    return true;
 }
 
 // Method - check_pixy_message
+// Checks Validity of a inpyt byte stream
 enum pixy_parser::message_validity_t pixy_parser::check_pixy_message() {
 //    // printf("INSIDE CHECK_PIXY_MSG:%u\n", (unsigned)pixy_len);
 
@@ -126,24 +122,6 @@ enum pixy_parser::message_validity_t pixy_parser::check_pixy_message() {
     if (pixy_len >= 2 && pixy_buf[1] != 0xAA) {   //checking if 2nd byte of the message is 0xAA   (Combined it verifies if the message is 0x55AA)
         // printf("Second block not 0xAA .. Message Invalid!\n");
         return MESSAGE_INVALID;
-    }
-    if (pixy_buf[2] == 0x55 && pixy_buf[3] == 0xAA) {
-        bytes_to_sof = 16 - pixy_len;
-        if (bytes_to_sof == 0) {
-            // printf("SOF COMPLETE!\n");
-        }
-        else {
-            // printf("Need %u more bytes to complete a SOF\n", (unsigned)bytes_to_sof);
-        }
-    }
-    if (pixy_buf[2] != 0x55 && pixy_buf[3] != 0xAA) {
-        bytes_to_block = 14 - pixy_len;
-        if (bytes_to_block == 0) {
-            // printf("BLOCK COMPLETE!\n");
-        }
-        else {
-            // printf("Need %u more bytes to complete a Block\n", (unsigned)bytes_to_sof);
-        }
     }
     if (pixy_len < 14) {     // Looks for at least 14 bytes i.e. "sync+blob_data" = 2+12 bytes)
         // printf("Message Length less than 14.. Message Incomplete!\n");
@@ -197,10 +175,10 @@ enum pixy_parser::message_validity_t pixy_parser::check_pixy_message() {
 }
 
 // Method - recv_byte_pixy
-void pixy_parser::recv_byte_pixy(uint8_t byte) {
+// Logicbase of Pixy_parser. Receives the byte from here and adds into pixyBuf if valid.
+bool pixy_parser::recv_byte_pixy(uint8_t byte) {
 //    // printf("INSIDE recv_byte_pixy:-\n");
 // Read 2 bytes
-    //%%%%%%%%%%%%%%%%%%%%$$$$$$$$$$$$$$$$$$$$$$$$-------------- should I put struct as prefix or not?-------------------------%%%%%%%%%$$$$$$$$$
 //    printf("\n----  IF_SWAP BEFORE:  %d", if_swap_buffer);
 
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
@@ -220,13 +198,13 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
     // printf("Validity Check Call: %d (0:empty 1:invalid 2:incomplete 3:valid_SOF 4:valid_block)\n", validity);
     // printf("Pixy Len: %u\n", (unsigned)pixy_len);
     // printf("Pixy_buf: ");
-    for (size_t i=0; i<PIXY_PARSER_PIXY_BUF_SIZE; i++) {
+//    for (size_t i=0; i<PIXY_PARSER_PIXY_BUF_SIZE; i++) {
         // printf("%u, ", pixy_buf[i]);
-    }
+//    }
     // printf("\n");
 
     if (validity == MESSAGE_VALID_SOF) {
-        if (!(writebuf.count >= 10)) {
+        if (!(writebuf.count >= PIXY_PARSER_MAX_BLOBS)) {
             pixy_blob received_blob;
             received_blob.center_x = pixy_buf[8] | (uint16_t)pixy_buf[9]<<8;    //Extract blob information
             received_blob.center_y = pixy_buf[10] | (uint16_t)pixy_buf[11]<<8;
@@ -241,6 +219,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
                 // printf("@@@SEE THIS----   [%u, %u, %u, %u], ", (unsigned)received_blob.center_x, (unsigned)received_blob.center_y, (unsigned)received_blob.width, (unsigned)received_blob.height);
 
                 write_buffer(received_blob);  //Writing inside the buffer(the count increment happens inside the write_buffer())
+                return true;
             }
             else {
                 write_buffer(received_blob);    //Writing inside the buffer(the count increment happens inside the write_buffer())
@@ -250,7 +229,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
     }
 
     if (validity == MESSAGE_VALID_BLOCK) {     ///-----------------------------how can I store the block inside a frame?-----------------
-        if (!(writebuf.count >= 10)) {
+        if (!(writebuf.count >= PIXY_PARSER_MAX_BLOBS)) {
             pixy_blob received_blob;
             received_blob.center_x = pixy_buf[6] | (uint16_t)pixy_buf[7]<<8; //Extract blob information
             received_blob.center_y = pixy_buf[8] | (uint16_t)pixy_buf[9]<<8;
@@ -260,7 +239,7 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
 
             write_buffer(received_blob);  //Writing inside the buffer
         }
-        empty_pixyBuf();    //Emptying The pixy_buf once read the SOF into 'writebuf'
+        empty_pixyBuf();    //Emptying The pixy_buf once read the SOF into 'writebuf'       
     }
 
     if (validity == MESSAGE_INVALID) {  // If message invalid, wait and read 2 bytes
@@ -268,9 +247,11 @@ void pixy_parser::recv_byte_pixy(uint8_t byte) {
         memmove(pixy_buf, pixy_buf+1, pixy_len);    // This discards the first block of the pixy_buf and makes pixy_buf have everything except the fisrt block value
         validity = check_pixy_message();
 
-        if (writebuf.count < 10 && writebuf.count != 0) {
+        if (writebuf.count < PIXY_PARSER_MAX_BLOBS && writebuf.count != 0) {
             swap_buffer();  //swap buffer
             if_swap_buffer = 1;
+            return true;
         }
     }
+    return false;
 }

@@ -15,20 +15,10 @@
 #include <string.h>
 
 #define PIXY_PARSER_PIXY_BUF_SIZE 17
+#define PIXY_PARSER_MAX_BLOBS 10
 
-/*
-    pixy_buf_size = 17;
-    pixy_buf[17]= {};
-    pixy_len = 0;
-    blob_buffer_write_idx = 0;
-    bytes_to_sof = 0;
-    bytes_to_block = 0;
-}
-*/
 class pixy_parser {
     public:
-        bool if_swap_buffer;
-
         typedef struct {
             uint16_t center_x;
             uint16_t center_y;
@@ -37,19 +27,16 @@ class pixy_parser {
         } pixy_blob;
 
         pixy_parser();
-        ~pixy_parser();
         void empty_pixyBuf(void);
         void print_buffer(void);
         void swap_buffer(void);
-        void recv_byte_pixy(uint8_t byte);
-        const pixy_blob* read_buffer(size_t i);
-
-
+        bool recv_byte_pixy(uint8_t byte);
+        bool read_buffer(size_t i, pixy_blob& ret);
 
     private:
 
         struct blob_buffer {    //Frame (full of blobs)
-            pixy_blob blobs[10];
+            pixy_blob blobs[PIXY_PARSER_MAX_BLOBS];
             size_t count;
         } blob_buffer[2];
 
@@ -68,8 +55,6 @@ class pixy_parser {
         uint8_t pixy_buf[PIXY_PARSER_PIXY_BUF_SIZE];
         size_t pixy_len;
         uint8_t blob_buffer_write_idx;
-        size_t bytes_to_sof;
-        size_t bytes_to_block;
 };
 
 
