@@ -203,6 +203,17 @@ bool pixy_parser::recv_byte_pixy(uint8_t byte) {
 //    }
     // printf("\n");
 
+
+/*
+    if (writebuf.count > 1) {
+        if (!AP_HAL::millis() <= multiple_count_start_timestamp + 500) {
+            multiple_count_start_timestamp = AP_HAL::millis(); 
+        }
+    }
+
+*/
+
+
     if (validity == MESSAGE_VALID_SOF) {
         if (!(writebuf.count >= PIXY_PARSER_MAX_BLOBS)) {
             pixy_blob received_blob;

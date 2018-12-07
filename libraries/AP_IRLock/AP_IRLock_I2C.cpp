@@ -77,18 +77,21 @@ void AP_IRLock_I2C::copy_frame_from_parser() {
         pixel_to_1M_plane(corner1_pix_x, corner1_pix_y, corner1_pos_x, corner1_pos_y);
         pixel_to_1M_plane(corner2_pix_x, corner2_pix_y, corner2_pos_x, corner2_pos_y);
 
-        _target_info[target_count].pos_x = 0.5f*(corner1_pos_x+corner2_pos_x);      // 4. copy frame data from pixy parser to target info array
-        _target_info[target_count].pos_y = 0.5f*(corner1_pos_y+corner2_pos_y);
-        _target_info[target_count].size_x = corner2_pos_x-corner1_pos_x;
-        _target_info[target_count].size_x = corner2_pos_y-corner1_pos_y;
+        _target_info[i].pos_x = 0.5f*(corner1_pos_x+corner2_pos_x);      // 4. copy frame data from pixy parser to target info array
+        _target_info[i].pos_y = 0.5f*(corner1_pos_y+corner2_pos_y);
+        _target_info[i].size_x = corner2_pos_x-corner1_pos_x;
+        _target_info[i].size_x = corner2_pos_y-corner1_pos_y;
 
-        target_count = i+1;
+        _num_targets = i+1;
+//        printf("\n Num_targets in the loop: %u", _num_targets);
 
 //            // printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", blob.center_x, blob.center_y, blob.width, blob.height);
-            // printf("\nBLOCK:- \nX: %03u - Y: %03u - W: %03u - H: %03u\n\n\n", blob.center_x, blob.center_y, blob.width, blob.height);
-
+            //  printf("\nBLOCK:- \nX: %03u - Y: %03u - W: %03u - H: %03u\n\n\n", blob.center_x, blob.center_y, blob.width, blob.height);
     }
-    _frame_timestamp = AP_HAL::micros();                    // 6. update frame_timestamp_us
+
+    _frame_timestamp = AP_HAL::millis();                    // 6. update frame_timestamp_us
+//    printf("\nFrame Timestamp Init: %u", _frame_timestamp);    
+
     // printf("\nCOPY FRAME FROM PARSER END----");
 
 }
@@ -123,14 +126,16 @@ bool AP_IRLock_I2C::update() {
     // printf("\nUPDATE");
     bool new_data = false;
     if (!dev || !sem) {
-        return false;
+            return false;
     }
     if (sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
         if (_last_update_ms != _frame_timestamp) {
             new_data = true;
         }
         _last_update_ms = _frame_timestamp;
-        _flags.healthy = (AP_HAL::millis() - _last_read_ms < 100);
+        _flags.healthy = (AP_HAL::millis() - _last_update_ms < 100);
+//        printf("\nHEALTHY COMPARE STATUS: %u", _flags.healthy);    
+//        printf("\nHEALTHY COMPARISON (AP_HAL::millis(): %u - _last_read_ms: %u < 100)", AP_HAL::millis(), _last_update_ms);    
         sem->give();
     }
     // return true if new data found

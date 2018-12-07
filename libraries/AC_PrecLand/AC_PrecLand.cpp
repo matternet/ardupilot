@@ -10,6 +10,8 @@
 #include <AP_UAVCAN/AP_UAVCAN.h>
 #endif
 
+//param show PLND_type
+
 extern const AP_HAL::HAL& hal;
 
 const AP_Param::GroupInfo AC_PrecLand::var_info[] = {
@@ -177,8 +179,7 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
     }
 }
 
-bool AC_PrecLand::target_acquired()
-{
+bool AC_PrecLand::target_acquired() {
     if ((AP_HAL::millis()-_last_update_ms) >= 2000) {
         _estimator_initialized = false;
         _target_acquired = false;
@@ -186,6 +187,17 @@ bool AC_PrecLand::target_acquired()
 
     return _target_acquired;
 }
+
+void AC_PrecLand::set_target_acquired(bool _target_acquired_value) {
+    if (_target_acquired_value == false) {
+        _target_acquired = _target_acquired_value;
+        _estimator_initialized = false;
+    }
+    else {
+        _target_acquired = _target_acquired_value;
+    }
+}
+
 
 bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
 #if !HAL_WITH_UAVCAN

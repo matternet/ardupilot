@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <AP_Common/AP_Common.h>
@@ -19,7 +20,7 @@ class AC_PrecLand_IRLock : public AC_PrecLand_Backend
 public:
 
     // Constructor
-    AC_PrecLand_IRLock(const AC_PrecLand& frontend, AC_PrecLand::precland_state& state);
+    AC_PrecLand_IRLock(AC_PrecLand& frontend, AC_PrecLand::precland_state& state);
 
     // perform any required initialisation of backend
     void init() override;
@@ -37,10 +38,19 @@ public:
     // return true if there is a valid los measurement available
     bool have_los_meas() override;
 
+    void multiple_target_check(); 
+
+
 private:
     AP_IRLock_I2C irlock;
 
     Vector3f            _los_meas_body;         // unit vector in body frame pointing towards target
     bool                _have_los_meas;         // true if there is a valid measurement from the camera
     uint32_t            _los_meas_time_ms;      // system time in milliseconds when los was measured
+
+    uint32_t            _multiple_target_timestamp_log[25];    // array of timestamps when multiple targets detected
+//    uint32_t            _multiple_target_timestamp_start;    // array of timestamps when multiple targets detected
+//    uint32_t            _multiple_target_timestamp_latest;    // array of timestamps when multiple targets detected
+//    bool                _multiple_target_start_flag;
+    size_t              _index;
 };

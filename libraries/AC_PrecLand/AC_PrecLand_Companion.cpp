@@ -1,10 +1,11 @@
+
 #include <AP_HAL/AP_HAL.h>
 #include "AC_PrecLand_Companion.h"
 
 extern const AP_HAL::HAL& hal;
 
 // Constructor
-AC_PrecLand_Companion::AC_PrecLand_Companion(const AC_PrecLand& frontend, AC_PrecLand::precland_state& state)
+AC_PrecLand_Companion::AC_PrecLand_Companion(AC_PrecLand& frontend, AC_PrecLand::precland_state& state)
     : AC_PrecLand_Backend(frontend, state),
       _timestamp_us(0),
       _distance_to_target(0.0f),
