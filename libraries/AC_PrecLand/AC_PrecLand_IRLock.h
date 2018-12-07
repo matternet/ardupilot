@@ -38,6 +38,8 @@ public:
     // return true if there is a valid los measurement available
     bool have_los_meas() override;
 
+    //multiple_target_check - Checks if multiple targets detected for 500 ms continously.
+    //If yes, sets target_acquired=False which calls contingency landing
     void multiple_target_check(); 
 
 
@@ -47,10 +49,6 @@ private:
     Vector3f            _los_meas_body;         // unit vector in body frame pointing towards target
     bool                _have_los_meas;         // true if there is a valid measurement from the camera
     uint32_t            _los_meas_time_ms;      // system time in milliseconds when los was measured
-
     uint32_t            _multiple_target_timestamp_log[25];    // array of timestamps when multiple targets detected
-//    uint32_t            _multiple_target_timestamp_start;    // array of timestamps when multiple targets detected
-//    uint32_t            _multiple_target_timestamp_latest;    // array of timestamps when multiple targets detected
-//    bool                _multiple_target_start_flag;
     size_t              _index;
 };
