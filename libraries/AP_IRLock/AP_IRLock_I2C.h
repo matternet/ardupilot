@@ -18,7 +18,7 @@ public:
 
     pixy_parser pixyObj;
 
-private:
+private:    
     AP_HAL::OwnPtr<AP_HAL::Device> dev;
 
     void read_frames(void);
@@ -27,5 +27,4 @@ private:
 
     AP_HAL::Semaphore *sem;
     uint32_t _last_read_ms;
-    size_t target_count;
-};
+};  

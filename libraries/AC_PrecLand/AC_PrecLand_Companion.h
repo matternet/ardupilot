@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <AP_Common/AP_Common.h>
@@ -13,7 +14,7 @@ class AC_PrecLand_Companion : public AC_PrecLand_Backend
 {
 public:
     // Constructor
-    AC_PrecLand_Companion(const AC_PrecLand& frontend, AC_PrecLand::precland_state& state);
+    AC_PrecLand_Companion(AC_PrecLand& frontend, AC_PrecLand::precland_state& state);
 
     // perform any required initialisation of backend
     void init() override;

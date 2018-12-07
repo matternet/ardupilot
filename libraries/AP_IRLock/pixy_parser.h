@@ -32,7 +32,6 @@ class pixy_parser {
         void swap_buffer(void);
         bool recv_byte_pixy(uint8_t byte);
         bool read_buffer(size_t i, pixy_blob& ret);
-
     private:
 
         struct blob_buffer {    //Frame (full of blobs)
@@ -55,6 +54,9 @@ class pixy_parser {
         uint8_t pixy_buf[PIXY_PARSER_PIXY_BUF_SIZE];
         size_t pixy_len;
         uint8_t blob_buffer_write_idx;
+
+
+//        uint32_t multiple_count_start_timestamp;
 };
 
 

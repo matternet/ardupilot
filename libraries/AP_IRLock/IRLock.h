@@ -38,7 +38,7 @@ public:
     uint32_t last_update_ms() const { return _last_update_ms; }
 
     // returns the number of blocks in the current frame
-    size_t num_targets() const { return _flags.healthy?1:0; }
+    size_t num_targets() const { return _flags.healthy?_num_targets:0; }
 
     // retrieve latest sensor data - returns true if new data is available
     virtual bool update() = 0;
@@ -70,5 +70,6 @@ protected:
     } irlock_target_info;
 
     irlock_target_info _target_info[10];
+    size_t _num_targets;
 
 };
