@@ -948,15 +948,20 @@ void AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
 void AP_GPS::send_mavlink_gps2_raw(mavlink_channel_t chan)
 {
     static uint32_t last_send_time_ms[MAVLINK_COMM_NUM_BUFFERS];
-    if (num_instances < 2 || status(1) <= AP_GPS::NO_GPS) {
-        return;
+    if (num_instances >= 2 && status(1) > AP_GPS::NO_GPS) {
+        // when we have a GPS then only send new data
+        if (last_send_time_ms[chan] == last_message_time_ms(1)) {
+            return;
+        }
+        last_send_time_ms[chan] = last_message_time_ms(1);
+    } else {
+        // when we don't have a GPS then send at 1Hz
+        uint32_t now = AP_HAL::millis();
+        if (now - last_send_time_ms[chan] < 1000) {
+            return;
+        }
+        last_send_time_ms[chan] = now;
     }
-    // when we have a GPS then only send new data
-    if (last_send_time_ms[chan] == last_message_time_ms(1)) {
-        return;
-    }
-    last_send_time_ms[chan] = last_message_time_ms(1);
-
     const Location &loc = location(1);
     mavlink_msg_gps2_raw_send(
         chan,
