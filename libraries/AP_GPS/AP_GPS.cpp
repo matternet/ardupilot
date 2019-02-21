@@ -749,10 +749,10 @@ void AP_GPS::update(void)
 
                     if (state[i].status == state[primary_instance].status && another_gps_has_1_or_more_sats) {
 
-                        bool another_gps_has_2_or_more_sats = (state[i].num_sats >= state[primary_instance].num_sats + 2);
+                        bool another_gps_has_4_or_more_sats = (state[i].num_sats >= state[primary_instance].num_sats + 4);
 
                         if ((another_gps_has_1_or_more_sats && (now - _last_instance_swap_ms) >= 20000) ||
-                            (another_gps_has_2_or_more_sats && (now - _last_instance_swap_ms) >= 5000)) {
+                            (another_gps_has_4_or_more_sats && (now - _last_instance_swap_ms) >= 5000)) {
                             // this GPS has more satellites than the
                             // current primary, switch primary. Once we switch we will
                             // then tend to stick to the new GPS as primary. We don't
