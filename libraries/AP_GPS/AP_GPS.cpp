@@ -736,7 +736,7 @@ void AP_GPS::update(void)
                 // handle switch between real GPSs
                 for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
                     if (i == primary_instance) {
-                        continue; 
+                        continue;
                     }
                     if (state[i].status > state[primary_instance].status) {
                         // we have a higher status lock, or primary is set to the blended GPS, change GPS
