@@ -693,15 +693,27 @@ void AP_GPS::update(void)
                 // handle switch between real GPSs
                 for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
                     if (i == primary_instance) {
-                        continue;
+                        continue; 
                     }
                     if (state[i].status > state[primary_instance].status) {
                         // we have a higher status lock, or primary is set to the blended GPS, change GPS
-                        primary_instance = i;
-                        _last_instance_swap_ms = now;
-                        continue;
+                        
+                        if (state[primary_instance].status < GPS_OK_FIX_3D) {
+                            primary_instance = i;
+                            _last_instance_swap_ms = now;
+                            continue;
+                        }
+                        // switch only if the currently used GPS has a 2D FIX or lower
+
+                        if (state[i].status > GPS_OK_FIX_3D) {
+                            primary_instance = i;
+                            _last_instance_swap_ms = now;
+                            continue;
+                        }
+                        // AND only if the other GPS has a DGPS FIX (the best possible fix)
                     }
 
+            /*
                     bool another_gps_has_1_or_more_sats = (state[i].num_sats >= state[primary_instance].num_sats + 1);
 
                     if (state[i].status == state[primary_instance].status && another_gps_has_1_or_more_sats) {
@@ -719,6 +731,8 @@ void AP_GPS::update(void)
                             _last_instance_swap_ms = now;
                         }
                     }
+            */
+
                 }
             }
         } else {
