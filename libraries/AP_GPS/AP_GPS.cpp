@@ -744,6 +744,8 @@ void AP_GPS::update(void)
                         if (state[primary_instance].status < GPS_OK_FIX_3D) {
                             primary_instance = i;
                             _last_instance_swap_ms = now;
+                            gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
+                            // Add alert when a switch happens
                             continue;
                         }
                         // switch only if the currently used GPS has a 2D FIX or lower
@@ -751,6 +753,8 @@ void AP_GPS::update(void)
                         if (state[i].status > GPS_OK_FIX_3D) {
                             primary_instance = i;
                             _last_instance_swap_ms = now;
+                            gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
+                            // Add alert when a switch happens
                             continue;
                         }
                         // AND only if the other GPS has a DGPS FIX (the best possible fix)
