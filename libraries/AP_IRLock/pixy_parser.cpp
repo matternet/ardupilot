@@ -57,6 +57,7 @@ void pixy_parser::empty_pixyBuf() {
     }
 }
 
+/*
 // Method - print_buffer
 void pixy_parser::print_buffer() {
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
@@ -67,6 +68,7 @@ void pixy_parser::print_buffer() {
     }
     // printf("   -   Count: %u\n", (unsigned)writebuf.count);
 }
+*/
 
 // Method - write_buffer
 bool pixy_parser::write_buffer(const pixy_blob& received_blob) {
@@ -79,7 +81,7 @@ bool pixy_parser::write_buffer(const pixy_blob& received_blob) {
     writebuf.blobs[writebuf.count] = received_blob;
     // printf("SEE THIS----   [%u, %u, %u, %u], ", (unsigned)received_blob.center_x, (unsigned)received_blob.center_y, (unsigned)received_blob.width, (unsigned)received_blob.height);
     writebuf.count++;
-    print_buffer();
+//    print_buffer();
     return true;
 }
 
@@ -90,8 +92,8 @@ void pixy_parser::swap_buffer() {
     // printf("Swapping Main Buffer: Swapped to %u\n", blob_buffer_write_idx);
 //    struct blob_buffer* writebuf = &blob_buffer[blob_buffer_write_idx];
     struct blob_buffer& writebuf = blob_buffer[blob_buffer_write_idx];
-    writebuf.count = 0;        //This is probably wront. But helps me get rid of an error!!!-----------------------------------------------------------
-    print_buffer();
+    writebuf.count = 0;        //This is probably wrong. But helps me get rid of an error!!!-----------------------------------------------------------
+//    print_buffer();
 }
 
 // Method - read_buffer

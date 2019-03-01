@@ -1,6 +1,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include "AC_PrecLand_IRLock.h"
+#include <GCS_MAVLink/GCS.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -46,6 +47,8 @@ void AC_PrecLand_IRLock::multiple_target_check()
 //    printf("\nCount: %u  --  Multiple_target_count_percentage: %u", irlock.num_targets(), multiple_target_count_percentage);     
     if (multiple_target_count_percentage >= 80) {
 //        printf("\n----------------------------------------------------------------------HIGH COUNT PERCENTAGE: %u  ------setting TARGET ACQUIRED FALSE -- %", multiple_target_count_percentage); 
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Multiple Targets Detected");
+        // Send sn alert telling multiple targets detected
         _frontend.set_target_acquired(false); 
     }
 }

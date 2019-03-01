@@ -135,7 +135,7 @@ bool AP_IRLock_I2C::update() {
         _last_update_ms = _frame_timestamp;
         _flags.healthy = (AP_HAL::millis() - _last_update_ms < 100);
 //        printf("\nHEALTHY COMPARE STATUS: %u", _flags.healthy);    
-//        printf("\nHEALTHY COMPARISON (AP_HAL::millis(): %u - _last_read_ms: %u < 100)", AP_HAL::millis(), _last_update_ms);    
+//        printf("\nHEALTHY COMPARISON (AP_HAL::millis(): %u - _last_read_ms: %u < 100)", AP_HAL::millis(), _last_update_ms);
         sem->give();
     }
     // return true if new data found
