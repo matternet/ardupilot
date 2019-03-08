@@ -738,7 +738,7 @@ void Copter::ModeAuto::takeoff_run()
         set_throttle_takeoff();
 
         // get initial alt for WP_NAVALT_MIN
-        auto_takeoff_set_start_alt();
+        copter.auto_takeoff_set_start_alt();
         return;
     }
 
