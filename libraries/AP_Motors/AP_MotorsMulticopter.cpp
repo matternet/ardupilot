@@ -281,7 +281,7 @@ float AP_MotorsMulticopter::get_current_limit_max_throttle()
 {
     AP_BattMonitor &battery = AP::battery();
 
-    float batt_voltage = constrain_float(_batt_voltage, _batt_voltage_min, _batt_voltage_max);
+    float batt_voltage = constrain_float(battery.voltage(_batt_idx), _batt_voltage_min, _batt_voltage_max);
 
     float batt_current_max = 0;
     if (!is_zero(_batt_current_max) && !is_zero(_batt_power_max) && !is_zero(batt_voltage)) {
