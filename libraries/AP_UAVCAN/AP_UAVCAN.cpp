@@ -515,17 +515,11 @@ bool AP_UAVCAN::try_init(void)
         return false;
     }
 
-    uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation> *uwb_range;
-    uwb_range = new uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation>(*node);
-
     const int uwb_range_start_res = uwb_range->start(uwb_range_cb);
     if (uwb_range_start_res < 0) {
         debug_uavcan(1, "UAVCAN UWB subscriber start problem\n\r");
         return false;
     }
-
-    uavcan::Subscriber<uavcan::equipment::gnss::Fix> *gnss_fix;
-    gnss_fix = new uavcan::Subscriber<uavcan::equipment::gnss::Fix>(*node);
 
     const int gnss_fix_start_res = gnss_fix->start(gnss_fix_cb_arr[_uavcan_i]);
     if (gnss_fix_start_res < 0) {
