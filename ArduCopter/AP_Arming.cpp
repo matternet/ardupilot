@@ -662,9 +662,11 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
     }
 #endif
 
-    if (!copter.parachute.get_mttr_prearm_pass()) {
-        check_failed(true, "FTS state");
-        return false;
+    if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_FTS)) {
+        if (copter.parachute.enabled() && !copter.parachute.get_mttr_prearm_pass()) {
+            check_failed(true, "FTS state");
+            return false;
+        }
     }
 
     // always check if the current mode allows arming
