@@ -197,6 +197,7 @@ bool Copter::set_mode(Mode::Number mode, ModeReason reason)
          control_mode == Mode::Number::ALT_HOLD ||
          control_mode == Mode::Number::LOITER) &&
         reason == ModeReason::GCS_COMMAND) {
+        gcs().send_text(MAV_SEVERITY_WARNING,"Refusing GCS mode change");
         return false;
     }
 
