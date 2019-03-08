@@ -38,6 +38,7 @@
 #include <AP_VisualOdom/AP_VisualOdom.h>
 #include <AP_OpticalFlow/OpticalFlow.h>
 #include <AP_Baro/AP_Baro.h>
+#include <AP_Parachute/AP_Parachute.h>
 
 #include <stdio.h>
 
@@ -2152,11 +2153,6 @@ void GCS_MAVLINK::send_autopilot_version() const
         uid,
         uid2
     );
-
-
-    char mttr_fts_text[50];
-    snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", copter.parachute.mttr_get_fts_version());
-    send_text(MAV_SEVERITY_INFO, mttr_fts_text);
 }
 
 
@@ -3124,6 +3120,9 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
 
     case MAVLINK_MSG_ID_AUTOPILOT_VERSION_REQUEST:
         handle_send_autopilot_version(msg);
+        char mttr_fts_text[50];
+        snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", AP_Parachute::mttr_get_fts_version());
+        send_text(MAV_SEVERITY_INFO, mttr_fts_text);
         break;
 
     case MAVLINK_MSG_ID_MISSION_WRITE_PARTIAL_LIST:
@@ -3300,6 +3299,9 @@ void GCS_MAVLINK::handle_common_mission_message(const mavlink_message_t &msg)
 void GCS_MAVLINK::handle_send_autopilot_version(const mavlink_message_t &msg)
 {
     send_message(MSG_AUTOPILOT_VERSION);
+    char mttr_fts_text[50];
+    snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", AP_Parachute::mttr_get_fts_version());
+    send_text(MAV_SEVERITY_INFO, mttr_fts_text);
 }
 
 void GCS_MAVLINK::send_banner()
