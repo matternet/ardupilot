@@ -443,7 +443,7 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
             }
 
             // Compute target position relative to IMU
-            Vector3f imu_pos_ned = inertial_data_delayed.Tbn * AP::ins().get_ins().get_imu_pos_offset(_ahrs.get_primary_accel_index());
+            Vector3f imu_pos_ned = inertial_data_delayed.Tbn * AP::ins().get_imu_pos_offset(_ahrs.get_primary_accel_index());
             Vector3f cam_pos_ned_rel_imu = cam_pos_ned-imu_pos_ned;
             _target_pos_rel_meas_NED = Vector3f(target_vec_unit_ned.x*dist, target_vec_unit_ned.y*dist, alt) + cam_pos_ned_rel_imu;
             return true;
@@ -507,9 +507,10 @@ void AC_PrecLand::run_output_prediction()
 void AC_PrecLand::send_landing_target(mavlink_channel_t chan)
 {
     mavlink_msg_landing_target_send(chan,
-        _last_update_ms,
-        target_acquired(),
-        MAV_FRAME_GLOBAL_TERRAIN_ALT,
-        _ekf_x.getPos()*100.0f, _ekf_y.getPos()*100.0f, 0.0f, 0.0f, 0.0f);
+                                    _last_update_ms,
+                                    target_acquired(),
+                                    MAV_FRAME_GLOBAL_TERRAIN_ALT,
+                                    _ekf_x.getPos()*100.0f, _ekf_y.getPos()*100.0f,
+                                    0.0f, 0.0f, 0.0f, 0, 0, 0, nullptr, 0, 0);
 
 }
