@@ -66,6 +66,8 @@ const AP_Param::GroupInfo AP_Parachute::var_info[] = {
     AP_GROUPEND
 };
 
+char AP_Parachute::_mttr_fts_version[16];
+
 /// enabled - enable or disable parachute release
 void AP_Parachute::enabled(bool on_off)
 {
