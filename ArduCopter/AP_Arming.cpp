@@ -545,11 +545,13 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, bool arming_from_gcs)
         }
     }
 
-    if (!copter.parachute.get_mttr_prearm_pass()) {
-        if (display_failure) {
-            gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: FTS state");
+    if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_FTS)) {
+        if (copter.parachute.enabled() && !copter.parachute.get_mttr_prearm_pass()) {
+            if (display_failure) {
+                gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: FTS state");
+            }
+            return false;
         }
-        return false;
     }
 
     for (uint8_t i=0; i<RANGEFINDER_MAX_INSTANCES; i++) {
