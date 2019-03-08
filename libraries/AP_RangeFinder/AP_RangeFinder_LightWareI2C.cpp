@@ -165,7 +165,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
         return false;
     }
 
-    for (int i = 0 ; i < expected_reply_len ; i++) {
+    for (uint32_t i = 0 ; i < expected_reply_len ; i++) {
         if (rx_bytes[i] != expected_reply[i]) {
             return false;
         }
@@ -375,7 +375,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
                        const char *string_identifier,
                        uint16_t &val) {
     size_t string_identifier_len = strlen(string_identifier);
-    for (int i = 0 ; i < string_identifier_len ; i++) {
+    for (uint32_t i = 0 ; i < string_identifier_len ; i++) {
         if (stream_buf[*p_num_processed_chars] != string_identifier[i]) {
             return false;
         }
