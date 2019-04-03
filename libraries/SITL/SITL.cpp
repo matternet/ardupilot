@@ -196,6 +196,7 @@ const AP_Param::GroupInfo SITL::var_info2[] = {
     AP_SUBGROUPINFO(tonealarm_sim, "TA_", 57, SITL, ToneAlarm),
 
     AP_GROUPINFO("MAG_SCALING",    60, SITL,  mag_scaling, 1),
+    AP_GROUPINFO("PLAND_OFS",   61, SITL,  precland_offset, 0),
 
     AP_GROUPEND
 
