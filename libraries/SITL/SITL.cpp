@@ -349,6 +349,8 @@ const AP_Param::GroupInfo SITL::var_gps[] = {
     AP_GROUPINFO("INIT_LON_OFS",  46, SITL,  gps_init_lon_ofs, 0),
     AP_GROUPINFO("INIT_ALT_OFS",  47, SITL,  gps_init_alt_ofs, 0),
 
+    AP_GROUPINFO("GPS_DRIFT_S",   48, SITL,  gps_drift_spd, 0),
+
     AP_GROUPEND
 };
 
