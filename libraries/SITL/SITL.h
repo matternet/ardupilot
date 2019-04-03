@@ -192,6 +192,8 @@ public:
     // differential pressure sensor tube order
     AP_Int8 arspd_signflip;
 
+    AP_Vector3f precland_offset; // XYZ offset of precland target from SITL origin
+
     uint16_t irlock_port;
 
     void simstate_send(mavlink_channel_t chan);
