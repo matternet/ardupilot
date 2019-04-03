@@ -288,6 +288,8 @@ public:
         AP_Float hdg; // 0 to 360
     } opos;
 
+    AP_Vector3f precland_offset; // XYZ offset of precland target from SITL origin
+
     uint16_t irlock_port;
 
     void simstate_send(mavlink_channel_t chan);
