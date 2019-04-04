@@ -553,6 +553,8 @@ public:
         const AP_InertialSensor &_ins = AP::ins();
         _ins.get_delta_velocity(ret);
         dt = _ins.get_delta_velocity_dt();
+        ret = get_rotation_body_to_ned() * get_rotation_autopilot_body_to_vehicle_body() * ret;
+        ret.z += GRAVITY_MSS*dt;
     }
 
     // create a view
