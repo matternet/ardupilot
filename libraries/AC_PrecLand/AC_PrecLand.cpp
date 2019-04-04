@@ -195,9 +195,17 @@ bool AC_PrecLand::target_acquired()
     return _target_acquired;
 }
 
-bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
+bool AC_PrecLand::get_target_distance_m(float &ret) {
 #if !HAL_WITH_UAVCAN
-    return false;
+    if (!_backend) {
+        return false;
+    }
+    float dist = _backend->distance_to_target();
+    if (dist <= 0) {
+        return false;
+    }
+    ret = dist;
+    return true;
 #else
     if (!target_acquired()) {
         return false;
@@ -208,7 +216,7 @@ bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
         return false;
     }
 
-    ret = precland_uwb_range.range * 100;
+    ret = precland_uwb_range.range;
     return true;
 #endif
 }
