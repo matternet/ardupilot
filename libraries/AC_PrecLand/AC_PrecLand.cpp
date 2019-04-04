@@ -6,6 +6,7 @@
 #include "AC_PrecLand_SITL_Gazebo.h"
 #include "AC_PrecLand_SITL.h"
 #include <DataFlash/DataFlash.h>
+#include <GCS_MAVLink/GCS.h>
 
 #if HAL_WITH_UAVCAN
 #include <AP_UAVCAN/AP_UAVCAN.h>
@@ -307,6 +308,9 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
                 _target_vel_rel_est_NE.y = -inertial_data_delayed.inertialNavVelocity.y;
 
                 _last_update_ms = AP_HAL::millis();
+                if (!_target_acquired) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "PL: target acquired %.1m", rangefinder_alt_m);
+                }
                 _target_acquired = true;
             }
 
@@ -362,6 +366,7 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
                 if (AP_HAL::millis()-_last_update_ms > 200) {
                     _estimator_initialized = false;
                 } else if (AP_HAL::millis()-_estimator_init_ms > 2000) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "PL: target acquired2");
                     _target_acquired = true;
                 }
             }
@@ -375,6 +380,22 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
 
                 run_output_prediction();
             }
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+            {
+                static uint32_t last_print_ms;
+                uint32_t now = AP_HAL::millis();
+                if (now - last_print_ms >= 1000) {
+                    last_print_ms = now;
+                    float dist = 0;
+                    get_target_distance_m(dist);
+                    printf("PL: TA:%u pos=(%.1f,%.1f) d=%.1f\n",
+                           _target_acquired,
+                           _target_pos_rel_est_NE.x,
+                           _target_pos_rel_est_NE.y,
+                           dist);
+                }
+            }
+#endif
             break;
         }
     }
