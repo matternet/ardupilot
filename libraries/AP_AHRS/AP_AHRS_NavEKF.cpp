@@ -1300,32 +1300,24 @@ bool AP_AHRS_NavEKF::getMagOffsets(uint8_t mag_idx, Vector3f &magOffsets) const
 void AP_AHRS_NavEKF::getCorrectedDeltaVelocityNED(Vector3f& ret, float& dt) const
 {
     const EKF_TYPE type = active_EKF_type();
-    if (type == EKF_TYPE2 || type == EKF_TYPE3) {
-        int8_t imu_idx = 0;
-        Vector3f accel_bias;
-        if (type == EKF_TYPE2) {
-            accel_bias.zero();
-            imu_idx = EKF2.getPrimaryCoreIMUIndex();
-            EKF2.getAccelZBias(-1,accel_bias.z);
-        } else if (type == EKF_TYPE3) {
-            imu_idx = EKF3.getPrimaryCoreIMUIndex();
-            EKF3.getAccelBias(-1,accel_bias);
-        }
-        if (imu_idx == -1) {
-            // should never happen, call parent implementation in this scenario
-            AP_AHRS::getCorrectedDeltaVelocityNED(ret, dt);
-            return;
-        }
-        ret.zero();
-        const AP_InertialSensor &_ins = AP::ins();
-        _ins.get_delta_velocity((uint8_t)imu_idx, ret);
-        dt = _ins.get_delta_velocity_dt((uint8_t)imu_idx);
-        ret -= accel_bias*dt;
-        ret = _dcm_matrix * get_rotation_autopilot_body_to_vehicle_body() * ret;
-        ret.z += GRAVITY_MSS*dt;
-    } else {
-        AP_AHRS::getCorrectedDeltaVelocityNED(ret, dt);
+
+    int8_t imu_idx = 0;
+    Vector3f accel_bias;
+    if (type == EKF_TYPE2) {
+        accel_bias.zero();
+        imu_idx = EKF2.getPrimaryCoreIMUIndex();
+        EKF2.getAccelZBias(-1,accel_bias.z);
+    } else if (type == EKF_TYPE3) {
+        imu_idx = EKF3.getPrimaryCoreIMUIndex();
+        EKF3.getAccelBias(-1,accel_bias);
     }
+    ret.zero();
+    const AP_InertialSensor &_ins = AP::ins();
+    _ins.get_delta_velocity((uint8_t)imu_idx, ret);
+    dt = _ins.get_delta_velocity_dt((uint8_t)imu_idx);
+    ret -= accel_bias*dt;
+    ret = _dcm_matrix * get_rotation_autopilot_body_to_vehicle_body() * ret;
+    ret.z += GRAVITY_MSS*dt;
 }
 
 // report any reason for why the backend is refusing to initialise
