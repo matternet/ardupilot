@@ -369,6 +369,8 @@ void FlightAxis::update(const struct sitl_input &input)
 {
     WITH_SEMAPHORE(mutex);
     
+    update_external_payload(input);
+
     last_input = input;
     
     double dt_seconds = state.m_currentPhysicsTime_SEC - last_time_s;
