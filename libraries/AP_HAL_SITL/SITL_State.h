@@ -20,6 +20,7 @@
 #include <AP_Compass/AP_Compass.h>
 #include <AP_Terrain/AP_Terrain.h>
 #include <SITL/SITL.h>
+#include <SITL/SITL_Input.h>
 #include <SITL/SIM_Gimbal.h>
 #include <SITL/SIM_ADSB.h>
 #include <SITL/SIM_Vicon.h>
@@ -132,9 +133,10 @@ private:
     void _update_airspeed(float airspeed);
     void _update_gps_instance(SITL::SITL::GPSType gps_type, const struct gps_data *d, uint8_t instance);
     void _check_rc_input(void);
+    bool _read_rc_sitl_input();
     void _fdm_input_local(void);
     void _output_to_flightgear(void);
-    void _simulator_servos(SITL::Aircraft::sitl_input &input);
+    void _simulator_servos(struct sitl_input &input);
     void _simulator_output(bool synthetic_clock_mode);
     uint16_t _airspeed_sensor(float airspeed);
     uint16_t _ground_sonar();
