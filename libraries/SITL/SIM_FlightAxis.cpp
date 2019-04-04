@@ -362,6 +362,8 @@ void FlightAxis::exchange_data(const struct sitl_input &input)
  */
 void FlightAxis::update(const struct sitl_input &input)
 {
+    update_external_payload(input);
+
     last_input = input;
     exchange_data(input);
 
