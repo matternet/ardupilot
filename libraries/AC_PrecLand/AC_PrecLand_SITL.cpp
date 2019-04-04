@@ -18,6 +18,7 @@ void AC_PrecLand_SITL::update()
     if (_state.healthy && _sitl->precland_sim.last_update_ms() != _los_meas_time_ms) {
         const Vector3f position = _sitl->precland_sim.get_target_position();
         const Matrix3f &body_to_ned = AP::ahrs().get_rotation_body_to_ned();
+        _target_distance_m = position.length();
         _los_meas_body =  body_to_ned.mul_transpose(-position);
         _los_meas_body /= _los_meas_body.length();
         _have_los_meas = true;
@@ -43,6 +44,15 @@ bool AC_PrecLand_SITL::get_los_body(Vector3f& ret) {
     }
     ret = _los_meas_body;
     return true;
+}
+
+// returns distance to target in meters (0 means distance is not known)
+float AC_PrecLand_SITL::distance_to_target()
+{
+    if (AP_HAL::millis() - _los_meas_time_ms > 1000) {
+        return 0;
+    }
+    return _target_distance_m;
 }
 
 #endif
