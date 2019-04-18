@@ -1301,41 +1301,62 @@ void SITL_State::_update_gps(double latitude, double longitude, float altitude,
 }
 
 void SITL_State::_update_gps_instance(SITL::SITL::GPSType gps_type, const struct gps_data *data, uint8_t instance) {
+    struct gps_data d2 = *data;
+
+    static uint32_t start_ms;
+    uint32_t now = AP_HAL::millis();
+    if (hal.util->get_soft_armed()) {
+        if (start_ms == 0) {
+            start_ms = now;
+        }
+        float dt = (now - start_ms) * 0.001;
+        // drift to N
+        //d2.speedN += _sitl->gps_drift_spd;
+        Location loc;
+        loc.lat = d2.latitude*1.0e7;
+        loc.lng = d2.longitude*1.0e7;
+        loc.offset(dt * _sitl->gps_drift_spd, 0);
+        d2.latitude = loc.lat * 1.0e-7;
+        d2.longitude = loc.lng * 1.0e-7;
+    } else {
+        start_ms = 0;
+    }
+
     switch (gps_type) {
         case SITL::SITL::GPS_TYPE_NONE:
             // no GPS attached
             break;
 
         case SITL::SITL::GPS_TYPE_UBLOX:
-            _update_gps_ubx(data, instance);
+            _update_gps_ubx(&d2, instance);
             break;
 
         case SITL::SITL::GPS_TYPE_MTK:
-            _update_gps_mtk(data, instance);
+            _update_gps_mtk(&d2, instance);
             break;
 
         case SITL::SITL::GPS_TYPE_MTK16:
-            _update_gps_mtk16(data, instance);
+            _update_gps_mtk16(&d2, instance);
             break;
 
         case SITL::SITL::GPS_TYPE_MTK19:
-            _update_gps_mtk19(data, instance);
+            _update_gps_mtk19(&d2, instance);
             break;
 
         case SITL::SITL::GPS_TYPE_NMEA:
-            _update_gps_nmea(data, instance);
+            _update_gps_nmea(&d2, instance);
             break;
 
         case SITL::SITL::GPS_TYPE_SBP:
-            _update_gps_sbp(data, instance);
+            _update_gps_sbp(&d2, instance);
             break;
 
         case SITL::SITL::GPS_TYPE_SBP2:
-            _update_gps_sbp2(data, instance);
+            _update_gps_sbp2(&d2, instance);
             break;
 
         case SITL::SITL::GPS_TYPE_NOVA:
-            _update_gps_nova(data, instance);
+            _update_gps_nova(&d2, instance);
             break;
 
         case SITL::SITL::GPS_TYPE_FILE:
