@@ -156,6 +156,8 @@ const AP_Param::GroupInfo SITL::var_info2[] = {
     // optical flow sensor measurement noise in rad/sec
     AP_GROUPINFO("FLOW_RND",   34, SITL,  flow_noise,  0.05f),
 
+    AP_GROUPINFO("GPS_DRIFT_S", 35, SITL,  gps_drift_spd, 0),
+
     AP_GROUPEND
 };
     
