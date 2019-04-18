@@ -233,6 +233,7 @@ public:
     AP_Float temp_flight;
     AP_Float temp_tconst;
     AP_Float temp_baro_factor;
+    AP_Float gps_drift_spd;
     
     // differential pressure sensor tube order
     AP_Int8 arspd_signflip;
