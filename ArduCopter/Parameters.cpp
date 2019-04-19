@@ -1005,6 +1005,13 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
     // ID 19 reserved for TCAL (PR pending)
     // ID 20 reserved for TX_TYPE (PR pending)
+
+    // @Param: WP_NAVALT_MAX
+    // @DisplayName: Maximum navigation altitude
+    // @Description: This is the altitude in meters above which full navigation attitude can begin. This applies in auto takeoff
+    // @Range: 0 5
+    // @User: Standard
+    AP_GROUPINFO("WP_NAVALT_MAX", 28, ParametersG2, wp_navalt_max, 0),
     
     AP_GROUPEND
 };
