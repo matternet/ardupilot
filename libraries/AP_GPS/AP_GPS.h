@@ -388,6 +388,12 @@ public:
     // indicate which bit in LOG_BITMASK indicates gps logging enabled
     void set_log_gps_bit(uint32_t bit) { _log_gps_bit = bit; }
 
+    // get change in position and altitude since arming
+    bool get_pre_arm_pos_change(uint8_t instance, float &pos_change, float &alt_change) const;
+    bool get_pre_arm_pos_change(float &pos_change, float &alt_change) const {
+        return get_pre_arm_pos_change(primary_instance, pos_change, alt_change);
+    }
+
 protected:
 
     // configuration parameters
@@ -468,6 +474,8 @@ private:
     void detect_instance(uint8_t instance);
     void update_instance(uint8_t instance);
 
+    void update_position_change(uint8_t instance);
+
     /*
       buffer for re-assembling RTCM data for GPS injection.
       The 8 bit flags field in GPS_RTCM_DATA is interpreted as:
@@ -507,6 +515,12 @@ private:
     float _omega_lpf; // cutoff frequency in rad/sec of LPF applied to position offsets
     bool _output_is_blended; // true when a blended GPS solution being output
     uint8_t _blend_health_counter;  // 0 = perfectly health, 100 = very unhealthy
+
+    /*
+      track change in position and height since arming. Used for
+      pre-takeoff check
+     */
+    Location _arm_loc[GPS_MAX_RECEIVERS];
 
     // calculate the blend weight.  Returns true if blend could be calculated, false if not
     bool calc_blend_weights(void);

@@ -106,6 +106,9 @@ const AP_Param::GroupInfo SITL::var_info2[] = {
     AP_GROUPINFO("GPS_LOCKTIME", 5, SITL,  gps_lock_time, 0),
     AP_GROUPINFO("ARSPD_FAIL_P", 6, SITL,  arspd_fail_pressure, 0),
     AP_GROUPINFO("ARSPD_PITOT",  7, SITL,  arspd_fail_pitot_pressure, 0),
+
+
+    AP_GROUPINFO("GPS_DRIFT_S",  35, SITL,  gps_drift_spd, 0),
     AP_GROUPEND
 };
     

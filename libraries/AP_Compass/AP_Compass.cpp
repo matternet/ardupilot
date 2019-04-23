@@ -1010,11 +1010,15 @@ bool Compass::configured(uint8_t i)
 
 bool Compass::configured(void)
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    return true;
+#else
     bool all_configured = true;
     for(uint8_t i=0; i<get_count(); i++) {
         all_configured = all_configured && (!use_for_yaw(i) || configured(i));
     }
     return all_configured;
+#endif
 }
 
 // Update raw magnetometer values from HIL data
