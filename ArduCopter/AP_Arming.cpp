@@ -428,7 +428,7 @@ bool AP_Arming_Copter::gps_checks(bool display_failure)
 
     float hacc, vacc;
     if (!copter.gps.horizontal_accuracy(hacc) ||
-        !copter.gps.horizontal_accuracy(vacc)) {
+        !copter.gps.vertical_accuracy(vacc)) {
         if (display_failure) {
             gcs().send_text(MAV_SEVERITY_CRITICAL,"PreArm: No GPS accuracy");
         }
