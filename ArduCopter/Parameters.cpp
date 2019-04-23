@@ -1013,6 +1013,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Param: WP_NAVALT_MAX
     // @DisplayName: Maximum navigation altitude
     // @Description: This is the altitude in meters above which full navigation attitude can begin. This applies in auto takeoff
+    // @Units: m
     // @Range: 0 5
     // @User: Standard
     AP_GROUPINFO("WP_NAVALT_MAX", 28, ParametersG2, wp_navalt_max, 0),
@@ -1045,6 +1046,7 @@ const AP_Param::GroupInfo ParametersMTTR::var_info[] = {
     // @Param: TOFF_POS_CHANGE
     // @DisplayName: Maximum GPS pos change
     // @Description: This is the maximum allowed position change since arming for automatic takeoff
+    // @Units: m
     // @Range: 0 5
     // @Increment: 0.01
     // @User: Advanced
@@ -1053,6 +1055,7 @@ const AP_Param::GroupInfo ParametersMTTR::var_info[] = {
     // @Param: TOFF_ALT_CHANGE
     // @DisplayName: Maximum GPS alt change
     // @Description: This is the maximum allowed altitude change since arming for automatic takeoff
+    // @Units: m
     // @Range: 0 5
     // @Increment: 0.01
     // @User: Advanced
@@ -1061,6 +1064,7 @@ const AP_Param::GroupInfo ParametersMTTR::var_info[] = {
     // @Param: ARM_GPS_HACC
     // @DisplayName: Maximum GPS HAcc on arming
     // @Description: This is the maximum allowed GPS horizontal accuracy for arming
+    // @Units: m
     // @Range: 0 5
     // @Increment: 0.01
     // @User: Advanced
@@ -1069,6 +1073,7 @@ const AP_Param::GroupInfo ParametersMTTR::var_info[] = {
     // @Param: ARM_GPS_VACC
     // @DisplayName: Maximum GPS VAcc on arming
     // @Description: This is the maximum allowed GPS vertical accuracy for arming
+    // @Units: m
     // @Range: 0 5
     // @Increment: 0.01
     // @User: Advanced
