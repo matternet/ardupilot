@@ -172,6 +172,11 @@ void Mode::auto_takeoff_attitude_run(float target_yaw_rate)
         // tell the position controller that we have limited roll/pitch demand to prevent integrator buildup
         pos_control->set_limit_accel_xy();
 
+        // clear rate integrators till we reach min navigation altitude
+        attitude_control->get_rate_roll_pid().set_integrator(0);
+        attitude_control->get_rate_pitch_pid().set_integrator(0);
+        attitude_control->get_rate_yaw_pid().set_integrator(0);
+
         wp_nav->shift_wp_origin_to_current_pos();
     } else if (g2.wp_navalt_min > 0 && alt_cm < auto_takeoff_max_nav_alt_cm) {
         // between no nav alt and max nav alt we interpolate
