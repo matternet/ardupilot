@@ -45,7 +45,7 @@ compiler:
 
 deploy:
   provider: releases
-  api_key: "$GITHUB_DEPLOY_API_KEY"
+  api_key: "GITHUB_DEPLOY_API_KEY"
   file_glob: true
   file: "$HOME/deploy_files/*"
   on:
