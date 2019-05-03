@@ -550,6 +550,13 @@ const AP_Param::GroupInfo NavEKF2::var_info[] = {
     // @RebootRequired: True
     AP_GROUPINFO("OGN_HGT_MASK", 49, NavEKF2, _originHgtMode, 0),
 
+    // @Param: AFFINITY
+    // @DisplayName: EKF2 Sensor Addinity Options
+    // @Description: These options control the affinity between sensor instances and EKF cores
+    // @User: Advanced
+    // @Bitmask: 0:EnableGPSAffinity,1:EnableBaroAffinity,2:EnableCompassAffinity,3:EnableAirspeedAffinity
+    AP_GROUPINFO("AFFINITY", 52, NavEKF2, _affinity, 0),
+    
     AP_GROUPEND
 };
 
@@ -602,7 +609,11 @@ void NavEKF2::check_log_write(void)
         logging.log_compass = false;
     }
     if (logging.log_gps) {
-        DataFlash_Class::instance()->Log_Write_GPS(_ahrs->get_gps(), _ahrs->get_gps().primary_sensor(), imuSampleTime_us);
+        // log all GPS instances
+        auto &gps = _ahrs->get_gps();
+        for (uint8_t i=0; i<gps.num_sensors(); i++) {
+            DataFlash_Class::instance()->Log_Write_GPS(gps, i, imuSampleTime_us);
+        }
         logging.log_gps = false;
     }
     if (logging.log_baro) {
@@ -743,14 +754,14 @@ void NavEKF2::UpdateFilter(void)
         for (uint8_t coreIndex=0; coreIndex<num_cores; coreIndex++) {
 
             if (coreIndex != primary) {
-                // an alternative core is available for selection only if healthy and if states have been updated on this time step
-                bool altCoreAvailable = core[coreIndex].healthy() && statePredictEnabled[coreIndex];
+                // an alternative core is available for selection only if healthy
+                bool altCoreAvailable = core[coreIndex].healthy();
 
                 // If the primary core is unhealthy and another core is available, then switch now
                 // If the primary core is still healthy,then switching is optional and will only be done if
                 // a core with a significantly lower error score can be found
                 float altErrorScore = core[coreIndex].errorScore();
-                if (altCoreAvailable && (!core[primary].healthy() || altErrorScore < lowestErrorScore)) {
+                if (altCoreAvailable && (!core[newPrimaryIndex].healthy() || altErrorScore < lowestErrorScore)) {
                     newPrimaryIndex = coreIndex;
                     lowestErrorScore = altErrorScore;
                 }

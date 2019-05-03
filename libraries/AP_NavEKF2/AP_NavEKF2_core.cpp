@@ -333,7 +333,7 @@ void NavEKF2_core::InitialiseVariables()
 bool NavEKF2_core::InitialiseFilterBootstrap(void)
 {
     // If we are a plane and don't have GPS lock then don't initialise
-    if (assume_zero_sideslip() && _ahrs->get_gps().status() < AP_GPS::GPS_OK_FIX_3D) {
+    if (assume_zero_sideslip() && _ahrs->get_gps().status(preferred_gps) < AP_GPS::GPS_OK_FIX_3D) {
         statesInitialised = false;
         return false;
     }
@@ -473,6 +473,9 @@ void NavEKF2_core::UpdateFilter(bool predict)
     irqstate_t istate = irqsave();
 #endif
     hal.util->perf_begin(_perf_UpdateFilter);
+
+    // update sensor selection (for affinity)
+    update_sensor_selection();
 
     // TODO - in-flight restart method
 
