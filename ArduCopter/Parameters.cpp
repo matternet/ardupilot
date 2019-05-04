@@ -751,6 +751,9 @@ const AP_Param::Info Copter::var_info[] = {
     // @Path: ../libraries/AP_Vehicle/AP_Vehicle.cpp
     { AP_PARAM_GROUP, "", Parameters::k_param_vehicle, (const void *)&copter, {group_info : AP_Vehicle::var_info} },
 
+    // @Path: Parameters.cpp
+    GOBJECT(matternet, "",  ParametersMTTR),
+
     AP_VAREND
 };
 
@@ -1114,6 +1117,60 @@ ParametersG2::ParametersG2(void)
 {
     AP_Param::setup_object_defaults(this, var_info);
 }
+
+
+/*
+  Matternet specific parameters
+ */
+const AP_Param::GroupInfo ParametersMTTR::var_info[] = {
+
+    // @Param: TOFF_POS_CHANGE
+    // @DisplayName: Maximum GPS pos change
+    // @Description: This is the maximum allowed position change since arming for automatic takeoff
+    // @Units: m
+    // @Range: 0 5
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_GROUPINFO("TOFF_POS_CHANGE", 1, ParametersMTTR, tkoff_gps_pos_change, 1.0),
+
+    // @Param: TOFF_ALT_CHANGE
+    // @DisplayName: Maximum GPS alt change
+    // @Description: This is the maximum allowed altitude change since arming for automatic takeoff
+    // @Units: m
+    // @Range: 0 5
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_GROUPINFO("TOFF_ALT_CHANGE", 2, ParametersMTTR, tkoff_gps_alt_change, 1.0),
+
+    // @Param: ARM_GPS_HACC
+    // @DisplayName: Maximum GPS HAcc on arming
+    // @Description: This is the maximum allowed GPS horizontal accuracy for arming
+    // @Units: m
+    // @Range: 0 5
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_GROUPINFO("ARM_GPS_HACC", 3, ParametersMTTR, arm_gps_hacc, 1.0),
+
+    // @Param: ARM_GPS_VACC
+    // @DisplayName: Maximum GPS VAcc on arming
+    // @Description: This is the maximum allowed GPS vertical accuracy for arming
+    // @Units: m
+    // @Range: 0 5
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_GROUPINFO("ARM_GPS_VACC", 4, ParametersMTTR, arm_gps_vacc, 1.0),
+    
+    AP_GROUPEND
+};
+
+/*
+  constructor for matternet object
+ */
+ParametersMTTR::ParametersMTTR(void)
+{
+    AP_Param::setup_object_defaults(this, var_info);
+}
+
 
 /*
   This is a conversion table from old parameter values to new

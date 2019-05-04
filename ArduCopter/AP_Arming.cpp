@@ -460,6 +460,33 @@ bool AP_Arming_Copter::gps_checks(bool display_failure)
         return false;
     }
 
+    // call parent gps checks
+    if (!AP_Arming::gps_checks(display_failure)) {
+        AP_Notify::flags.pre_arm_gps_check = false;
+        return false;
+    }
+
+    float hacc, vacc;
+    if (!copter.gps.horizontal_accuracy(hacc) ||
+        !copter.gps.vertical_accuracy(vacc)) {
+        if (display_failure) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL,"PreArm: No GPS accuracy");
+        }
+        return false;
+    }
+    if (hacc > copter.matternet.arm_gps_hacc) {
+        if (display_failure) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "PreArm: GPS hacc %.2f", hacc);
+        }
+        return false;
+    }
+    if (vacc > copter.matternet.arm_gps_vacc) {
+        if (display_failure) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "PreArm: GPS vacc %.2f", vacc);
+        }
+        return false;
+    }
+
     // if we got here all must be ok
     AP_Notify::flags.pre_arm_gps_check = true;
     return true;
@@ -958,5 +985,28 @@ bool AP_Arming_Copter::disarm(const AP_Arming::Method method, bool do_disarm_che
 
     copter.ap.in_arming_delay = false;
 
+    return true;
+}
+
+
+/*
+  checks run before takeoff to check that GPS movement is within
+  acceptable range
+ */
+bool AP_Arming_Copter::pre_takeoff_checks(void)
+{
+    float pos_change, alt_change;
+    if (!copter.gps.get_pre_arm_pos_change(pos_change, alt_change)) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"Takeoff: no GPS data");
+        return false;
+    }
+    if (pos_change > copter.matternet.tkoff_gps_pos_change) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"Takeoff: pos change %.2f", pos_change);
+        return false;
+    }
+    if (fabsf(alt_change) > copter.matternet.tkoff_gps_alt_change) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"Takeoff: alt change %.2f", alt_change);
+        return false;
+    }
     return true;
 }
