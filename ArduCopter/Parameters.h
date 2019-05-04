@@ -53,7 +53,7 @@ public:
         k_param_software_type, // deprecated
         k_param_ins_old,                        // *** Deprecated, remove with next eeprom number change
         k_param_ins,                            // libraries/AP_InertialSensor variables
-        k_param_NavEKF2_old, // deprecated - remove
+        k_param_matternet,
         k_param_NavEKF2,
         k_param_g2, // 2nd block of parameters
         k_param_NavEKF3,
@@ -623,6 +623,23 @@ public:
     // Autonmous autorotation
     AC_Autorotation arot;
 #endif
+};
+
+/*
+  Matternet specific parameters. This is done as a separate block to
+  reduce the change of conflict on rebase
+ */
+class ParametersMTTR {
+public:
+    ParametersMTTR(void);
+
+    // var_info for holding Parameter information
+    static const struct AP_Param::GroupInfo var_info[];
+    
+    AP_Float tkoff_gps_pos_change;
+    AP_Float tkoff_gps_alt_change;
+    AP_Float arm_gps_hacc;
+    AP_Float arm_gps_vacc;
 };
 
 extern const AP_Param::Info        var_info[];

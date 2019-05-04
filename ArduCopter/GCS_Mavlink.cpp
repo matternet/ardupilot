@@ -713,6 +713,12 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
 
 #if MODE_AUTO_ENABLED == ENABLED
     case MAV_CMD_MISSION_START:
+        // when we are not yet flying we run additional
+        // pre-takeoff checks for GPS movement
+        if (copter.motors->get_desired_spool_state() < AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED &&
+            !copter.arming.pre_takeoff_checks()) {
+            return MAV_RESULT_FAILED;
+        }
         if (copter.motors->armed() &&
             copter.set_mode(Mode::Number::AUTO, ModeReason::GCS_COMMAND)) {
             copter.set_auto_armed(true);
