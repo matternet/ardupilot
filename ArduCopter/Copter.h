@@ -402,6 +402,11 @@ private:
     Mode::Number prev_control_mode;
     ModeReason prev_control_mode_reason = ModeReason::UNKNOWN;
 
+    // minimum recorded barometric alt during takeoff. Used to detect
+    // the "dip" in barometric alt that happens on takeoff
+    float takeoff_baro_min_alt_m;
+    bool takeoff_liftoff_complete;
+
     RCMapper rcmap;
 
     // intertial nav alt when we armed

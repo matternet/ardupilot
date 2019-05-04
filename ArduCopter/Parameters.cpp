@@ -1107,6 +1107,24 @@ const AP_Param::GroupInfo ParametersMTTR::var_info[] = {
     // @Increment: 0.01
     // @User: Advanced
     AP_GROUPINFO("ARM_GPS_VACC", 4, ParametersMTTR, arm_gps_vacc, 1.0),
+
+    // @Param: TOFF_BARO_DIP
+    // @DisplayName: Barometric rise for liftoff completion
+    // @Description: This is amount of rise in barometer above min reading in takeoff before we consider that liftoff has completed
+    // @Units: m
+    // @Range: 0 5
+    // @Increment: 0.01
+    // @User: Advanced
+    AP_GROUPINFO("TOFF_BARO_DIP", 5, ParametersMTTR, tkoff_baro_dip, 2.0),
+
+    // @Param: TOFF_HOV_PCT
+    // @DisplayName: Percent of hover throttle for liftoff
+    // @Description: This is percentage of hover throttle before we consider that liftoff is complete
+    // @Units: %
+    // @Range: 0 127
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("TOFF_HOV_PCT", 6, ParametersMTTR, tkoff_hover_pct, 80),
     
     AP_GROUPEND
 };
