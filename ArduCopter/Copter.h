@@ -366,6 +366,7 @@ private:
     } aux_debounce[(CH_12 - CH_7)+1];
     // altitude below which we do no navigation in auto takeoff
     float auto_takeoff_no_nav_alt_cm;
+    float auto_takeoff_max_nav_alt_cm;
 
     RCMapper rcmap;
 
