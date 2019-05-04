@@ -779,4 +779,9 @@ private:
     // RTCM3 parser for when in moving baseline base mode
     RTCM3_Parser *rtcm3_parser;
 #endif // GPS_MOVING_BASELINE
+
+    // returns hardware generation of the GPS
+    uint32_t hardware_generation() override {
+        return _hardware_generation;
+    }
 };

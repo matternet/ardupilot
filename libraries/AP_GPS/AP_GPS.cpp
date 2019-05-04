@@ -905,6 +905,7 @@ void AP_GPS::update_instance(uint8_t instance)
         if (now != 0) {
             AP::rtc().set_utc_usec(now, AP_RTC::SOURCE_GPS);
         }
+        update_position_change(instance);
     }
 #else
     (void)data_should_be_logged;
@@ -1831,6 +1832,8 @@ void AP_GPS::calc_blended_state(void)
         Write_GPS(GPS_BLENDED_INSTANCE);
     }
 #endif
+
+    update_position_change(GPS_BLENDED_INSTANCE);
 }
 #endif // GPS_BLENDED_INSTANCE
 
@@ -2012,6 +2015,35 @@ bool AP_GPS::gps_yaw_deg(uint8_t instance, float &yaw_deg, float &accuracy_deg, 
         // fall back to 10 degrees as a generic default
         accuracy_deg = 10;
     }
+    return true;
+}
+
+/*
+  update data for distance moved since arming. Used for pre-takeoff
+  check
+ */
+void AP_GPS::update_position_change(uint8_t instance)
+{
+    if (!hal.util->get_soft_armed()) {
+        _arm_loc[instance].lat = 0;
+        _arm_loc[instance].lng = 0;
+    } else if (_arm_loc[instance].lat == 0 &&
+               _arm_loc[instance].lng == 0) {
+        _arm_loc[instance] = state[instance].location;
+    }
+}
+
+/*
+  get change in position and altitude since arming
+  This is used as part of a pre-takeoff check for GPS movement
+*/
+bool AP_GPS::get_pre_arm_pos_change(uint8_t instance, float &pos_change, float &alt_change) const
+{
+    if (!hal.util->get_soft_armed()) {
+        return false;
+    }
+    pos_change = _arm_loc[instance].get_distance(state[instance].location);
+    alt_change = (_arm_loc[instance].alt - state[instance].location.alt) * 0.01;
     return true;
 }
 
