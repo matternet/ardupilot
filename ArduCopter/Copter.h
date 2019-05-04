@@ -198,6 +198,7 @@ public:
     friend class AP_Rally_Copter;
     friend class Parameters;
     friend class ParametersG2;
+    friend class ParametersMTTR;
     friend class AP_Avoidance_Copter;
 
 #if ADVANCED_FAILSAFE == ENABLED
@@ -252,6 +253,7 @@ private:
     // Global parameters are all contained within the 'g' class.
     Parameters g;
     ParametersG2 g2;
+    ParametersMTTR matternet;
 
     // main loop scheduler
     AP_Scheduler scheduler{FUNCTOR_BIND_MEMBER(&Copter::fast_loop, void)};
