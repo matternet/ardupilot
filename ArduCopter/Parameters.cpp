@@ -961,8 +961,13 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     AP_SUBGROUPINFO(arot, "AROT_", 37, ParametersG2, AC_Autorotation),
 #endif
 
-
-
+    // @Param: WP_NAVALT_MAX
+    // @DisplayName: Maximum navigation altitude
+    // @Description: This is the altitude in meters above which full navigation attitude can begin. This applies in auto takeoff
+    // @Range: 0 5
+    // @User: Standard
+    AP_GROUPINFO("WP_NAVALT_MAX", 38, ParametersG2, wp_navalt_max, 0),
+    
     AP_GROUPEND
 };
 
