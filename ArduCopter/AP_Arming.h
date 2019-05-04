@@ -27,6 +27,9 @@ public:
 
     bool rc_calibration_checks(bool display_failure) override;
 
+    // checks run before auto-takeoff on MISSION_START allowed
+    bool pre_takeoff_checks(void);
+
 protected:
 
     bool pre_arm_checks(bool display_failure) override;
