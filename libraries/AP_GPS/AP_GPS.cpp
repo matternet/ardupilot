@@ -675,6 +675,7 @@ void AP_GPS::update_instance(uint8_t instance)
     if (state[instance].status >= GPS_OK_FIX_3D) {
         const uint64_t now = time_epoch_usec(instance);
         AP::rtc().set_utc_usec(now, AP_RTC::SOURCE_GPS);
+        update_position_change(instance);
     }
 }
 
@@ -1572,6 +1573,35 @@ bool AP_GPS::prepare_for_arming(void) {
         }
     }
     return all_passed;
+}
+
+/*
+  update data for distance moved since arming. Used for pre-takeoff
+  check
+ */
+void AP_GPS::update_position_change(uint8_t instance)
+{
+    if (!hal.util->get_soft_armed()) {
+        _arm_loc[instance].lat = 0;
+        _arm_loc[instance].lng = 0;
+    } else if (_arm_loc[instance].lat == 0 &&
+               _arm_loc[instance].lng == 0) {
+        _arm_loc[instance] = state[instance].location;
+    }
+}
+
+/*
+  get change in position and altitude since arming
+  This is used as part of a pre-takeoff check for GPS movement
+*/
+bool AP_GPS::get_pre_arm_pos_change(uint8_t instance, float &pos_change, float &alt_change) const
+{
+    if (!hal.util->get_soft_armed()) {
+        return false;
+    }
+    pos_change = get_distance(_arm_loc[instance], state[instance].location);
+    alt_change = (_arm_loc[instance].alt - state[instance].location.alt) * 0.01;
+    return true;
 }
 
 namespace AP {
