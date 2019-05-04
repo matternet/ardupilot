@@ -171,6 +171,7 @@ protected:
     void auto_takeoff_attitude_run(float target_yaw_rate);
     // altitude below which we do no navigation in auto takeoff
     static float auto_takeoff_no_nav_alt_cm;
+    static float auto_takeoff_max_nav_alt_cm;
 
 public:
     // Navigation Yaw control

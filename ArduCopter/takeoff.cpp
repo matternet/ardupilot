@@ -142,10 +142,13 @@ void Mode::auto_takeoff_set_start_alt(void)
 {
     // start with our current altitude
     auto_takeoff_no_nav_alt_cm = inertial_nav.get_altitude();
-    
+    auto_takeoff_max_nav_alt_cm = inertial_nav.get_altitude();
+
     if (is_disarmed_or_landed() || !motors->get_interlock()) {
         // we are not flying, add the wp_navalt_min
         auto_takeoff_no_nav_alt_cm += g2.wp_navalt_min * 100;
+        auto_takeoff_max_nav_alt_cm += g2.wp_navalt_max * 100;
+        auto_takeoff_max_nav_alt_cm = MAX(auto_takeoff_max_nav_alt_cm,auto_takeoff_no_nav_alt_cm);
     }
 }
 
@@ -157,19 +160,32 @@ void Mode::auto_takeoff_set_start_alt(void)
 void Mode::auto_takeoff_attitude_run(float target_yaw_rate)
 {
     float nav_roll, nav_pitch;
-    
-    if (g2.wp_navalt_min > 0 && inertial_nav.get_altitude() < auto_takeoff_no_nav_alt_cm) {
-        // we haven't reached the takeoff navigation altitude yet
+
+    nav_roll = wp_nav->get_roll();
+    nav_pitch = wp_nav->get_pitch();
+
+    float alt_cm = inertial_nav.get_altitude();
+    if (g2.wp_navalt_min > 0 && alt_cm <= auto_takeoff_no_nav_alt_cm) {
+        // below no nav alt we zero roll and pitch demand
         nav_roll = 0;
         nav_pitch = 0;
         // tell the position controller that we have limited roll/pitch demand to prevent integrator buildup
         pos_control->set_limit_accel_xy();
 
         wp_nav->shift_wp_origin_to_current_pos();
-        wp_nav->wp_and_spline_init();
-    } else {
-        nav_roll = wp_nav->get_roll();
-        nav_pitch = wp_nav->get_pitch();
+    } else if (g2.wp_navalt_min > 0 && alt_cm < auto_takeoff_max_nav_alt_cm) {
+        // between no nav alt and max nav alt we interpolate
+        // roll/pitch demand
+        float lean_limit = linear_interpolate(0, aparm.angle_max,
+                                              alt_cm,
+                                              auto_takeoff_no_nav_alt_cm, auto_takeoff_max_nav_alt_cm);
+        if (fabsf(nav_roll) > lean_limit ||
+            fabsf(nav_pitch) > lean_limit) {
+            nav_roll = constrain_float(nav_roll, -lean_limit, lean_limit);
+            nav_pitch = constrain_float(nav_pitch, -lean_limit, lean_limit);
+            // tell the position controller that we have limited roll/pitch demand to prevent integrator buildup
+            pos_control->set_limit_accel_xy();
+        }
     }
     
     // roll & pitch from waypoint controller, yaw rate from pilot

@@ -485,6 +485,9 @@ public:
     // altitude at which nav control can start in takeoff
     AP_Float wp_navalt_min;
 
+    // altitude at which nav control reaches full range in takeoff
+    AP_Float wp_navalt_max;
+
 #if BUTTON_ENABLED == ENABLED
     // button checking
     AP_Button button;
