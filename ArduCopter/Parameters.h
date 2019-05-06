@@ -642,6 +642,7 @@ public:
     AP_Float arm_gps_vacc;
     AP_Float tkoff_baro_dip;
     AP_Int8 tkoff_hover_pct;
+    AP_Int8 arm_pin;
 };
 
 extern const AP_Param::Info        var_info[];
