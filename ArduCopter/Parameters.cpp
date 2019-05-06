@@ -1125,6 +1125,14 @@ const AP_Param::GroupInfo ParametersMTTR::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("TOFF_HOV_PCT", 6, ParametersMTTR, tkoff_hover_pct, 80),
+
+    // @Param: ARM_PIN
+    // @DisplayName: Pin number for armed state
+    // @Description: If set to value >= 0 then this pin will go high on arming and low on disarm
+    // @Range: -1 127
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("ARMED_PIN", 7, ParametersMTTR, arm_pin, -1),
     
     AP_GROUPEND
 };

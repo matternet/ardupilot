@@ -665,3 +665,15 @@ bool Copter::is_tradheli() const
     return false;
 #endif
 }
+
+
+/*
+  update arming pin set with ARM_PIN, if any
+ */
+void Copter::update_armed_pin(void)
+{
+    if (matternet.arm_pin != -1) {
+        hal.gpio->pinMode(matternet.arm_pin, HAL_GPIO_OUTPUT);
+        hal.gpio->write(matternet.arm_pin, motors->armed());
+    }
+}

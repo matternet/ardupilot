@@ -255,6 +255,8 @@ private:
     ParametersG2 g2;
     ParametersMTTR matternet;
 
+    void update_armed_pin();
+
     // main loop scheduler
     AP_Scheduler scheduler{FUNCTOR_BIND_MEMBER(&Copter::fast_loop, void)};
 

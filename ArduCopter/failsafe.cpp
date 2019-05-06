@@ -66,6 +66,7 @@ void Copter::failsafe_check()
         failsafe_last_timestamp = tnow;
         if(motors->armed()) {
             motors->armed(false);
+            update_armed_pin();
             motors->output();
         }
     }
