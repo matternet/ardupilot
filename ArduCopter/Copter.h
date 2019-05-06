@@ -309,6 +309,11 @@ private:
     float auto_takeoff_no_nav_alt_cm;
     float auto_takeoff_max_nav_alt_cm;
 
+    // minimum recorded barometric alt during takeoff. Used to detect
+    // the "dip" in barometric alt that happens on takeoff
+    float takeoff_baro_min_alt_m;
+    bool takeoff_liftoff_complete;
+
     RCMapper rcmap;
 
     // board specific config
