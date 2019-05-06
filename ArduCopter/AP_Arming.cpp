@@ -14,6 +14,8 @@ void AP_Arming_Copter::update(void)
     }
 
     set_pre_arm_check(pre_arm_checks(display_fail));
+
+    copter.update_armed_pin();
 }
 
 // performs pre-arm checks and arming checks
