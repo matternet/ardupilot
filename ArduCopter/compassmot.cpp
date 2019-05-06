@@ -124,6 +124,7 @@ MAV_RESULT Copter::mavlink_compassmot(const GCS_MAVLINK &gcs_chan)
     // enable motors and pass through throttle
     enable_motor_output();
     motors->armed(true);
+    update_armed_pin();
     hal.util->set_soft_armed(true);
 
     // initialise run time
@@ -234,6 +235,7 @@ MAV_RESULT Copter::mavlink_compassmot(const GCS_MAVLINK &gcs_chan)
     // stop motors
     motors->output_min();
     motors->armed(false);
+    update_armed_pin();
     hal.util->set_soft_armed(false);
 
     // set and save motor compensation

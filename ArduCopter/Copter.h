@@ -234,6 +234,8 @@ private:
     ParametersG2 g2;
     ParametersMTTR matternet;
 
+    void update_armed_pin();
+
     // used to detect MAVLink acks from GCS to stop compassmot
     uint8_t command_ack_counter;
 

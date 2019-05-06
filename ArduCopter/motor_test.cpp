@@ -41,6 +41,7 @@ void Copter::motor_test_output()
                 motor_test_start_ms = now;
                 if (!motors->armed()) {
                     motors->armed(true);
+                    update_armed_pin();
                     hal.util->set_soft_armed(true);
                 }
             }
@@ -152,6 +153,7 @@ MAV_RESULT Copter::mavlink_motor_test_start(const GCS_MAVLINK &gcs_chan, uint8_t
             if (!motors->armed()) {
                 enable_motor_output();
                 motors->armed(true);
+                update_armed_pin();
                 hal.util->set_soft_armed(true);
             }
 
@@ -198,6 +200,7 @@ void Copter::motor_test_stop()
 
     // disarm motors
     motors->armed(false);
+    update_armed_pin();
     hal.util->set_soft_armed(false);
 
     // reset timeout

@@ -178,6 +178,7 @@ void Copter::esc_calibration_setup()
 
     // arm and enable motors
     motors->armed(true);
+    update_armed_pin();
     SRV_Channels::enable_by_mask(motors->get_motor_mask());
     hal.util->set_soft_armed(true);
 }

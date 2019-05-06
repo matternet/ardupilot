@@ -17,6 +17,8 @@ void AP_Arming_Copter::update(void)
     }
 
     pre_arm_checks(display_fail);
+
+    copter.update_armed_pin();
 }
 
 bool AP_Arming_Copter::pre_arm_checks(bool display_failure)
@@ -895,6 +897,10 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
     // finally actually arm the motors
     copter.motors->armed(true);
 
+    copter.update_armed_pin();
+
+    AP::logger().Write_Event(DATA_ARMED);
+
     // log flight mode in case it was changed while vehicle was disarmed
     AP::logger().Write_Mode((uint8_t)copter.flightmode->mode_number(), copter.control_mode_reason);
 
@@ -971,6 +977,7 @@ bool AP_Arming_Copter::disarm(const AP_Arming::Method method, bool do_disarm_che
 
     // send disarm command to motors
     copter.motors->armed(false);
+    copter.update_armed_pin();
 
 #if MODE_AUTO_ENABLED == ENABLED
     // reset the mission
