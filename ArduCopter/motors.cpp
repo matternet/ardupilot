@@ -215,6 +215,8 @@ bool Copter::init_arm_motors(const bool arming_from_gcs, const bool do_arming_ch
     // finally actually arm the motors
     motors->armed(true);
 
+    update_armed_pin();
+
     // log arming to dataflash
     Log_Write_Event(DATA_ARMED);
 
@@ -279,6 +281,8 @@ void Copter::init_disarm_motors()
 
     // send disarm command to motors
     motors->armed(false);
+
+    update_armed_pin();
 
 #if MODE_AUTO_ENABLED == ENABLED
     // reset the mission
