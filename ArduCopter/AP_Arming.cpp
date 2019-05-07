@@ -303,6 +303,9 @@ bool AP_Arming_Copter::motor_checks(bool display_failure)
 
 bool AP_Arming_Copter::pilot_throttle_checks(bool display_failure)
 {
+    if (rc_check_disabled) {
+        return true;
+    }
     // check throttle is above failsafe throttle
     // this is near the bottom to allow other failures to be displayed before checking pilot throttle
     if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_RC)) {
@@ -666,7 +669,7 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
 #endif
 
     // check throttle
-    if ((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_RC)) {
+    if (((checks_to_perform == ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_RC)) && !rc_check_disabled) {
          #if FRAME_CONFIG == HELI_FRAME
         const char *rc_item = "Collective";
         #else
