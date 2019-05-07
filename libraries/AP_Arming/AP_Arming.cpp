@@ -547,7 +547,7 @@ bool AP_Arming::manual_transmitter_checks(bool report)
     if ((checks_to_perform & ARMING_CHECK_ALL) ||
         (checks_to_perform & ARMING_CHECK_RC)) {
 
-        if (AP_Notify::flags.failsafe_radio) {
+        if (AP_Notify::flags.failsafe_radio && !rc_check_disabled) {
             check_failed(ARMING_CHECK_RC, report, "Radio failsafe on");
             return false;
         }
