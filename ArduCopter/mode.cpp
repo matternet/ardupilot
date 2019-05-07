@@ -242,6 +242,9 @@ bool Copter::set_mode(control_mode_t mode, mode_reason_t reason)
     // update notify object
     notify_flight_mode();
 
+    // we want to allow arming with no RC in GUIDED mode
+    arming.disable_RC_check(mode == GUIDED);
+
     // return success
     return true;
 }
