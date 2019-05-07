@@ -93,7 +93,7 @@ const AP_ToneAlarm::Tone AP_ToneAlarm::_tones[] {
 #define AP_NOTIFY_TONE_QUIET_NOT_READY_OR_NOT_FINISHED 28
     { "MFT200L4<B#4A#6G#6", false },
 #define AP_NOTIFY_TONE_STARTUP 29
-    { "MFT240L8O4aO5dcO4aO5dcO4aO5dcL16dcdcdcdc", false },
+    { "MFMST200L64O4ceceP32ceceP8df#df#P32df#df#P8L16gf#g>c", false },
 #define AP_NOTIFY_TONE_NO_SDCARD 30
     { "MNBGG", false },
 #define AP_NOTIFY_TONE_EKF_ALERT 31
@@ -350,6 +350,8 @@ void AP_ToneAlarm::update()
         }
     }
 
+#if 0
+    // disabled for matternet
     // notify the user when pre_arm checks are passing
     if (flags.pre_arm_check != AP_Notify::flags.pre_arm_check) {
         flags.pre_arm_check = AP_Notify::flags.pre_arm_check;
@@ -363,6 +365,7 @@ void AP_ToneAlarm::update()
             }
         }
     }
+#endif
 
     // check if arming status has changed
     if (flags.armed != AP_Notify::flags.armed) {
