@@ -339,7 +339,7 @@ void Copter::set_mode_SmartRTL_or_RTL(ModeReason reason)
 }
 
 bool Copter::should_disarm_on_failsafe() {
-    if (ap.in_arming_delay) {
+    if (ap.in_arming_delay && control_mode != GUIDED) {
         return true;
     }
 
@@ -351,6 +351,14 @@ bool Copter::should_disarm_on_failsafe() {
         case Mode::Number::AUTO:
             // if mission has not started AND vehicle is landed, disarm motors
             return !ap.auto_armed && ap.land_complete;
+        case GUIDED:
+            if (g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION ||
+                g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION_ALWAYS_LAND) {
+                // prevent needing to arm twice in GUIDED
+                return false;
+            }
+            return ap.land_complete;
+
         default:
             // used for AltHold, Guided, Loiter, RTL, Circle, Drift, Sport, Flip, Autotune, PosHold
             // if landed disarm
