@@ -59,6 +59,11 @@ public:
     // get expected magnetic field strength
     uint16_t compass_magfield_expected() const;
 
+    // allow RC check to be disabled for some modes
+    void disable_RC_check(bool disable) {
+        rc_check_disabled = disable;
+    }
+
     // rudder arming support
     enum ArmingRudder {
         ARMING_RUDDER_DISABLED  = 0,
@@ -91,6 +96,7 @@ protected:
     uint8_t                 arming_method;          // how the vehicle was armed
     uint32_t                last_accel_pass_ms[INS_MAX_INSTANCES];
     uint32_t                last_gyro_pass_ms[INS_MAX_INSTANCES];
+    bool                    rc_check_disabled;
 
     virtual bool barometer_checks(bool report);
 
