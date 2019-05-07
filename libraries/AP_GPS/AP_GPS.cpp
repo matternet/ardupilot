@@ -675,6 +675,7 @@ void AP_GPS::update_instance(uint8_t instance)
     if (state[instance].status >= GPS_OK_FIX_3D) {
         const uint64_t now = time_epoch_usec(instance);
         AP::rtc().set_utc_usec(now, AP_RTC::SOURCE_GPS);
+        update_position_change(instance);
     }
 }
 
@@ -1114,6 +1115,13 @@ void AP_GPS::Write_DataFlash_Log_Startup_messages()
  */
 bool AP_GPS::get_lag(uint8_t instance, float &lag_sec) const
 {
+    // always enusre a lag is provided
+    lag_sec = GPS_WORST_LAG_SEC;
+
+    if (instance >= GPS_MAX_INSTANCES) {
+        return false;
+    }
+
     // return lag of blended GPS
     if (instance == GPS_BLENDED_INSTANCE) {
         lag_sec = _blended_lag_sec;
@@ -1131,8 +1139,6 @@ bool AP_GPS::get_lag(uint8_t instance, float &lag_sec) const
         if (_type[instance] == GPS_TYPE_NONE) {
             lag_sec = 0.0f;
             return true;
-        } else {
-            lag_sec = GPS_WORST_LAG_SEC;
         }
         return _type[instance] == GPS_TYPE_AUTO;
     } else {
@@ -1144,12 +1150,17 @@ bool AP_GPS::get_lag(uint8_t instance, float &lag_sec) const
 // return a 3D vector defining the offset of the GPS antenna in meters relative to the body frame origin
 const Vector3f &AP_GPS::get_antenna_offset(uint8_t instance) const
 {
-    if (instance == GPS_MAX_RECEIVERS) {
+    if (instance >= GPS_MAX_INSTANCES) {
+        // we have to return a reference so use instance 0
+        return _antenna_offset[0];
+    }
+
+    if (instance == GPS_BLENDED_INSTANCE) {
         // return an offset for the blended GPS solution
         return _blended_antenna_offset;
-    } else {
-        return _antenna_offset[instance];
     }
+
+    return _antenna_offset[instance];
 }
 
 /*
@@ -1176,7 +1187,7 @@ bool AP_GPS::calc_blend_weights(void)
     memset(&_blend_weights, 0, sizeof(_blend_weights));
 
     // exit immediately if not enough receivers to do blending
-    if (num_instances < 2 || drivers[1] == nullptr || _type[1] == GPS_TYPE_NONE) {
+    if (state[0].status <= NO_FIX || state[1].status <= NO_FIX) {
         return false;
     }
 
@@ -1537,9 +1548,20 @@ void AP_GPS::calc_blended_state(void)
     timing[GPS_BLENDED_INSTANCE].last_message_time_ms = (uint32_t)temp_time_2;
 }
 
-bool AP_GPS::is_healthy(uint8_t instance) const {
-    return drivers[instance] != nullptr &&
-           last_message_delta_time_ms(instance) < GPS_MAX_DELTA_MS &&
+bool AP_GPS::is_healthy(uint8_t instance) const
+{
+    if (instance >= GPS_MAX_INSTANCES) {
+        return false;
+    }
+
+    bool last_msg_valid = last_message_delta_time_ms(instance) < GPS_MAX_DELTA_MS;
+
+    if (instance == GPS_BLENDED_INSTANCE) {
+        return last_msg_valid && blend_health_check();
+    }
+
+    return last_msg_valid &&
+           drivers[instance] != nullptr &&
            drivers[instance]->is_healthy();
 }
 
@@ -1551,6 +1573,35 @@ bool AP_GPS::prepare_for_arming(void) {
         }
     }
     return all_passed;
+}
+
+/*
+  update data for distance moved since arming. Used for pre-takeoff
+  check
+ */
+void AP_GPS::update_position_change(uint8_t instance)
+{
+    if (!hal.util->get_soft_armed()) {
+        _arm_loc[instance].lat = 0;
+        _arm_loc[instance].lng = 0;
+    } else if (_arm_loc[instance].lat == 0 &&
+               _arm_loc[instance].lng == 0) {
+        _arm_loc[instance] = state[instance].location;
+    }
+}
+
+/*
+  get change in position and altitude since arming
+  This is used as part of a pre-takeoff check for GPS movement
+*/
+bool AP_GPS::get_pre_arm_pos_change(uint8_t instance, float &pos_change, float &alt_change) const
+{
+    if (!hal.util->get_soft_armed()) {
+        return false;
+    }
+    pos_change = get_distance(_arm_loc[instance], state[instance].location);
+    alt_change = (_arm_loc[instance].alt - state[instance].location.alt) * 0.01;
+    return true;
 }
 
 namespace AP {

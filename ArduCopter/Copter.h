@@ -187,6 +187,7 @@ public:
     friend class AP_Rally_Copter;
     friend class Parameters;
     friend class ParametersG2;
+    friend class ParametersMTTR;
     friend class AP_Avoidance_Copter;
 
 #if ADVANCED_FAILSAFE == ENABLED
@@ -210,6 +211,9 @@ private:
     // Global parameters are all contained within the 'g' class.
     Parameters g;
     ParametersG2 g2;
+    ParametersMTTR matternet;
+
+    void update_armed_pin();
 
     // main loop scheduler
     AP_Scheduler scheduler{FUNCTOR_BIND_MEMBER(&Copter::fast_loop, void)};
@@ -366,6 +370,12 @@ private:
     } aux_debounce[(CH_12 - CH_7)+1];
     // altitude below which we do no navigation in auto takeoff
     float auto_takeoff_no_nav_alt_cm;
+    float auto_takeoff_max_nav_alt_cm;
+
+    // minimum recorded barometric alt during takeoff. Used to detect
+    // the "dip" in barometric alt that happens on takeoff
+    float takeoff_baro_min_alt_m;
+    bool takeoff_liftoff_complete;
 
     RCMapper rcmap;
 

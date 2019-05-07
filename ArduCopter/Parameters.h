@@ -42,7 +42,7 @@ public:
         k_param_software_type, // deprecated
         k_param_ins_old,                        // *** Deprecated, remove with next eeprom number change
         k_param_ins,                            // libraries/AP_InertialSensor variables
-        k_param_NavEKF2_old, // deprecated - remove
+        k_param_matternet,
         k_param_NavEKF2,
         k_param_g2, // 2nd block of parameters
         k_param_NavEKF3,
@@ -491,6 +491,9 @@ public:
     // altitude at which nav control can start in takeoff
     AP_Float wp_navalt_min;
 
+    // altitude at which nav control reaches full range in takeoff
+    AP_Float wp_navalt_max;
+
     // button checking
     AP_Button button;
 
@@ -587,6 +590,26 @@ public:
     AP_Follow follow;
 #endif
 
+};
+
+/*
+  Matternet specific parameters. This is done as a separate block to
+  reduce the change of conflict on rebase
+ */
+class ParametersMTTR {
+public:
+    ParametersMTTR(void);
+
+    // var_info for holding Parameter information
+    static const struct AP_Param::GroupInfo var_info[];
+    
+    AP_Float tkoff_gps_pos_change;
+    AP_Float tkoff_gps_alt_change;
+    AP_Float arm_gps_hacc;
+    AP_Float arm_gps_vacc;
+    AP_Float tkoff_baro_dip;
+    AP_Int8 tkoff_hover_pct;
+    AP_Int8 arm_pin;
 };
 
 extern const AP_Param::Info        var_info[];
