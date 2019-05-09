@@ -714,7 +714,7 @@ bool AP_Arming_Copter::pre_takeoff_checks(void)
         gcs().send_text(MAV_SEVERITY_CRITICAL,"Takeoff: pos change %.2f", pos_change);
         return false;
     }
-    if (pos_change > copter.matternet.tkoff_gps_alt_change) {
+    if (fabsf(alt_change) > copter.matternet.tkoff_gps_alt_change) {
         gcs().send_text(MAV_SEVERITY_CRITICAL,"Takeoff: alt change %.2f", alt_change);
         return false;
     }
