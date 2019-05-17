@@ -58,6 +58,8 @@ class AP_AHRS;
 class NavEKF2_core
 {
 public:
+    friend class NavEKF2;
+
     // Constructor
     NavEKF2_core(void);
 
