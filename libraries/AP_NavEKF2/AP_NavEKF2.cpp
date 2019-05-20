@@ -767,7 +767,7 @@ void NavEKF2::UpdateFilter(void)
 
     // when disarmed force lane1 if it is healthy. This is a temporary
     // workaround for poor performance of the 2nd IMU
-    if (!hal.util->get_soft_armed() && primary != 0 && core[0].healthy()) {
+    if (!hal.util->get_soft_armed() && primary != 0) {
         primary = 0;
     }
 
