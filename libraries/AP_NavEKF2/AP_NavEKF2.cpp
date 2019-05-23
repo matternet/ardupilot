@@ -771,6 +771,9 @@ void NavEKF2::UpdateFilter(void)
         primary = 0;
     }
 
+    // Enable EKF lane 2 for vibration testing
+    primary = 1;
+
     check_log_write();
 }
 
