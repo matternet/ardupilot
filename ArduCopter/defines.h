@@ -78,6 +78,11 @@ enum aux_sw_func {
     AUXSW_USER_FUNC1 =          47, // user function #1
     AUXSW_USER_FUNC2 =          48, // user function #2
     AUXSW_USER_FUNC3 =          49, // user function #3
+    AUXSW_KILL_ALL   =         110,
+    AUXSW_KILL_MOT1  =         111,
+    AUXSW_KILL_MOT2  =         112,
+    AUXSW_KILL_MOT3  =         113,
+    AUXSW_KILL_MOT4  =         114,
     AUXSW_SWITCH_MAX,
 };
 
