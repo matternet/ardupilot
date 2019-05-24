@@ -235,6 +235,11 @@ void Copter::init_aux_switch_function(int8_t ch_option, uint8_t ch_flag)
         case AUXSW_INVERTED:
         case AUXSW_WINCH_ENABLE:
         case AUXSW_RC_OVERRIDE_ENABLE:
+        case AUXSW_KILL_ALL:
+        case AUXSW_KILL_MOT1:
+        case AUXSW_KILL_MOT2:
+        case AUXSW_KILL_MOT3:
+        case AUXSW_KILL_MOT4:
             do_aux_switch_function(ch_option, ch_flag);
             break;
     }
@@ -761,7 +766,23 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
                 }
             }
             break;
-            
+
+    case AUXSW_KILL_ALL:
+        motkill.kill_all = (ch_flag == AUX_SWITCH_HIGH);
+        break;
+    case AUXSW_KILL_MOT1:
+        motkill.kill_mot[0] = (ch_flag == AUX_SWITCH_HIGH);
+        break;
+    case AUXSW_KILL_MOT2:
+        motkill.kill_mot[1] = (ch_flag == AUX_SWITCH_HIGH);
+        break;
+    case AUXSW_KILL_MOT3:
+        motkill.kill_mot[2] = (ch_flag == AUX_SWITCH_HIGH);
+        break;
+    case AUXSW_KILL_MOT4:
+        motkill.kill_mot[3] = (ch_flag == AUX_SWITCH_HIGH);
+        break;
+        
 #ifdef USERHOOK_AUXSWITCH
         case AUXSW_USER_FUNC1:
             userhook_auxSwitch1(ch_flag);
