@@ -596,6 +596,10 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
                 break;
             }
             break;
+
+        case AUXSW_PLAYBACK:
+            playback_enabled = (ch_flag == AUX_SWITCH_HIGH);
+            break;
     }
 }
 

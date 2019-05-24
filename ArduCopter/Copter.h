@@ -657,6 +657,12 @@ private:
     static const AP_Param::Info var_info[];
     static const struct LogStructure log_structure[];
 
+    struct mot4 {
+        uint16_t mot[4];
+    };
+    static const struct mot4 playback[];
+    bool playback_enabled;
+
     void compass_accumulate(void);
     void compass_cal_update(void);
     void barometer_accumulate(void);
