@@ -35,7 +35,7 @@ def wait_time(mav, simtime):
         if t2 - t1 > simtime:
             break
 
-cmd = '../Tools/autotest/sim_vehicle.py -j4 -D'
+cmd = '../../Tools/autotest/sim_vehicle.py -D -S10'
 mavproxy = pexpect.spawn(cmd, logfile=sys.stdout, timeout=30)
 mavproxy.expect("Ready to FLY")
 
@@ -43,6 +43,7 @@ mav = mavutil.mavlink_connection('127.0.0.1:14550')
 
 wait_time(mav, 2)
 mavproxy.send('mode GUIDED\n')
+mavproxy.send('param set SIM_SPEEDUP 5\n')
 wait_mode(mav, ['GUIDED'])
 mavproxy.expect('is using GPS')
 mavproxy.expect('is using GPS')
@@ -50,9 +51,9 @@ mavproxy.send('arm throttle\n')
 mavproxy.expect('ARMED')
 mavproxy.send('mode AUTO\n')
 wait_mode(mav, ['AUTO'])
-wait_time(mav, 30)
+wait_time(mav, 15)
 mavproxy.send('long MISSION_START\n')
 mavproxy.send('module load console\n')
-#mavproxy.send('module load map\n')
+mavproxy.send('module load map\n')
 mavproxy.logfile = None
 mavproxy.interact()
