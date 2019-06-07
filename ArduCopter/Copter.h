@@ -430,7 +430,11 @@ private:
     } failsafe;
 
     bool any_failsafe_triggered() const {
-        return failsafe.radio || battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain || failsafe.adsb;
+        bool ret = battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain || failsafe.adsb;
+        if (control_mode != GUIDED && control_mode != AUTO) {
+            ret |= failsafe.radio;
+        }
+        return ret;
     }
 
     // sensor health for logging
