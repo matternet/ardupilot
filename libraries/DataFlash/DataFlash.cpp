@@ -23,6 +23,13 @@ extern const AP_HAL::HAL& hal;
 #define HAL_DATAFLASH_MAV_BUFSIZE  8
 #endif 
 
+// by default log for 60 seconds after disarming
+#ifndef HAL_LOGGER_ARM_PERSIST
+#define HAL_LOGGER_ARM_PERSIST 60
+#endif
+
+uint32_t DataFlash_Class::_last_armed_ms;
+
 const AP_Param::GroupInfo DataFlash_Class::var_info[] = {
     // @Param: _BACKEND_TYPE
     // @DisplayName: DataFlash Backend Storage type
@@ -422,10 +429,16 @@ void DataFlash_Class::backend_starting_new_log(const DataFlash_Backend *backend)
 
 bool DataFlash_Class::should_log(const uint32_t mask) const
 {
+    bool armed = vehicle_is_armed();
+
+    if (armed) {
+        _last_armed_ms = AP_HAL::millis();
+    }
+
     if (!(mask & _log_bitmask)) {
         return false;
     }
-    if (!vehicle_is_armed() && !log_while_disarmed()) {
+    if (!armed && !log_while_disarmed()) {
         return false;
     }
     if (in_log_download()) {
@@ -981,4 +994,29 @@ bool DataFlash_Class::Log_Write_ISBD(const uint16_t isb_seqno,
     }
 
     return backends[0]->WriteBlock(&pkt, sizeof(pkt));
+}
+
+/*
+  return true if we should log while disarmed
+ */
+bool DataFlash_Class::log_while_disarmed(void) const
+{
+    if (_params.log_disarmed != 0) {
+        return true;
+    }
+
+    uint32_t now = AP_HAL::millis();
+    uint32_t persist_ms = HAL_LOGGER_ARM_PERSIST*1000U;
+
+    // keep logging for HAL_LOGGER_ARM_PERSIST seconds after disarming
+    if (_last_armed_ms != 0 && now - _last_armed_ms < persist_ms) {
+        return true;
+    }
+
+    // keep logging for HAL_LOGGER_ARM_PERSIST seconds after an arming failure
+    if (_last_arming_failure_ms && now - _last_arming_failure_ms < persist_ms) {
+        return true;
+    }
+
+    return false;
 }

@@ -170,6 +170,10 @@ public:
     // returns true if logging of a message should be attempted
     bool should_log(uint32_t mask) const;
 
+    // notify logging subsystem of an arming failure. This triggers
+    // logging for HAL_LOGGER_ARM_PERSIST seconds
+    void arming_failure() { _last_arming_failure_ms = AP_HAL::millis(); }
+    
     bool logging_started(void);
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL || CONFIG_HAL_BOARD == HAL_BOARD_LINUX
@@ -185,7 +189,7 @@ public:
     uint32_t num_dropped(void) const;
 
     // accesss to public parameters
-    bool log_while_disarmed(void) const { return _params.log_disarmed != 0; }
+    bool log_while_disarmed(void) const;
     uint8_t log_replay(void) const { return _params.log_replay; }
     
     vehicle_startup_message_Log_Writer _vehicle_messages;
@@ -364,6 +368,13 @@ private:
     uint16_t _log_data_page;
 
     GCS_MAVLINK *_log_sending_link;
+
+    // last time vehicle was armed. This is static so that
+    // should_log() can be const
+    static uint32_t _last_armed_ms;
+
+    // last time arming failed, for backends
+    uint32_t _last_arming_failure_ms;
 
     bool should_handle_log_message();
     void handle_log_message(class GCS_MAVLINK &, mavlink_message_t *msg);
