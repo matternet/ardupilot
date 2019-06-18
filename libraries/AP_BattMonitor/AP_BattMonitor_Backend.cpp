@@ -91,3 +91,23 @@ void AP_BattMonitor_Backend::update_resistance_estimate()
     // update estimated voltage without sag
     _state.voltage_resting_estimate = _state.voltage + _state.current_amps * _state.resistance;
 }
+
+/*
+  default implementation for reset_remaining(). This sets consumed_wh
+  and consumed_mah based on the given percentage. Use percentage=100
+  for a full battery
+*/
+bool AP_BattMonitor_Backend::reset_remaining(float percentage)
+{
+    percentage = constrain_float(percentage, 0, 100);
+    const float used_proportion = (100 - percentage) * 0.01;
+    _state.consumed_mah = used_proportion * _params._pack_capacity;
+    // without knowing the history we can't do consumed_wh
+    // accurately. Best estimate is based on current voltage. This
+    // will be good when resetting the battery to a value close to
+    // full charge
+    _state.consumed_wh = _state.consumed_mah * 1000 * _state.voltage;
+
+    return true;
+}
+

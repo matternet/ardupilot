@@ -484,6 +484,21 @@ bool AP_BattMonitor::get_temperature(float &temperature, const uint8_t instance)
 }
 
 
+/*
+  reset battery remaining percentage for batteries that integrate to
+  calculate percentage remaining
+*/
+bool AP_BattMonitor::reset_remaining(uint16_t battery_mask, float percentage)
+{
+    bool ret = true;
+    for (uint8_t i = 0; i < _num_instances; i++) {
+        if ((1U<<i) & battery_mask) {
+            ret &= drivers[i]->reset_remaining(percentage);
+        }
+    }
+    return ret;
+}
+
 namespace AP {
 
 AP_BattMonitor &battery()

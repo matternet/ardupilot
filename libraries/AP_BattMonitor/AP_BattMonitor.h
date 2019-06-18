@@ -164,6 +164,9 @@ public:
     float get_resistance() const { return get_resistance(AP_BATT_PRIMARY_INSTANCE); }
     float get_resistance(uint8_t instance) const { return state[instance].resistance; }
 
+    // reset battery remaining percentage
+    bool reset_remaining(uint16_t battery_mask, float percentage);
+
     static const struct AP_Param::GroupInfo var_info[];
 
 protected:
