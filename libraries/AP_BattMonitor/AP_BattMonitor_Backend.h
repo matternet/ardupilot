@@ -53,6 +53,9 @@ public:
     virtual void handle_bi_msg(float voltage, float current,
             float temperature) {}
 
+    // reset remaining percentage to given value
+    virtual bool reset_remaining(float percentage);
+
 protected:
     AP_BattMonitor                      &_mon;      // reference to front-end
     AP_BattMonitor::BattMonitor_State   &_state;    // reference to this instances state (held in the front-end)
