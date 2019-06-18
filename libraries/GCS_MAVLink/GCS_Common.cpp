@@ -245,7 +245,8 @@ void GCS_MAVLINK::send_distance_sensor(const AP_RangeFinder_Backend *sensor, con
         sensor->get_mav_distance_sensor_type(),  // type from MAV_DISTANCE_SENSOR enum
         instance,                                // onboard ID of the sensor == instance
         sensor->orientation(),                   // direction the sensor faces from MAV_SENSOR_ORIENTATION enum
-        0);                                      // Measurement covariance in centimeters, 0 for unknown / invalid readings
+        0,                                      // Measurement covariance in centimeters, 0 for unknown / invalid readings
+        0, 0, nullptr);
 }
 
 bool GCS_MAVLINK::send_distance_sensor() const
@@ -321,7 +322,8 @@ bool GCS_MAVLINK::send_proximity() const
                     MAV_DISTANCE_SENSOR_LASER,                      // type from MAV_DISTANCE_SENSOR enum
                     PROXIMITY_SENSOR_ID_START + i,                  // onboard ID of the sensor
                     dist_array.orientation[i],                      // direction the sensor faces from MAV_SENSOR_ORIENTATION enum
-                    0);                                             // Measurement covariance in centimeters, 0 for unknown / invalid readings
+                    0,                                             // Measurement covariance in centimeters, 0 for unknown / invalid readings
+                    0, 0, nullptr);
         }
     }
 
@@ -338,7 +340,8 @@ bool GCS_MAVLINK::send_proximity() const
                 MAV_DISTANCE_SENSOR_LASER,                                // type from MAV_DISTANCE_SENSOR enum
                 PROXIMITY_SENSOR_ID_START + PROXIMITY_MAX_DIRECTION + 1,  // onboard ID of the sensor
                 MAV_SENSOR_ROTATION_PITCH_90,                             // direction upwards
-                0);                                                       // Measurement covariance in centimeters, 0 for unknown / invalid readings
+                0,                                                       // Measurement covariance in centimeters, 0 for unknown / invalid readings
+                0, 0, nullptr);
     }
     return true;
 }
