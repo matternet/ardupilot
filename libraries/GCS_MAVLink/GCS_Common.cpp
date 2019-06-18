@@ -2614,6 +2614,16 @@ MAV_RESULT GCS_MAVLINK::handle_command_preflight_calibration(const mavlink_comma
     return _handle_command_preflight_calibration(packet);
 }
 
+MAV_RESULT GCS_MAVLINK::handle_command_battery_reset(const mavlink_command_long_t &packet)
+{
+    const uint16_t battery_mask = packet.param1;
+    const float percentage = packet.param2;
+    if (AP::battery().reset_remaining(battery_mask, percentage)) {
+        return MAV_RESULT_ACCEPTED;
+    }
+    return MAV_RESULT_FAILED;
+}
+
 MAV_RESULT GCS_MAVLINK::handle_command_mag_cal(const mavlink_command_long_t &packet)
 {
     Compass *compass = get_compass();
@@ -2736,6 +2746,10 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_message(mavlink_command_long_t &pack
         result = handle_command_preflight_calibration(packet);
         break;
 
+    case MAV_CMD_BATTERY_RESET:
+        result = handle_command_battery_reset(packet);
+        break;
+        
     case MAV_CMD_FLASH_BOOTLOADER:
         result = handle_command_flash_bootloader(packet);
         break;
