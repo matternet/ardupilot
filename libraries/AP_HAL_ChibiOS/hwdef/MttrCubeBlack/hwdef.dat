@@ -1,0 +1,9 @@
+# hw definition for Matternet CubeBlack build
+
+include ../CubeBlack/hwdef.dat
+
+define MODE_SMARTRTL_ENABLED DISABLED
+define SPRAYER_ENABLED DISABLED
+define GRIPPER_ENABLED DISABLED
+define WINCH_ENABLED DISABLED
+
