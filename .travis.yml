@@ -54,9 +54,9 @@ matrix:
   fast_finish: true
   include:
     - compiler: "gcc"
-      env: CI_BUILD_TARGET="px4-v2 revo-bootloader"
+      env: CI_BUILD_TARGET="MttrCubeBlack"
     - compiler: "gcc"
-      env: CI_BUILD_TARGET="px4-v4 revo-mini"
+      env: CI_BUILD_TARGET="px4-v3"
     - compiler: "gcc"
       env: CI_BUILD_TARGET="sitltest-copter"
     - compiler: "gcc"
