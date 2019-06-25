@@ -363,7 +363,7 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
 
             // Check for estimator timeout
             if (!target_acquired() && _estimator_initialized) {
-                if (AP_HAL::millis()-_last_update_ms > 200) {
+                if (AP_HAL::millis()-_last_update_ms > 300) {
                     _estimator_initialized = false;
                 } else if (AP_HAL::millis()-_estimator_init_ms > 2000) {
                     gcs().send_text(MAV_SEVERITY_INFO, "PL: target acquired2");
