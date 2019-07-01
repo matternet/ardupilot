@@ -540,7 +540,7 @@ void  NavEKF2_core::getFilterGpsStatus(nav_gps_status &faults) const
 // report the reason for why the backend is refusing to initialise
 const char *NavEKF2_core::prearm_failure_reason(void) const
 {
-    if (imuSampleTime_ms - lastGpsVelFail_ms > 10000) {
+    if (gpsGoodToAlign) {
         // we are not failing
         return nullptr;
     }
