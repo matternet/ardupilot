@@ -566,6 +566,7 @@ private:
     bool noReceivedHdop;
     
     bool havePvtMsg;
+    bool haveTimeGPSMsg;
 
     bool        _configure_message_rate(uint8_t msg_class, uint8_t msg_id, uint8_t rate);
     void        _configure_rate(void);
