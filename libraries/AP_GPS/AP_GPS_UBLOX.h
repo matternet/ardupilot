@@ -494,6 +494,7 @@ private:
         UBLOX_6,
         UBLOX_7,
         UBLOX_M8,
+        UBLOX_F9 = 0x80, // comes from MON_VER hwVersion string
         UBLOX_UNKNOWN_HARDWARE_GENERATION = 0xff // not in the ublox spec used for
                                                  // flagging state in the driver
     };
@@ -565,6 +566,7 @@ private:
     bool noReceivedHdop;
     
     bool havePvtMsg;
+    bool haveTimeGPSMsg;
 
     bool        _configure_message_rate(uint8_t msg_class, uint8_t msg_id, uint8_t rate);
     void        _configure_rate(void);
