@@ -369,6 +369,8 @@ protected:
     void handle_send_autopilot_version(const mavlink_message_t &msg);
     MAV_RESULT handle_command_request_autopilot_capabilities(const mavlink_command_long_t &packet);
 
+    void send_matternet_FTS_version(void) const;
+
     virtual void send_banner();
 
     void handle_device_op_read(const mavlink_message_t &msg);
