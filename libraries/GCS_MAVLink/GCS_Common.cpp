@@ -1547,6 +1547,8 @@ void GCS_MAVLINK::send_autopilot_version() const
         uid,
         uid2
     );
+
+    send_matternet_FTS_version();
 }
 
 
@@ -2311,9 +2313,6 @@ void GCS_MAVLINK::handle_common_message(mavlink_message_t *msg)
 
     case MAVLINK_MSG_ID_AUTOPILOT_VERSION_REQUEST:
         handle_send_autopilot_version(msg);
-        char mttr_fts_text[50];
-        snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", AP_Parachute::mttr_get_fts_version());
-        send_text(MAV_SEVERITY_INFO, mttr_fts_text);
         break;
 
     case MAVLINK_MSG_ID_MISSION_WRITE_PARTIAL_LIST:
@@ -2461,9 +2460,6 @@ void GCS_MAVLINK::handle_common_mission_message(mavlink_message_t *msg)
 void GCS_MAVLINK::handle_send_autopilot_version(const mavlink_message_t *msg)
 {
     send_autopilot_version();
-    char mttr_fts_text[50];
-    snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", AP_Parachute::mttr_get_fts_version());
-    send_text(MAV_SEVERITY_INFO, mttr_fts_text);
 }
 
 void GCS_MAVLINK::send_banner()
@@ -2645,6 +2641,16 @@ MAV_RESULT GCS_MAVLINK::handle_command_request_autopilot_capabilities(const mavl
     send_autopilot_version();
 
     return MAV_RESULT_ACCEPTED;
+}
+
+/*
+  send Matternet FTS version string
+ */
+void GCS_MAVLINK::send_matternet_FTS_version(void) const
+{
+    char mttr_fts_text[50];
+    snprintf(mttr_fts_text, 50, "MTTR_FTS_VER: %s", AP_Parachute::mttr_get_fts_version());
+    gcs().send_text(MAV_SEVERITY_INFO, mttr_fts_text);
 }
 
 
