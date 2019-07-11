@@ -935,6 +935,11 @@ uint16_t DataFlash_File::start_new_log(void)
         return 0xFFFF;
     }
     hal.scheduler->expect_delay_ms(3000);
+
+    // remember if we had utc time when we opened the file
+    uint64_t utc_usec;
+    _need_rtc_update = !AP::rtc().get_utc_usec(utc_usec);
+
 #if HAL_OS_POSIX_IO
     _write_fd = ::open(_write_filename, O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666);
 #else
@@ -1110,6 +1115,22 @@ void DataFlash_File::_io_timer(void)
         last_io_operation = "fsync";
         ::fsync(_write_fd);
         last_io_operation = "";
+#endif
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+        // ChibiOS does not update mtime on writes, so if we opened
+        // without knowing the time we should update it later
+        if (_need_rtc_update) {
+            uint64_t utc_usec;
+            if (AP::rtc().get_utc_usec(utc_usec)) {
+                struct utimbuf t {};
+                t.modtime = utc_usec / (1000UL * 1000UL);
+                t.actime = t.modtime;
+                // we ignore return on utime() as there is nothing useful we can do
+                (void)utime(_write_filename, &t);
+                _need_rtc_update = false;
+            }
+        }
 #endif
     }
     write_fd_semaphore->give();
