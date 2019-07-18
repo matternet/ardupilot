@@ -591,4 +591,9 @@ private:
     uint8_t _ubx_msg_log_index(uint8_t ubx_msg) {
         return (uint8_t)(ubx_msg + (state.instance * UBX_MSG_TYPES));
     }
+
+    // returns hardware generation of the GPS
+    uint32_t hardware_generation() { 
+        return _hardware_generation;
+    }
 };
