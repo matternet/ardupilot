@@ -71,6 +71,9 @@ public:
     virtual bool get_RTCMV3(const uint8_t *&bytes, uint16_t &len) { return false; }
     virtual void clear_RTCMV3(void) {};
 
+    // returns hardware generation variable
+    virtual uint32_t hardware_generation() { return 0; }
+
 protected:
     AP_HAL::UARTDriver *port;           ///< UART we are attached to
     AP_GPS &gps;                        ///< access to frontend (for parameters)
