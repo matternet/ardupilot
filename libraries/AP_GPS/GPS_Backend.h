@@ -65,6 +65,9 @@ public:
 
     virtual bool prepare_for_arming(void) { return true; }
 
+    // returns hardware generation variable
+    virtual uint32_t hardware_generation() { return 0; }
+
 protected:
     AP_HAL::UARTDriver *port;           ///< UART we are attached to
     AP_GPS &gps;                        ///< access to frontend (for parameters)
