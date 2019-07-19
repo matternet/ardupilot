@@ -739,26 +739,34 @@ void AP_GPS::update(void)
                     if (i == primary_instance) {
                         continue;
                     }
-                    if (state[i].status > state[primary_instance].status) {
-                        // we have a higher status lock, or primary is set to the blended GPS, change GPS
-                        
-                        if (state[primary_instance].status < GPS_OK_FIX_3D) {
-                            primary_instance = i;
-                            _last_instance_swap_ms = now;
-                            gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
-                            // add alert when a switch happens
-                            continue;
-                        }
-                        // switch only if the currently used GPS has a 2D FIX or lower
+                    
+                    GPS_Status status_i = state[i].status;
+                    GPS_Status status_primary = state[primary_instance].status;
 
-                        if (state[i].status > GPS_OK_FIX_3D) {
-                            primary_instance = i;
-                            _last_instance_swap_ms = now;
-                            gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
-                            // add alert when a switch happens
-                            continue;
-                        }
-                        // er if the other GPS has a DGPS FIX (the best possible fix)
+                    // Treat U-blox F9 as SBAS as it is dual band GPS and is more accurate than M8 with SBAS                    
+                    if (status_i == GPS_OK_FIX_3D && strcmp(drivers[i]->name(), "u-blox") == 0 && drivers[i]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9) {
+                        status_i = GPS_OK_FIX_3D_DGPS;
+                    }
+
+                    // Treat U-blox F9 as SBAS as it is dual band GPS and is more accurate than M8 with SBAS                    
+                    if (status_primary == GPS_OK_FIX_3D && strcmp(drivers[primary_instance]->name(), "u-blox") == 0 && drivers[primary_instance]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9) {
+                        status_primary = GPS_OK_FIX_3D_DGPS;
+                    }
+
+                    bool should_switch = false;
+
+                    if (status_i > status_primary) {
+                        should_switch = true;
+                    }
+                    
+                    if (status_i == status_primary && !hal.util->get_soft_armed() && state[i].num_sats >= state[primary_instance].num_sats+3) {
+                        should_switch = true;                        
+                    }
+
+                    if (should_switch) {
+                        primary_instance = i;
+                        _last_instance_swap_ms = now;
+                        gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
                     }
                 }
             }

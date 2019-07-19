@@ -126,6 +126,17 @@ public:
 
     const char *name() const override { return "u-blox"; }
 
+    enum ubx_hardware_version {
+        ANTARIS = 0,
+        UBLOX_5,
+        UBLOX_6,
+        UBLOX_7,
+        UBLOX_M8,
+        UBLOX_F9 = 0x80, // comes from MON_VER hwVersion string
+        UBLOX_UNKNOWN_HARDWARE_GENERATION = 0xff // not in the ublox spec used for
+                                                 // flagging state in the driver
+    };
+
 private:
     // u-blox UBX protocol essentials
     struct PACKED ubx_header {
@@ -488,16 +499,6 @@ private:
         NAV_STATUS_FIX_VALID = 1,
         NAV_STATUS_DGPS_USED = 2
     };
-    enum ubx_hardware_version {
-        ANTARIS = 0,
-        UBLOX_5,
-        UBLOX_6,
-        UBLOX_7,
-        UBLOX_M8,
-        UBLOX_F9 = 0x80, // comes from MON_VER hwVersion string
-        UBLOX_UNKNOWN_HARDWARE_GENERATION = 0xff // not in the ublox spec used for
-                                                 // flagging state in the driver
-    };
 
     enum config_step {
         STEP_PVT = 0,
@@ -593,7 +594,7 @@ private:
     }
 
     // returns hardware generation of the GPS
-    uint32_t hardware_generation() { 
+    uint32_t hardware_generation() const override { 
         return _hardware_generation;
     }
 };
