@@ -639,7 +639,8 @@ private:
         Failsafe_Action_RTL            = 2,
         Failsafe_Action_SmartRTL       = 3,
         Failsafe_Action_SmartRTL_Land  = 4,
-        Failsafe_Action_Terminate      = 5
+        Failsafe_Action_Terminate      = 5,
+        Failsafe_Action_LandIfManual   = 6
     };
 
     enum class FailsafeOption {
@@ -653,6 +654,7 @@ private:
     static constexpr int8_t _failsafe_priorities[] = {
                                                       Failsafe_Action_Terminate,
                                                       Failsafe_Action_Land,
+                                                      Failsafe_Action_LandIfManual,
                                                       Failsafe_Action_RTL,
                                                       Failsafe_Action_SmartRTL_Land,
                                                       Failsafe_Action_SmartRTL,
