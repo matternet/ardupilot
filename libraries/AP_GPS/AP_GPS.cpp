@@ -742,14 +742,15 @@ void AP_GPS::update(void)
                     
                     GPS_Status status_i = state[i].status;
                     GPS_Status status_primary = state[primary_instance].status;
+                      
 
-                    // Treat U-blox F9 as SBAS as it is dual band GPS and is more accurate than M8 with SBAS                    
-                    if (status_i == GPS_OK_FIX_3D && strcmp(drivers[i]->name(), "u-blox") == 0 && drivers[i]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9) {
+                    // Treat U-blox F9 as SBAS if it has more than or equal to 16 satellites, as it is dual band GPS and is more accurate than M8 with SBAS                    
+                    if (status_i == GPS_OK_FIX_3D && state[i].num_sats >= 16 && strcmp(drivers[i]->name(), "u-blox") == 0 && drivers[i]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9) {
                         status_i = GPS_OK_FIX_3D_DGPS;
                     }
 
-                    // Treat U-blox F9 as SBAS as it is dual band GPS and is more accurate than M8 with SBAS                    
-                    if (status_primary == GPS_OK_FIX_3D && strcmp(drivers[primary_instance]->name(), "u-blox") == 0 && drivers[primary_instance]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9) {
+                    // Treat U-blox F9 as SBAS if it has more than or equal to 16 satellites, as it is dual band GPS and is more accurate than M8 with SBAS
+                    if (status_primary == GPS_OK_FIX_3D && state[primary_instance].num_sats >= 16 && strcmp(drivers[primary_instance]->name(), "u-blox") == 0 && drivers[primary_instance]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9) {
                         status_primary = GPS_OK_FIX_3D_DGPS;
                     }
 
