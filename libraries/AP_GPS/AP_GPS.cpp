@@ -760,7 +760,7 @@ void AP_GPS::update(void)
                         should_switch = true;
                     }
                     
-                    if (status_i == status_primary && !hal.util->get_soft_armed() && state[i].num_sats >= state[primary_instance].num_sats+3) {
+                    else if (status_i == status_primary && !hal.util->get_soft_armed() && state[i].num_sats >= state[primary_instance].num_sats+3) {
                         should_switch = true;                        
                     }
 
