@@ -113,6 +113,8 @@
 class NavEKF3_core : public NavEKF_core_common
 {
 public:
+    friend class NavEKF3;
+
     // Constructor
     NavEKF3_core(class NavEKF3 *_frontend);
 
@@ -348,8 +350,10 @@ public:
     */
     void getFilterStatus(nav_filter_status &status) const;
 
-    // send an EKF_STATUS_REPORT message to GCS
-    void send_status_report(mavlink_channel_t chan) const;
+    /*
+      get GPS status
+     */
+    void getFilterGpsStatus(nav_gps_status &faults) const;
 
     // provides the height limit to be observed by the control loops
     // returns false if no height limiting is required
