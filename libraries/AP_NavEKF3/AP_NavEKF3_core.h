@@ -67,6 +67,8 @@ class AP_AHRS;
 class NavEKF3_core : public NavEKF_core_common
 {
 public:
+    friend class NavEKF3;
+
     // Constructor
     NavEKF3_core(NavEKF3 *_frontend);
 
@@ -325,9 +327,6 @@ public:
         If GPS data is being used
     */
     void getFilterStatus(nav_filter_status &status) const;
-
-    // send an EKF_STATUS_REPORT message to GCS
-    void send_status_report(mavlink_channel_t chan);
 
     // provides the height limit to be observed by the control loops
     // returns false if no height limiting is required
