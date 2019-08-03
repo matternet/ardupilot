@@ -14,11 +14,7 @@
 #define SEEK_CUR 1
 #define SEEK_END 2
 
-#if FF_USE_LFN != 0
-#define MAX_NAME_LEN FF_MAX_LFN 
-#else
-#define MAX_NAME_LEN 13
-#endif
+#define MAX_NAME_LEN _MAX_LFN
 
 typedef struct __file FILE;
 

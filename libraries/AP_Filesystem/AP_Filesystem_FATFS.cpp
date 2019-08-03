@@ -7,6 +7,129 @@
 
 #if HAVE_FILESYSTEM_SUPPORT && CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 
+#include <AP_HAL_ChibiOS/Semaphores.h>
+
+#define HAL_SEMAPHORE_BLOCK_FOREVER 0
+
+// a recursive semaphore, allowing for a thread to take it more than
+// once. It must be released the same number of times it is taken
+class Semaphore_Recursive : public ChibiOS::Semaphore {
+public:
+    Semaphore_Recursive();
+    bool give() override;
+    bool take(uint32_t timeout_ms) override;
+    bool take_nonblocking() override;
+private:
+    uint32_t count;
+};
+
+// constructor
+Semaphore_Recursive::Semaphore_Recursive()
+    : Semaphore(), count(0)
+{}
+
+
+bool Semaphore_Recursive::give()
+{
+    chSysLock();
+    mutex_t *mtx = (mutex_t *)&_lock;
+    osalDbgAssert(count>0, "recursive semaphore");
+    if (count != 0) {
+        count--;
+        if (count == 0) {
+            // this thread is giving it up
+            chMtxUnlockS(mtx);
+            // we may need to re-schedule if our priority was increased due to
+            // priority inheritance
+            chSchRescheduleS();
+        }
+    }
+    chSysUnlock();
+    return true;
+}
+
+bool Semaphore_Recursive::take(uint32_t timeout_ms)
+{
+    // most common case is we can get the lock immediately
+    if (Semaphore::take_nonblocking()) {
+        count=1;
+        return true;
+    }
+
+    // check for case where we hold it already
+    chSysLock();
+    mutex_t *mtx = (mutex_t *)&_lock;
+    if (mtx->owner == chThdGetSelfX()) {
+        count++;
+        chSysUnlock();
+        return true;
+    }
+    chSysUnlock();
+    if (Semaphore::take(timeout_ms)) {
+        count = 1;
+        return true;
+    }
+    return false;
+}
+
+bool Semaphore_Recursive::take_nonblocking(void)
+{
+    // most common case is we can get the lock immediately
+    if (Semaphore::take_nonblocking()) {
+        count=1;
+        return true;
+    }
+
+    // check for case where we hold it already
+    chSysLock();
+    mutex_t *mtx = (mutex_t *)&_lock;
+    if (mtx->owner == chThdGetSelfX()) {
+        count++;
+        chSysUnlock();
+        return true;
+    }
+    chSysUnlock();
+    if (Semaphore::take_nonblocking()) {
+        count = 1;
+        return true;
+    }
+    return false;
+}
+
+class WithSemaphore {
+public:
+    WithSemaphore(Semaphore_Recursive *mtx, uint32_t line);
+    WithSemaphore(Semaphore_Recursive &mtx, uint32_t line);
+
+    ~WithSemaphore();
+private:
+    Semaphore_Recursive &_mtx;
+};
+
+#define WITH_SEMAPHORE( sem ) JOIN( sem, __LINE__, __COUNTER__ )
+#define JOIN( sem, line, counter ) _DO_JOIN( sem, line, counter )
+#define _DO_JOIN( sem, line, counter ) WithSemaphore _getsem ## counter(sem, line)
+
+/*
+  implement WithSemaphore class for WITH_SEMAPHORE() support
+ */
+WithSemaphore::WithSemaphore(Semaphore_Recursive *mtx, uint32_t line) :
+    WithSemaphore(*mtx, line)
+{}
+
+WithSemaphore::WithSemaphore(Semaphore_Recursive &mtx, uint32_t line) :
+    _mtx(mtx)
+{
+    _mtx.take_blocking();
+}
+
+WithSemaphore::~WithSemaphore()
+{
+    _mtx.give();
+}
+
+static Semaphore_Recursive sem;
+
 #include <AP_HAL_ChibiOS/sdcard.h>
 
 #if 0
@@ -254,7 +377,7 @@ static int fatfs_to_errno( FRESULT Result )
 
 static int fatfs_getc(FILE *stream)
 {
-    WITH_SEMAPHORE(AP::FS().get_sem());
+    WITH_SEMAPHORE(sem);
 
     FIL *fh;
     UINT size;
@@ -285,7 +408,7 @@ static int fatfs_getc(FILE *stream)
 
 static int fatfs_putc(char c, FILE *stream)
 {
-    WITH_SEMAPHORE(AP::FS().get_sem());
+    WITH_SEMAPHORE(sem);
 
     int res;
     FIL *fh;
@@ -868,7 +991,7 @@ int64_t AP_Filesystem::disk_space(const char *path)
 
 static int fileno(FILE *stream)
 {
-    WITH_SEMAPHORE(AP::FS().get_sem());
+    WITH_SEMAPHORE(sem);
 
     int fileno;
 
@@ -967,7 +1090,7 @@ FILE *fopen(const char *path, const char *mode)
 
 int fputc(int c, FILE *stream)
 {
-    WITH_SEMAPHORE(AP::FS().get_sem());
+    WITH_SEMAPHORE(sem);
     return fatfs_putc(c,stream);
 }
 

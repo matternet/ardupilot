@@ -60,11 +60,6 @@ public:
 
     // return total disk space in bytes, -1 on error
     int64_t disk_space(const char *path);
-
-    HAL_Semaphore_Recursive &get_sem(void) { return sem; }
-
-private:
-    HAL_Semaphore_Recursive sem;
 };
 
 namespace AP {
