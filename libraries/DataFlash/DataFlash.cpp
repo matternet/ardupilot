@@ -106,7 +106,7 @@ void DataFlash_Class::Init(const struct LogStructure *structures, uint8_t num_ty
     _num_types = num_types;
     _structures = structures;
 
-#if defined(HAL_BOARD_LOG_DIRECTORY)
+#if defined(HAL_BOARD_LOG_DIRECTORY) && HAVE_FILESYSTEM_SUPPORT
  #if HAL_OS_POSIX_IO || HAL_OS_FATFS_IO
     if (_params.backend_types == DATAFLASH_BACKEND_FILE ||
         _params.backend_types == DATAFLASH_BACKEND_BOTH) {
@@ -123,7 +123,7 @@ void DataFlash_Class::Init(const struct LogStructure *structures, uint8_t num_ty
             _next_backend++;
         }
     }
- #elif CONFIG_HAL_BOARD == HAL_BOARD_F4LIGHT 
+ #elif CONFIG_HAL_BOARD == HAL_BOARD_F4LIGHT
 
     if (_params.backend_types == DATAFLASH_BACKEND_FILE ||
         _params.backend_types == DATAFLASH_BACKEND_BOTH) {
