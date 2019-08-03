@@ -23,7 +23,10 @@ extern const AP_HAL::HAL& hal;
 #define HAL_DATAFLASH_MAV_BUFSIZE  8
 #endif 
 
-// by default log for 60 seconds after disarming
+#ifndef HAL_LOGGING_FILE_TIMEOUT
+#define HAL_LOGGING_FILE_TIMEOUT 5
+#endif 
+
 #ifndef HAL_LOGGER_ARM_PERSIST
 #define HAL_LOGGER_ARM_PERSIST 60
 #endif
@@ -72,6 +75,13 @@ const AP_Param::GroupInfo DataFlash_Class::var_info[] = {
     // @Units: kB
     AP_GROUPINFO("_MAV_BUFSIZE",  5, DataFlash_Class, _params.mav_bufsize,       HAL_DATAFLASH_MAV_BUFSIZE),
 
+    // @Param: _FILE_TIMEOUT
+    // @DisplayName: Timeout before giving up on file writes
+    // @Description: This controls the amount of time before failing writes to a log file cause the file to be closed and logging stopped.
+    // @User: Standard
+    // @Units: s
+    AP_GROUPINFO("_FILE_TIMEOUT",  6, AP_Logger, _params.file_timeout,     HAL_LOGGING_FILE_TIMEOUT),
+    
     AP_GROUPEND
 };
 
