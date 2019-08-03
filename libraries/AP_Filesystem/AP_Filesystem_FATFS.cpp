@@ -437,12 +437,17 @@ static int fatfs_putc(char c, FILE *stream)
 
 // check for a remount and return -1 if it fails
 #define CHECK_REMOUNT() do { if (remount_needed && !remount_file_system()) { errno = EIO; return -1; }} while (0)
+#define CHECK_REMOUNT_NULL() do { if (remount_needed && !remount_file_system()) { errno = EIO; return NULL; }} while (0)
+
+// we allow for IO retries if either not armed or not in main thread
+#define RETRY_ALLOWED() (!hal.scheduler->in_main_thread() || !hal.util->get_soft_armed())
 
 /*
   try to remount the file system on disk error
  */
 static bool remount_file_system(void)
 {
+    hal.scheduler->expect_delay_ms(3000);
     if (!remount_needed) {
         sdcard_stop();
     }
@@ -522,7 +527,7 @@ int AP_Filesystem::open(const char *pathname, int flags)
         return -1;
     }
     res = f_open(fh, pathname, (BYTE) (fatfs_modes & 0xff));
-    if (res == FR_DISK_ERR && !hal.scheduler->in_main_thread()) {
+    if (res == FR_DISK_ERR && RETRY_ALLOWED()) {
         // one retry on disk error
         hal.scheduler->delay(100);
         if (remount_file_system()) {
@@ -649,7 +654,7 @@ ssize_t AP_Filesystem::write(int fd, const void *buf, size_t count)
     }
 
     res = f_write(fh, buf, bytes, &size);
-    if (res == FR_DISK_ERR && !hal.scheduler->in_main_thread()) {
+    if (res == FR_DISK_ERR && RETRY_ALLOWED()) {
         // one retry on disk error
         hal.scheduler->delay(100);
         if (remount_file_system()) {
@@ -710,7 +715,6 @@ off_t AP_Filesystem::lseek(int fileno, off_t position, int whence)
     if (isatty(fileno)) {
         return -1;
     }
-
 
     stream = fileno_to_stream(fileno);
     stream->flags |= __SUNGET;
@@ -797,6 +801,8 @@ int AP_Filesystem::stat(const char *name, struct stat *buf)
 
     WITH_SEMAPHORE(sem);
 
+    CHECK_REMOUNT();
+
     errno = 0;
 
     // f_stat does not handle / or . as root directory
@@ -812,6 +818,12 @@ int AP_Filesystem::stat(const char *name, struct stat *buf)
     }
 
     res = f_stat(name, &info);
+    if (res == FR_DISK_ERR && RETRY_ALLOWED()) {
+        // one retry on disk error
+        if (remount_file_system()) {
+            res = f_stat(name, &info);
+        }
+    }
     if (res != FR_OK) {
         errno = fatfs_to_errno((FRESULT)res);
         return -1;
@@ -888,12 +900,20 @@ DIR *AP_Filesystem::opendir(const char *pathdir)
 {
     WITH_SEMAPHORE(sem);
 
+    CHECK_REMOUNT_NULL();
+
     debug("Opendir %s", pathdir);
     struct DIR_Wrapper *ret = new DIR_Wrapper;
     if (!ret) {
         return nullptr;
     }
     int res = f_opendir(&ret->d, pathdir);
+    if (res == FR_DISK_ERR && RETRY_ALLOWED()) {
+        // one retry on disk error
+        if (remount_file_system()) {
+            res = f_opendir(&ret->d, pathdir);
+        }
+    }
     if (res != FR_OK) {
         errno = fatfs_to_errno((FRESULT)res);
         delete ret;
