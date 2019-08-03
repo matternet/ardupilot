@@ -80,7 +80,7 @@ const AP_Param::GroupInfo DataFlash_Class::var_info[] = {
     // @Description: This controls the amount of time before failing writes to a log file cause the file to be closed and logging stopped.
     // @User: Standard
     // @Units: s
-    AP_GROUPINFO("_FILE_TIMEOUT",  6, AP_Logger, _params.file_timeout,     HAL_LOGGING_FILE_TIMEOUT),
+    AP_GROUPINFO("_FILE_TIMEOUT",  6, DataFlash_Class, _params.file_timeout,     HAL_LOGGING_FILE_TIMEOUT),
     
     AP_GROUPEND
 };

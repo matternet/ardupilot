@@ -971,6 +971,22 @@ void DataFlash_File::flush(void)
 #endif // APM_BUILD_TYPE(APM_BUILD_Replay) || APM_BUILD_TYPE(APM_BUILD_UNKNOWN)
 #endif
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+static void unix_time_to_fat(time_t epoch, uint16_t *date, uint16_t *time)
+{
+    struct tm *t = gmtime((time_t *) &epoch);
+
+/* Pack date and time into a uint32_t variable */
+    *date = ((uint16_t)(t->tm_year - 80) << 9)
+        | (((uint16_t)t->tm_mon+1) << 5)
+        | (((uint16_t)t->tm_mday));
+
+    *time = ((uint16_t)t->tm_hour << 11)
+        | ((uint16_t)t->tm_min << 5)
+        | ((uint16_t)t->tm_sec >> 1);
+}
+#endif
+
 void DataFlash_File::_io_timer(void)
 {
     uint32_t tnow = AP_HAL::millis();
@@ -1069,11 +1085,13 @@ void DataFlash_File::_io_timer(void)
         if (_need_rtc_update) {
             uint64_t utc_usec;
             if (AP::rtc().get_utc_usec(utc_usec)) {
-                struct utimbuf t {};
-                t.modtime = utc_usec / (1000UL * 1000UL);
-                t.actime = t.modtime;
-                // we ignore return on utime() as there is nothing useful we can do
-                (void)utime(_write_filename, &t);
+                uint32_t modtime = utc_usec / (1000UL * 1000UL);
+                FILINFO fno;
+                uint16_t fdate,ftime;
+                unix_time_to_fat(modtime, (uint16_t *) &fdate, (uint16_t *) &ftime);
+                fno.fdate = fdate;
+                fno.ftime = ftime;
+                f_utime(_write_filename, (FILINFO *) &fno);
                 _need_rtc_update = false;
             }
         }
