@@ -71,7 +71,7 @@ public:
     virtual void     read(uint16_t* period_us, uint8_t len) = 0;
 
     /* Read the current input state. This returns the last value that was written. */
-    virtual uint16_t read_last_sent(uint8_t ch) { return read(ch); }
+    virtual uint16_t read_last_sent(uint8_t c) { return read(c); }
     virtual void     read_last_sent(uint16_t* period_us, uint8_t len) { read(period_us, len); };
 
     /*
