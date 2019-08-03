@@ -7,6 +7,8 @@
 
 #if HAVE_FILESYSTEM_SUPPORT && CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 
+#include <AP_HAL_ChibiOS/sdcard.h>
+
 #if 0
 #define debug(fmt, args ...)  do {printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); } while(0)
 #else
@@ -32,11 +34,9 @@ struct __file {
     int len;        /* characters read or written so far */
     int (*put)(char, struct __file *);  				/* write one char to device */
     int (*get)(struct __file *);    					/* read one char from device */
-    void    *udata;     /* User defined and accessible data. */
+    FIL  *fh;
+    char *name;
 };
-
-#define fdev_set_udata(stream, u) do { (stream)->udata = u; } while(0)
-#define fdev_get_udata(stream) ((stream)->udata)
 
 #define FATFS_R (S_IRUSR | S_IRGRP | S_IROTH)	/*< FatFs Read perms */
 #define FATFS_W (S_IWUSR | S_IWGRP | S_IWOTH)	/*< FatFs Write perms */
@@ -52,7 +52,9 @@ struct __file {
 #define _FDEV_SETUP_RW    (__SRD|__SWR) /**< fdev_setup_stream() with read/write intent */
 
 typedef struct __file FILE;
-FILE *__iob[MAX_FILES];
+
+static FILE *__iob[MAX_FILES];
+static bool remount_needed = false;
 
 static bool isatty(int fileno)
 {
@@ -68,7 +70,7 @@ static bool isatty(int fileno)
 ///
 /// @return fileno on success.
 /// @return -1 on failure with errno set.
-static int new_file_descriptor( void )
+static int new_file_descriptor(const char *pathname)
 {
     int i;
     FILE *stream;
@@ -90,9 +92,18 @@ static int new_file_descriptor( void )
                 errno = ENOMEM;
                 return -1;
             }
+            char *fname = (char *)malloc(strlen(pathname)+1);
+            if (fname == NULL) {
+                free(fh);
+                free(stream);
+                errno = ENOMEM;
+                return -1;
+            }
+            strcpy(fname, pathname);
+            stream->name = fname;
 
             __iob[i]  = stream;
-            fdev_set_udata(stream, (void *) fh);
+            stream->fh = fh;
             return i;
         }
     }
@@ -132,7 +143,7 @@ static int free_file_descriptor(int fileno)
         return -1;
     }
 
-    fh = (FIL *)fdev_get_udata(stream);
+    fh = stream->fh;
 
     if (fh != NULL) {
         free(fh);
@@ -141,6 +152,9 @@ static int free_file_descriptor(int fileno)
     if (stream->buf != NULL && stream->flags & __SMALLOC) {
         free(stream->buf);
     }
+
+    free(stream->name);
+    stream->name = NULL;
 
     __iob[fileno]  = NULL;
     free(stream);
@@ -163,7 +177,7 @@ static FIL *fileno_to_fatfs(int fileno)
         return nullptr;
     }
 
-    fh = (FIL *)fdev_get_udata(stream);
+    fh = stream->fh;
     if (fh == NULL) {
         errno = EBADF;
         return nullptr;
@@ -254,7 +268,7 @@ static int fatfs_getc(FILE *stream)
         return (EOF);
     }
 
-    fh = (FIL *) fdev_get_udata(stream);
+    fh = stream->fh;
     if (fh == NULL) {
         errno = EBADF;                            // Bad File Number
         return (EOF);
@@ -283,7 +297,7 @@ static int fatfs_putc(char c, FILE *stream)
         return (EOF);
     }
 
-    fh = (FIL *) fdev_get_udata(stream);
+    fh = stream->fh;
     if (fh == NULL) {
         errno = EBADF;                            // Bad File Number
         return (EOF);
@@ -298,6 +312,45 @@ static int fatfs_putc(char c, FILE *stream)
     return c;
 }
 
+// check for a remount and return -1 if it fails
+#define CHECK_REMOUNT() do { if (remount_needed && !remount_file_system()) { errno = EIO; return -1; }} while (0)
+
+/*
+  try to remount the file system on disk error
+ */
+static bool remount_file_system(void)
+{
+    if (!remount_needed) {
+        sdcard_stop();
+    }
+    if (!sdcard_retry()) {
+        remount_needed = true;
+        return false;
+    }
+    remount_needed = false;
+    for (uint16_t i=0; i<MAX_FILES; i++) {
+        FILE *f = __iob[i];
+        if (!f) {
+            continue;
+        }
+        FIL *fh = f->fh;
+        FSIZE_t offset = fh->fptr;
+        uint8_t flags = fh->flag & (FA_READ | FA_WRITE);
+
+        memset(fh, 0, sizeof(*fh));
+        if (flags & FA_WRITE) {
+            // the file may not have been created yet on the sdcard
+            flags |= FA_OPEN_ALWAYS;
+        }
+        FRESULT res = f_open(fh, f->name, flags);
+        debug("reopen %s flags=0x%x ofs=%u -> %d\n", f->name, unsigned(flags), unsigned(offset), int(res));
+        if (res == FR_OK) {
+            f_lseek(fh, offset);
+        }
+    }
+    return true;
+}
+
 int AP_Filesystem::open(const char *pathname, int flags)
 {
     int fileno;
@@ -307,6 +360,8 @@ int AP_Filesystem::open(const char *pathname, int flags)
     int res;
 
     WITH_SEMAPHORE(sem);
+
+    CHECK_REMOUNT();
 
     errno = 0;
     debug("Open %s 0x%x", pathname, flags);
@@ -327,7 +382,7 @@ int AP_Filesystem::open(const char *pathname, int flags)
         }
     }
 
-    fileno = new_file_descriptor();
+    fileno = new_file_descriptor(pathname);
 
     // checks if fileno out of bounds
     stream = fileno_to_stream(fileno);
@@ -344,6 +399,13 @@ int AP_Filesystem::open(const char *pathname, int flags)
         return -1;
     }
     res = f_open(fh, pathname, (BYTE) (fatfs_modes & 0xff));
+    if (res == FR_DISK_ERR && !hal.scheduler->in_main_thread()) {
+        // one retry on disk error
+        hal.scheduler->delay(100);
+        if (remount_file_system()) {
+            res = f_open(fh, pathname, (BYTE) (fatfs_modes & 0xff));
+        }
+    }
     if (res != FR_OK) {
         errno = fatfs_to_errno((FRESULT)res);
         free_file_descriptor(fileno);
@@ -421,6 +483,8 @@ ssize_t AP_Filesystem::read(int fd, void *buf, size_t count)
 
     WITH_SEMAPHORE(sem);
 
+    CHECK_REMOUNT();
+
     if (count > 0) {
         *(char *) buf = 0;
     }
@@ -452,6 +516,8 @@ ssize_t AP_Filesystem::write(int fd, const void *buf, size_t count)
 
     WITH_SEMAPHORE(sem);
 
+    CHECK_REMOUNT();
+
     // fileno_to_fatfs checks for fd out of bounds
     fh = fileno_to_fatfs(fd);
     if ( fh == NULL ) {
@@ -460,6 +526,13 @@ ssize_t AP_Filesystem::write(int fd, const void *buf, size_t count)
     }
 
     res = f_write(fh, buf, bytes, &size);
+    if (res == FR_DISK_ERR && !hal.scheduler->in_main_thread()) {
+        // one retry on disk error
+        hal.scheduler->delay(100);
+        if (remount_file_system()) {
+            res = f_write(fh, buf, bytes, &size);
+        }
+    }
     if (res != FR_OK) {
         errno = fatfs_to_errno(res);
         return -1;
@@ -729,7 +802,6 @@ struct dirent *AP_Filesystem::readdir(DIR *dirp)
     len = strlen(fno.fname);
     strncpy(d->de.d_name,fno.fname,len);
     d->de.d_name[len] = 0;
-    debug("readdir -> %s", d->de.d_name);
     return &d->de;
 }
 
@@ -760,6 +832,7 @@ int64_t AP_Filesystem::disk_free(const char *path)
     FATFS *fs;
     DWORD fre_clust, fre_sect;
 
+    CHECK_REMOUNT();
 
     /* Get volume information and free clusters of drive 1 */
     FRESULT res = f_getfree("/", &fre_clust, &fs);
@@ -777,13 +850,15 @@ int64_t AP_Filesystem::disk_space(const char *path)
 {
     WITH_SEMAPHORE(sem);
 
+    CHECK_REMOUNT();
+
     FATFS *fs;
     DWORD fre_clust, tot_sect;
 
     /* Get volume information and free clusters of drive 1 */
     FRESULT res = f_getfree("/", &fre_clust, &fs);
     if (res) {
-        return (res);
+        return -1;
     }
 
     /* Get total sectors and free sectors */
