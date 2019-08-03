@@ -23,7 +23,6 @@
   without an implementation. If we need them then we can implement as
   needed.
  */
-#include <posix.h>
 #include <string.h>
 #include <hal.h>
 #include <memstreams.h>
