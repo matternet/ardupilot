@@ -16,10 +16,10 @@
 
 #pragma once
 
-#include "posix.h"
 #include <stdarg.h>
 #include <stdint.h>
 #include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,9 +30,6 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 int asprintf(char **strp, const char *fmt, ...);
 int vprintf(const char *fmt, va_list arg);
 int printf(const char *fmt, ...);
-#if defined(USE_FATFS) || (defined(HAL_OS_FATFS_IO) && HAL_OS_FATFS_IO)
-int fscanf ( FILE * stream, const char * format, ... );
-#endif
 
 int scanf (const char *fmt, ...);
 int sscanf (const char *buf, const char *fmt, ...);

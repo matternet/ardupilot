@@ -41,6 +41,5 @@ public:
     void assert_owner(void) {
         osalDbgAssert(check_owner(), "owner");
     }
-private:
     mutex_t _lock;
 };
