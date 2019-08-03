@@ -132,11 +132,6 @@ CSRC = $(STARTUPSRC) \
 	   $(HWDEF)/common/stm32_util.c \
 	   $(HWDEF)/common/bouncebuffer.c
 
-ifeq ($(USE_FATFS),yes)
-CSRC += $(HWDEF)/common/posix.c
-endif
-
-
 #	   $(TESTSRC) \
 #	   test.c
 

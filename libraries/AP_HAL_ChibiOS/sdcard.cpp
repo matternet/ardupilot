@@ -18,7 +18,7 @@
 #include "sdcard.h"
 #include "hwdef/common/spi_hook.h"
 #include <AP_BoardConfig/AP_BoardConfig.h>
-#include "Semaphores.h"
+#include <AP_Filesystem/AP_Filesystem.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -79,8 +79,8 @@ bool sdcard_init()
         printf("Successfully mounted SDCard (slowdown=%u)\n", (unsigned)sd_slowdown);
 
         // Create APM Directory if needed
-        mkdir("/APM", 0777);
-        mkdir("/APM/LOGS", 0777);
+        AP::FS().mkdir("/APM");
+        AP::FS().mkdir("/APM/LOGS");
         sdcard_running = true;
         sem.give();
         return true;
@@ -127,8 +127,8 @@ bool sdcard_init()
         printf("Successfully mounted SDCard (slowdown=%u)\n", (unsigned)sd_slowdown);
 
         // Create APM Directory if needed
-        mkdir("/APM", 0777);
-        mkdir("/APM/LOGS", 0777);
+        AP::FS().mkdir("/APM");
+        AP::FS().mkdir("/APM/LOGS");
         sem.give();
         return true;
     }
