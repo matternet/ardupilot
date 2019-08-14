@@ -1521,6 +1521,17 @@ void NavEKF2_core::MagTableConstrain(void)
                                                    table_earth_field_ga.z+limit_ga);
 }
 
+// constrain states using limit on mag offsets
+void NavEKF2_core::MagOffsetConstrain(void)
+{
+    if (frontend->_mag_learn_limit > 0) {
+        float limit_ga = frontend->_mag_learn_limit * 0.001f;
+        stateStruct.body_magfield.x = constrain_float(stateStruct.body_magfield.x, -limit_ga, limit_ga);
+        stateStruct.body_magfield.y = constrain_float(stateStruct.body_magfield.y, -limit_ga, limit_ga);
+        stateStruct.body_magfield.z = constrain_float(stateStruct.body_magfield.z, -limit_ga, limit_ga);
+    }
+}
+
 // constrain states to prevent ill-conditioning
 void NavEKF2_core::ConstrainStates()
 {
@@ -1547,6 +1558,8 @@ void NavEKF2_core::ConstrainStates()
         // use table constrain
         MagTableConstrain();
     }
+
+    MagOffsetConstrain();
 
     // body magnetic field limit
     for (uint8_t i=19; i<=21; i++) statesArray[i] = constrain_float(statesArray[i],-0.5f,0.5f);
