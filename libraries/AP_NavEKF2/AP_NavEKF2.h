@@ -368,11 +368,13 @@ private:
     AP_Int8 _gsfRunMask;            // mask controlling which EKF2 instances run a separate EKF-GSF yaw estimator
     AP_Int8 _gsfUseMask;            // mask controlling which EKF2 instances will use EKF-GSF yaw estimator data to assit with yaw resets
     AP_Int8 _gsfResetMaxCount;      // maximum number of times the EKF2 is allowed to reset it's yaw to the EKF-GSF estimate
+    AP_Int16 _mag_learn_limit;      // limit on learned magnetometer offsets
 
 // Possible values for _flowUse
 #define FLOW_USE_NONE    0
 #define FLOW_USE_NAV     1
 #define FLOW_USE_TERRAIN 2
+
 
     // Tuning parameters
     const float gpsNEVelVarAccScale = 0.05f;       // Scale factor applied to NE velocity measurement variance due to manoeuvre acceleration

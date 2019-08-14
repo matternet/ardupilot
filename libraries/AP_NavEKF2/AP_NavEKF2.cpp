@@ -594,7 +594,15 @@ const AP_Param::GroupInfo NavEKF2::var_info[] = {
     // @User: Advanced
     // @RebootRequired: True
     AP_GROUPINFO("GSF_RST_MAX", 57, NavEKF2, _gsfResetMaxCount, 2),
-    
+
+    // @Param: MAG_LRN_LIM
+    // @DisplayName: Magnetometer offset learning limit
+    // @Description: This limits the size of the learned magnetometer offsets. A value of zero means no limit. Limiting the learned offsets can be helpful when the compass calibration is known to be good and the vehicle is operating in an environment that can lead to significant incorrect learned offsets due to temporary local fields
+    // @User: Advanced
+    // @Range: 0 500
+    // @Units: mGauss
+    AP_GROUPINFO("MAG_LRN_LIM", 58, NavEKF2, _mag_learn_limit, 0),
+
     AP_GROUPEND
 };
 
