@@ -180,12 +180,16 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
  */
 bool AP_RangeFinder_LightWareI2C::init()
 {
-    if (!sf20_init()) {
-    	if (!legacy_init()) {
-    		return false;
-    	}
+    if (sf20_init()) {
+        hal.console->printf("Found SF20 native Lidar\n");
+        return true;
     }
-    return true;
+    if (legacy_init()) {
+        hal.console->printf("Found SF20 legacy Lidar\n");
+        return true;
+    }
+    hal.console->printf("SF20 not found\n");
+    return false;
 }
 
 // Original LiDAR sensor configuration.
@@ -296,7 +300,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     // Switches distance streaming on or off:
     // 0 = off
     // 1 = on
-    if(!sf20_send_and_expect("#SU,1\r\n", "su:1")) {
+    if (!sf20_send_and_expect("#SU,1\r\n", "su:1")) {
         return false;
     }
 
@@ -339,7 +343,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 {
     // Parses up to 5 ASCII streams for LiDAR data.
     // If a parse fails, the stream measurement is not updated until it is successfully read in the future.
-    uint8_t stream[lx20_max_expected_stream_reply_len_bytes]; // Maximum response length for a stream ie "ldf,0:40.99" is 11 characters
+    uint8_t stream[lx20_max_expected_stream_reply_len_bytes+1]; // Maximum response length for a stream ie "ldf,0:40.99" is 11 characters
 
     int i = streamSequence[currentStreamSequenceIndex];
     size_t num_processed_chars = 0;
@@ -348,6 +352,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
     if (!_dev->read(stream, sizeof(stream))) {
         return false;
     }
+    stream[lx20_max_expected_stream_reply_len_bytes] = 0;
 
     if (!sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_stream_val[i])) {
         return false;
@@ -450,19 +455,16 @@ bool AP_RangeFinder_LightWareI2C::sf20_wait_on_reply(uint8_t *rx_two_byte)
     // Waits for a non-zero first byte while repeatedly reading 16 bits.
     // This is used after a read command to allow the sf20 time to provide the result.
     uint32_t start_time_ms = AP_HAL::millis();
-    uint32_t current_time_ms;
-    uint32_t elapsed_time_ms;
     const uint32_t max_wait_time_ms = 50;
 
-    while(_dev->read(rx_two_byte, 2)) {
-        current_time_ms = AP_HAL::millis();
-        elapsed_time_ms = current_time_ms - start_time_ms;
+    while (AP_HAL::millis() - start_time_ms < max_wait_time_ms) {
+        if (!_dev->read(rx_two_byte, 2)) {
+            hal.scheduler->delay(1);
+            continue;
+        }
         if (rx_two_byte[0] != 0) {
             // normal exit
             return true;
-        }
-        if (elapsed_time_ms > max_wait_time_ms) {
-            return false;
         }
     }
     return false;
