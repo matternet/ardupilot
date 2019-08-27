@@ -235,6 +235,8 @@ void Copter::init_aux_switch_function(int8_t ch_option, uint8_t ch_flag)
         case AUXSW_INVERTED:
         case AUXSW_WINCH_ENABLE:
         case AUXSW_RC_OVERRIDE_ENABLE:
+        case AUXSW_GPS1_DISABLE:
+        case AUXSW_GPS2_DISABLE:
             do_aux_switch_function(ch_option, ch_flag);
             break;
     }
@@ -775,6 +777,14 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
             userhook_auxSwitch3(ch_flag);
             break;
 #endif
+
+        case AUXSW_GPS1_DISABLE:
+            gps.force_disable(0, ch_flag==AUX_SWITCH_HIGH);
+            break;
+
+        case AUXSW_GPS2_DISABLE:
+            gps.force_disable(1, ch_flag==AUX_SWITCH_HIGH);
+            break;
     }
 }
 
