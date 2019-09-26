@@ -380,11 +380,15 @@ AP_GPS_UBLOX::read(void)
         }
     }
 
+    log_write_stats();
+
     numc = port->available();
     for (int16_t i = 0; i < numc; i++) {        // Process bytes received
 
         // read the next byte
         data = port->read();
+
+        _stats.total_bytes++;
 
 	reset:
         switch(_step) {
@@ -405,6 +409,7 @@ AP_GPS_UBLOX::read(void)
             }
             _step = 0;
             Debug("reset %u", __LINE__);
+            _stats.reset_errors++;
             FALLTHROUGH;
         case 0:
             if(PREAMBLE1 == data)
@@ -445,12 +450,14 @@ AP_GPS_UBLOX::read(void)
                 // assume any payload bigger then what we know about is noise
                 _payload_length = 0;
                 _step = 0;
-				goto reset;
+                _stats.reset_errors++;
+                goto reset;
             }
             _payload_counter = 0;                               // prepare to receive payload
             if (_payload_length == 0) {
                 // bypass payload and go straight to checksum
                 _step++;
+                _stats.zero_payload_errors++;
             }
             break;
 
@@ -472,13 +479,15 @@ AP_GPS_UBLOX::read(void)
             if (_ck_a != data) {
                 Debug("bad cka %x should be %x", data, _ck_a);
                 _step = 0;
-				goto reset;
+                _stats.crc_errors++;
+                goto reset;
             }
             break;
         case 8:
             _step = 0;
             if (_ck_b != data) {
                 Debug("bad ckb %x should be %x", data, _ck_b);
+                _stats.crc_errors++;
                 break;                                                  // bad checksum
             }
 
@@ -601,6 +610,31 @@ void AP_GPS_UBLOX::log_rxm_rawx(const struct ubx_rxm_rawx &raw)
     }
 }
 #endif // UBLOX_RXM_RAW_LOGGING
+
+/*
+  write a GPST message giving statistics on UART handling every 10 seconds
+ */
+void AP_GPS_UBLOX::log_write_stats(void)
+{
+    uint32_t now = AP_HAL::millis();
+    if (now - _last_log_stats_ms < 10000) {
+        return;
+    }
+    _last_log_stats_ms = now;
+    DataFlash_Class::instance()->Log_Write(
+        "GPST",
+        "TimeUS,Inst,Bytes,ECrc,ERst,ZPL",
+        "s#----",
+        "F-----",
+        "QBIIII",
+        AP_HAL::micros64(),
+        state.instance,
+        _stats.total_bytes,
+        _stats.crc_errors,
+        _stats.reset_errors,
+        _stats.zero_payload_errors
+        );
+}
 
 void AP_GPS_UBLOX::unexpected_message(void)
 {
