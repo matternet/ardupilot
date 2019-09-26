@@ -547,6 +547,9 @@ private:
     uint32_t        _unconfigured_messages;
     uint8_t         _hardware_generation;
 
+    // support saving GPST messages
+    void            log_write_stats();
+    uint32_t        _last_log_stats_ms;
 
     // do we have new position information?
     bool            _new_position:1;
@@ -567,6 +570,13 @@ private:
     
     bool havePvtMsg;
     bool haveTimeGPSMsg;
+
+    struct {
+        uint32_t total_bytes;
+        uint32_t crc_errors;
+        uint32_t reset_errors;
+        uint32_t zero_payload_errors;
+    } _stats;
 
     bool        _configure_message_rate(uint8_t msg_class, uint8_t msg_id, uint8_t rate);
     void        _configure_rate(void);
