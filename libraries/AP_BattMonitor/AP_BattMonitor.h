@@ -36,6 +36,7 @@
 // declare backend class
 class AP_BattMonitor_Backend;
 class AP_BattMonitor_Analog;
+class AP_BattMonitor_Analog_Table;
 class AP_BattMonitor_SMBus;
 class AP_BattMonitor_SMBus_Solo;
 class AP_BattMonitor_SMBus_Generic;
@@ -49,6 +50,7 @@ class AP_BattMonitor
 {
     friend class AP_BattMonitor_Backend;
     friend class AP_BattMonitor_Analog;
+    friend class AP_BattMonitor_Analog_Table;
     friend class AP_BattMonitor_SMBus;
     friend class AP_BattMonitor_SMBus_Solo;
     friend class AP_BattMonitor_SMBus_Generic;
@@ -91,6 +93,7 @@ public:
         GENERATOR_FUEL             = 18,
         Rotoye                     = 19,
         MPPT_PacketDigital         = 20,
+        ANALOG_TABLE               = 21,
     };
 
     FUNCTOR_TYPEDEF(battery_failsafe_handler_fn_t, void, const char *, const int8_t);

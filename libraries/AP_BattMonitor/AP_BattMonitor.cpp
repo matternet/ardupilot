@@ -1,5 +1,6 @@
 #include "AP_BattMonitor.h"
 #include "AP_BattMonitor_Analog.h"
+#include "AP_BattMonitor_Analog_Table.h"
 #include "AP_BattMonitor_SMBus.h"
 #include "AP_BattMonitor_SMBus_Solo.h"
 #include "AP_BattMonitor_SMBus_Generic.h"
@@ -118,6 +119,10 @@ AP_BattMonitor::init()
             case Type::ANALOG_VOLTAGE_ONLY:
             case Type::ANALOG_VOLTAGE_AND_CURRENT:
                 drivers[instance] = new AP_BattMonitor_Analog(*this, state[instance], _params[instance]);
+                break;
+            case Type::ANALOG_TABLE:
+                drivers[instance] = new AP_BattMonitor_Analog_Table(*this, state[instance], _params[instance]);
+                _num_instances++;
                 break;
 #if HAL_BATTMON_SMBUS_ENABLE
             case Type::SOLO:
