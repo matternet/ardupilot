@@ -270,6 +270,9 @@ class sitl(Board):
             'AP_HAL_SITL',
             'SITL',
         ]
+        env.CXXFLAGS += [
+            '-Wno-address-of-packed-member',
+            ]
 
         if cfg.options.enable_sfml:
             if not cfg.check_SFML(env):
