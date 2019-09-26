@@ -1,5 +1,6 @@
 #include "AP_BattMonitor.h"
 #include "AP_BattMonitor_Analog.h"
+#include "AP_BattMonitor_Analog_Table.h"
 #include "AP_BattMonitor_SMBus.h"
 #include "AP_BattMonitor_Bebop.h"
 #include "AP_BattMonitor_BLHeliESC.h"
@@ -111,6 +112,10 @@ AP_BattMonitor::init()
             case AP_BattMonitor_Params::BattMonitor_TYPE_ANALOG_VOLTAGE_ONLY:
             case AP_BattMonitor_Params::BattMonitor_TYPE_ANALOG_VOLTAGE_AND_CURRENT:
                 drivers[instance] = new AP_BattMonitor_Analog(*this, state[instance], _params[instance]);
+                break;
+            case AP_BattMonitor_Params::BattMonitor_TYPE_ANALOG_TABLE:
+                drivers[instance] = new AP_BattMonitor_Analog_Table(*this, state[instance], _params[instance]);
+                _num_instances++;
                 break;
             case AP_BattMonitor_Params::BattMonitor_TYPE_SOLO:
                 drivers[instance] = new AP_BattMonitor_SMBus_Solo(*this, state[instance], _params[instance],
