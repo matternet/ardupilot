@@ -76,6 +76,7 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_Gripper',
     'AP_RTC',
     'AP_Filesystem',
+    'AP_ADSB',
 ]
 
 def get_legacy_defines(sketch_name):
