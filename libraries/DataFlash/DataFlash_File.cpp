@@ -163,6 +163,12 @@ bool DataFlash_File::log_exists(const uint16_t lognum) const
 
 void DataFlash_File::periodic_1Hz(const uint32_t now)
 {
+    if (_rotate_pending && !logging_enabled()) {
+        _rotate_pending = false;
+        // handle log rotation once we stop logging
+        stop_logging();
+    }
+
     if (!io_thread_alive()) {
         if (io_thread_warning_decimation_counter == 0) {
             gcs().send_text(MAV_SEVERITY_CRITICAL, "No IO Thread Heartbeat (%s)", last_io_operation);
@@ -1114,7 +1120,7 @@ void DataFlash_File::vehicle_was_disarmed()
         // rotate our log.  Closing the current one and letting the
         // logging restart naturally based on log_disarmed should do
         // the trick:
-        stop_logging();
+        _rotate_pending = true;
     }
 }
 
