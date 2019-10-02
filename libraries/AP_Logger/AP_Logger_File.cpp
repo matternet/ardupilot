@@ -1084,6 +1084,9 @@ void AP_Logger_File::vehicle_was_disarmed()
         // logging restart naturally based on log_disarmed should do
         // the trick:
         _rotate_pending = true;
+
+        // write out all of our system ID and vars again at end of log
+        start_new_log_reset_variables();
     }
 }
 
