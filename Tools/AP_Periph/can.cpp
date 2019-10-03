@@ -40,7 +40,7 @@
 #include <uavcan/equipment/esc/Status.h>
 #include <ardupilot/indication/SafetyState.h>
 #include <ardupilot/indication/Button.h>
-#include <ardupilot/equipment/trafficmonitor/TrafficReport.h>
+#include <com/matternet/equipment/trafficmonitor/TrafficReport.h>
 #include <uavcan/equipment/gnss/RTCMStream.h>
 #include <uavcan/equipment/power/BatteryInfo.h>
 #include <uavcan/protocol/debug/LogMessage.h>
@@ -1905,7 +1905,7 @@ void AP_Periph_FW::can_rangefinder_update(void)
  */
 void AP_Periph_FW::can_send_ADSB(struct __mavlink_adsb_vehicle_t &msg)
 {
-    ardupilot_equipment_trafficmonitor_TrafficReport pkt {};
+    com_matternet_equipment_trafficmonitor_TrafficReport pkt {};
     pkt.timestamp.usec = 0;
     pkt.icao_address = msg.ICAO_address;
     pkt.tslc = msg.tslc;
@@ -1926,19 +1926,19 @@ void AP_Periph_FW::can_send_ADSB(struct __mavlink_adsb_vehicle_t &msg)
     pkt.squawk = msg.squawk;
     memcpy(pkt.callsign, msg.callsign, MIN(sizeof(msg.callsign),sizeof(pkt.callsign)));
     if (msg.flags & 0x8000) {
-        pkt.source = ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_SOURCE_ADSB_UAT;
+        pkt.source = COM_MATTERNET_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_SOURCE_ADSB_UAT;
     } else {
-        pkt.source = ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_SOURCE_ADSB;
+        pkt.source = COM_MATTERNET_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_SOURCE_ADSB;
     }
 
     pkt.traffic_type = msg.emitter_type;
 
     if ((msg.flags & ADSB_FLAGS_VALID_ALTITUDE) != 0 && msg.altitude_type == 0) {
-        pkt.alt_type = ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_ALT_TYPE_PRESSURE_AMSL;
+        pkt.alt_type = COM_MATTERNET_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_ALT_TYPE_PRESSURE_AMSL;
     } else if ((msg.flags & ADSB_FLAGS_VALID_ALTITUDE) != 0 && msg.altitude_type == 1) {
-        pkt.alt_type = ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_ALT_TYPE_WGS84;
+        pkt.alt_type = COM_MATTERNET_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_ALT_TYPE_WGS84;
     } else {
-        pkt.alt_type = ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_ALT_TYPE_ALT_UNKNOWN;
+        pkt.alt_type = COM_MATTERNET_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_ALT_TYPE_ALT_UNKNOWN;
     }
 
     pkt.lat_lon_valid = (msg.flags & ADSB_FLAGS_VALID_COORDS) != 0;
@@ -1952,12 +1952,12 @@ void AP_Periph_FW::can_send_ADSB(struct __mavlink_adsb_vehicle_t &msg)
     pkt.vertical_velocity_valid = (msg.flags & 0x0080) != 0;
     pkt.baro_valid = (msg.flags & 0x0100) != 0;
 
-    uint8_t buffer[ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_MAX_SIZE] {};
-    uint16_t total_size = ardupilot_equipment_trafficmonitor_TrafficReport_encode(&pkt, buffer);
+    uint8_t buffer[COM_MATTERNET_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_MAX_SIZE] {};
+    uint16_t total_size = com_matternet_equipment_trafficmonitor_TrafficReport_encode(&pkt, buffer);
 
     canardBroadcast(&canard,
-                    ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_SIGNATURE,
-                    ARDUPILOT_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_ID,
+                    COM_MATTERNET_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_SIGNATURE,
+                    COM_MATTERNET_EQUIPMENT_TRAFFICMONITOR_TRAFFICREPORT_ID,
                     &transfer_id,
                     CANARD_TRANSFER_PRIORITY_LOW,
                     &buffer[0],
