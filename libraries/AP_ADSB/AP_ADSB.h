@@ -31,10 +31,8 @@
 
 class AP_ADSB {
 public:
-    AP_ADSB()
-    {
-        AP_Param::setup_object_defaults(this, var_info);
-    }
+    // constructor
+    AP_ADSB();
 
     /* Do not allow copies */
     AP_ADSB(const AP_ADSB &other) = delete;
@@ -80,7 +78,14 @@ public:
     // mavlink message handler
     void handle_message(const mavlink_channel_t chan, const mavlink_message_t* msg);
 
+    // get singleton instance
+    static AP_ADSB *get_singleton(void) {
+        return _singleton;
+    }
+
 private:
+    static AP_ADSB *_singleton;
+
     // initialize _vehicle_list
     void init();
 
@@ -180,5 +185,8 @@ private:
     AP_Buffer<adsb_vehicle_t, max_samples> samples;
 
     void push_sample(adsb_vehicle_t &vehicle);
+};
 
+namespace AP {
+    AP_ADSB *ADSB();
 };
