@@ -75,6 +75,9 @@ public:
     }
     bool next_sample(adsb_vehicle_t &obstacle);
 
+    // handle a adsb_vehicle_t from an external source (used for UAVCAN)
+    void handle_adsb_vehicle(const adsb_vehicle_t &vehicle);
+
     // mavlink message handler
     void handle_message(const mavlink_channel_t chan, const mavlink_message_t* msg);
 
@@ -184,7 +187,7 @@ private:
     static const uint8_t max_samples = 30;
     AP_Buffer<adsb_vehicle_t, max_samples> samples;
 
-    void push_sample(adsb_vehicle_t &vehicle);
+    void push_sample(const adsb_vehicle_t &vehicle);
 };
 
 namespace AP {
