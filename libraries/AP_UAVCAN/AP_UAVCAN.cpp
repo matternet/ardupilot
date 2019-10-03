@@ -39,7 +39,7 @@
 #include <uavcan/equipment/indication/RGB565.hpp>
 #include <ardupilot/indication/SafetyState.hpp>
 #include <ardupilot/indication/Button.hpp>
-#include <ardupilot/equipment/trafficmonitor/TrafficReport.hpp>
+#include <com/matternet/equipment/trafficmonitor/TrafficReport.hpp>
 #include <uavcan/equipment/gnss/RTCMStream.hpp>
 #include <uavcan/protocol/debug/LogMessage.hpp>
 
@@ -119,8 +119,8 @@ UC_REGISTRY_BINDER(ButtonCb, ardupilot::indication::Button);
 static uavcan::Subscriber<ardupilot::indication::Button, ButtonCb> *safety_button_listener[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 
 // handler TrafficReport
-UC_REGISTRY_BINDER(TrafficReportCb, ardupilot::equipment::trafficmonitor::TrafficReport);
-static uavcan::Subscriber<ardupilot::equipment::trafficmonitor::TrafficReport, TrafficReportCb> *traffic_report_listener[HAL_MAX_CAN_PROTOCOL_DRIVERS];
+UC_REGISTRY_BINDER(TrafficReportCb, com::matternet::equipment::trafficmonitor::TrafficReport);
+static uavcan::Subscriber<com::ardupilot::equipment::trafficmonitor::TrafficReport, TrafficReportCb> *traffic_report_listener[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 
 // handler actuator status
 UC_REGISTRY_BINDER(ActuatorStatusCb, uavcan::equipment::actuator::Status);
@@ -295,7 +295,7 @@ void AP_UAVCAN::init(uint8_t driver_index, bool enable_filters)
         safety_button_listener[driver_index]->start(ButtonCb(this, &handle_button));
     }
 
-    traffic_report_listener[driver_index] = new uavcan::Subscriber<ardupilot::equipment::trafficmonitor::TrafficReport, TrafficReportCb>(*_node);
+    traffic_report_listener[driver_index] = new uavcan::Subscriber<com::matternet::equipment::trafficmonitor::TrafficReport, TrafficReportCb>(*_node);
     if (traffic_report_listener[driver_index]) {
         traffic_report_listener[driver_index]->start(TrafficReportCb(this, &handle_traffic_report));
     }
@@ -773,7 +773,7 @@ void AP_UAVCAN::handle_traffic_report(AP_UAVCAN* ap_uavcan, uint8_t node_id, con
         return;
     }
 
-    const ardupilot::equipment::trafficmonitor::TrafficReport &msg = cb.msg[0];
+    const com::matternet::equipment::trafficmonitor::TrafficReport &msg = cb.msg[0];
     AP_ADSB::adsb_vehicle_t vehicle;
     mavlink_adsb_vehicle_t &pkt = vehicle.info;
 
@@ -791,10 +791,10 @@ void AP_UAVCAN::handle_traffic_report(AP_UAVCAN* ap_uavcan, uint8_t node_id, con
     }
     pkt.emitter_type = msg.traffic_type;
 
-    if (msg.alt_type == ardupilot::equipment::trafficmonitor::TrafficReport::ALT_TYPE_PRESSURE_AMSL) {
+    if (msg.alt_type == com::matternet::equipment::trafficmonitor::TrafficReport::ALT_TYPE_PRESSURE_AMSL) {
         pkt.flags |= ADSB_FLAGS_VALID_ALTITUDE;
         pkt.altitude_type = ADSB_ALTITUDE_TYPE_PRESSURE_QNH;
-    } else if (msg.alt_type == ardupilot::equipment::trafficmonitor::TrafficReport::ALT_TYPE_WGS84) {
+    } else if (msg.alt_type == com::matternet::equipment::trafficmonitor::TrafficReport::ALT_TYPE_WGS84) {
         pkt.flags |= ADSB_FLAGS_VALID_ALTITUDE;
         pkt.altitude_type = ADSB_ALTITUDE_TYPE_GEOMETRIC;
     }
