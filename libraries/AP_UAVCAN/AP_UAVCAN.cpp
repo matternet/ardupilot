@@ -36,6 +36,8 @@
 #include <uavcan/equipment/power/BatteryInfo.hpp>
 #include <uavcan/protocol/NodeStatus.hpp>
 #include <com/matternet/equipment/uwb/RangeObservation.hpp>
+#include <com/matternet/equipment/trafficmonitor/TrafficReport.hpp>
+#include <AP_ADSB/AP_ADSB.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -383,6 +385,11 @@ static uavcan::Publisher<uavcan::equipment::actuator::ArrayCommand>* act_out_arr
 static uavcan::Publisher<uavcan::equipment::esc::RawCommand>* esc_raw[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::indication::LightsCommand>* rgb_led[MAX_NUMBER_OF_CAN_DRIVERS];
 
+// handler TrafficReport
+UC_REGISTRY_BINDER(TrafficReportCb, com::matternet::equipment::trafficmonitor::TrafficReport);
+static uavcan::Subscriber<com::matternet::equipment::trafficmonitor::TrafficReport, TrafficReportCb> *traffic_report_listener[MAX_NUMBER_OF_CAN_DRIVERS];
+
+
 AP_UAVCAN::AP_UAVCAN() :
     _node_allocator()
 {
@@ -521,6 +528,11 @@ bool AP_UAVCAN::try_init(void)
         return false;
     }
 
+    traffic_report_listener[_uavcan_i] = new uavcan::Subscriber<com::matternet::equipment::trafficmonitor::TrafficReport, TrafficReportCb>(*_node);
+    if (traffic_report_listener[_uavcan_i]) {
+        traffic_report_listener[_uavcan_i]->start(TrafficReportCb(this, &handle_traffic_report));
+    }
+    
     const int gnss_fix_start_res = gnss_fix->start(gnss_fix_cb_arr[_uavcan_i]);
     if (gnss_fix_start_res < 0) {
         debug_uavcan(1, "UAVCAN GNSS subscriber start problem\n\r");
@@ -1461,6 +1473,73 @@ AP_UAVCAN *AP_UAVCAN::get_uavcan(uint8_t iface)
         return nullptr;
     }
     return hal.can_mgr[iface]->get_UAVCAN();
+}
+
+/*
+  handle traffic report
+ */
+void AP_UAVCAN::handle_traffic_report(AP_UAVCAN* ap_uavcan, uint8_t node_id, const TrafficReportCb &cb)
+{
+    AP_ADSB *adsb = AP::ADSB();
+    if (!adsb || !adsb->enabled()) {
+        // ADSB not enabled
+        return;
+    }
+
+    const com::matternet::equipment::trafficmonitor::TrafficReport &msg = cb.msg[0];
+    AP_ADSB::adsb_vehicle_t vehicle;
+    mavlink_adsb_vehicle_t &pkt = vehicle.info;
+
+    pkt.ICAO_address = msg.icao_address;
+    pkt.tslc = msg.tslc;
+    pkt.lat = msg.latitude_deg_1e7;
+    pkt.lon = msg.longitude_deg_1e7;
+    pkt.altitude = msg.alt_m * 1000;
+    pkt.heading = degrees(msg.heading) * 100;
+    pkt.hor_velocity = norm(msg.velocity[0], msg.velocity[1]) * 100;
+    pkt.ver_velocity = -msg.velocity[2] * 100;
+    pkt.squawk = msg.squawk;
+    for (uint8_t i=0; i<9; i++) {
+        pkt.callsign[i] = msg.callsign[i];
+    }
+    pkt.emitter_type = msg.traffic_type;
+
+    if (msg.alt_type == com::matternet::equipment::trafficmonitor::TrafficReport::ALT_TYPE_PRESSURE_AMSL) {
+        pkt.flags |= ADSB_FLAGS_VALID_ALTITUDE;
+        pkt.altitude_type = ADSB_ALTITUDE_TYPE_PRESSURE_QNH;
+    } else if (msg.alt_type == com::matternet::equipment::trafficmonitor::TrafficReport::ALT_TYPE_WGS84) {
+        pkt.flags |= ADSB_FLAGS_VALID_ALTITUDE;
+        pkt.altitude_type = ADSB_ALTITUDE_TYPE_GEOMETRIC;
+    }
+
+    if (msg.lat_lon_valid) {
+        pkt.flags |= ADSB_FLAGS_VALID_COORDS;
+    }
+    if (msg.heading_valid) {
+        pkt.flags |= ADSB_FLAGS_VALID_HEADING;
+    }
+    if (msg.velocity_valid) {
+        pkt.flags |= ADSB_FLAGS_VALID_VELOCITY;
+    }
+    if (msg.callsign_valid) {
+        pkt.flags |= ADSB_FLAGS_VALID_CALLSIGN;
+    }
+    if (msg.ident_valid) {
+        pkt.flags |= ADSB_FLAGS_VALID_SQUAWK;
+    }
+    if (msg.simulated_report) {
+        pkt.flags |= ADSB_FLAGS_SIMULATED;
+    }
+    // flags not in common.xml yet
+    if (msg.vertical_velocity_valid) {
+        pkt.flags |= 0x80;
+    }
+    if (msg.baro_valid) {
+        pkt.flags |= 0x100;
+    }
+
+    vehicle.last_update_ms = AP_HAL::millis() - (vehicle.info.tslc * 1000);
+    adsb->handle_adsb_vehicle(vehicle);
 }
 
 #endif // HAL_WITH_UAVCAN

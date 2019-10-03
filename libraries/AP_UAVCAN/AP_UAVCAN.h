@@ -53,7 +53,23 @@ struct precland_uwb_range_s {
     float range;
 };
 
+// fwd-declare callback classes
+class TrafficReportCb;
+
 extern struct precland_uwb_range_s precland_uwb_range;
+
+/*
+    Frontend Backend-Registry Binder: Whenever a message of said DataType_ from new node is received,
+    the Callback will invoke registery to register the node as separate backend.
+*/
+#define UC_REGISTRY_BINDER(ClassName_, DataType_) \
+	class ClassName_ : public AP_UAVCAN::RegistryBinder<DataType_> { \
+        typedef void (*CN_Registry)(AP_UAVCAN*, uint8_t, const ClassName_&); \
+	    public: \
+	        ClassName_() : RegistryBinder() {} \
+	        ClassName_(AP_UAVCAN* uc,  CN_Registry ffunc) : \
+				RegistryBinder(uc, (Registry)ffunc) {} \
+	}
 
 class AP_UAVCAN {
 public:
@@ -138,6 +154,32 @@ public:
     // output from do_cyclic
     void SRV_send_servos();
     void SRV_send_esc();
+
+    template <typename DataType_>
+    class RegistryBinder {
+    protected:
+        typedef void (*Registry)(AP_UAVCAN* _ap_uavcan, uint8_t _node_id, const RegistryBinder& _cb);
+        AP_UAVCAN* _uc;
+        Registry _ffunc;
+
+    public:
+        RegistryBinder() :
+        	_uc(),
+            _ffunc(),
+            msg() {}
+
+        RegistryBinder(AP_UAVCAN* uc, Registry ffunc) :
+            _uc(uc),
+            _ffunc(ffunc),
+            msg(nullptr) {}
+
+        void operator()(const uavcan::ReceivedDataStructure<DataType_>& _msg) {
+            msg = &_msg;
+            _ffunc(_uc, _msg.getSrcNodeID().get(), *this);
+        }
+
+        const uavcan::ReceivedDataStructure<DataType_> *msg;
+    };
 
 private:
     // ------------------------- GPS
@@ -287,6 +329,7 @@ public:
     {
         _parent_can_mgr = parent_can_mgr;
     }
+    static void handle_traffic_report(AP_UAVCAN* ap_uavcan, uint8_t node_id, const TrafficReportCb &cb);
 };
 
 #endif /* AP_UAVCAN_H_ */
