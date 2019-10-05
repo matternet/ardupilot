@@ -51,10 +51,13 @@ public:
 
     // callback for UAVCAN messages
     virtual void handle_bi_msg(float voltage, float current,
-            float temperature) {}
+                               float temperature,
+                               uint32_t model_instance_id, uint8_t model_name[33]) {}
 
     // reset remaining percentage to given value
     virtual bool reset_remaining(float percentage);
+
+    virtual void Write_DataFlash_Log_Startup_messages() {};
 
 protected:
     AP_BattMonitor                      &_mon;      // reference to front-end

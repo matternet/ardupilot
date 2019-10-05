@@ -9,6 +9,7 @@
 
 #include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_BoardConfig/AP_BoardConfig_CAN.h>
+#include <GCS_MAVLink/GCS.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -56,11 +57,16 @@ void AP_BattMonitor_UAVCAN::read()
     }
 }
 
-void AP_BattMonitor_UAVCAN::handle_bi_msg(float voltage, float current, float temperature)
+void AP_BattMonitor_UAVCAN::handle_bi_msg(float voltage, float current, float temperature, uint32_t _model_instance_id, uint8_t _model_name[33])
 {
     _state.temperature = temperature;
     _state.voltage = voltage;
     _state.current_amps = current;
+
+    bool need_log = strncmp((const char *)model_name, (const char *)_model_name, sizeof(model_name)) != 0;
+
+    model_instance_id = _model_instance_id;
+    memcpy(model_name, _model_name, sizeof(model_name));
 
     uint32_t tnow = AP_HAL::micros();
     uint32_t dt = tnow - _state.last_time_micros;
@@ -77,6 +83,14 @@ void AP_BattMonitor_UAVCAN::handle_bi_msg(float voltage, float current, float te
     _state.last_time_micros = tnow;
 
     _state.healthy = true;
+    if (need_log) {
+        Write_DataFlash_Log_Startup_messages();
+    }
+}
+
+void AP_BattMonitor_UAVCAN::Write_DataFlash_Log_Startup_messages()
+{
+    gcs().send_text(MAV_SEVERITY_INFO, "BMU Inst=%u Model=%s", unsigned(model_instance_id), (const char *)model_name);
 }
 
 #endif
