@@ -52,6 +52,13 @@ void AP_BattMonitor_UAVCAN::read()
 {
     uint32_t tnow = AP_HAL::micros();
 
+    if (batt_changed) {
+        batt_changed = false;
+        float soc_pct = AP_BattMonitor_Analog_Table::lookup_SoC_table(_state.voltage);
+        reset_remaining(soc_pct);
+        Write_DataFlash_Log_Startup_messages();
+    }
+    
     // timeout after 5 seconds
     if ((tnow - _state.last_time_micros) > AP_BATTMONITOR_UAVCAN_TIMEOUT_MICROS) {
         _state.healthy = false;
@@ -64,7 +71,7 @@ void AP_BattMonitor_UAVCAN::handle_bi_msg(float voltage, float current, float te
     _state.voltage = voltage;
     _state.current_amps = current;
 
-    bool batt_change = strncmp((const char *)model_name, (const char *)_model_name, sizeof(model_name)) != 0;
+    batt_changed = strncmp((const char *)model_name, (const char *)_model_name, sizeof(model_name)) != 0;
 
     model_instance_id = _model_instance_id;
     memcpy(model_name, _model_name, sizeof(model_name));
@@ -84,11 +91,6 @@ void AP_BattMonitor_UAVCAN::handle_bi_msg(float voltage, float current, float te
     _state.last_time_micros = tnow;
 
     _state.healthy = true;
-    if (batt_change) {
-        float soc_pct = AP_BattMonitor_Analog_Table::lookup_SoC_table(voltage);
-        reset_remaining(soc_pct);
-        Write_DataFlash_Log_Startup_messages();
-    }
 }
 
 void AP_BattMonitor_UAVCAN::Write_DataFlash_Log_Startup_messages()

@@ -34,4 +34,5 @@ protected:
     BattMonitor_UAVCAN_Type _type;
     uint32_t model_instance_id;
     char model_name[33];
+    bool batt_changed;
 };
