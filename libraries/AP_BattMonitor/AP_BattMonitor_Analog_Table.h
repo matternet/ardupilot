@@ -15,11 +15,11 @@ public:
 
     /// returns true if battery monitor provides current info
     bool has_current() const override { return true; }
+
+    // lookup SoC in table, returning SoC as a percentage
+    static float lookup_SoC_table(float voltage);
     
 private:
     uint32_t last_armed_ms;
     bool using_table = true;
-
-    // lookup SoC in table, returning SoC as a percentage
-    float lookup_SoC_table(float voltage);
 };

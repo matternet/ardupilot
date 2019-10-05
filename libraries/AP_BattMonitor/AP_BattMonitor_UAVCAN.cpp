@@ -6,6 +6,7 @@
 #include <AP_Math/AP_Math.h>
 #include "AP_BattMonitor.h"
 #include "AP_BattMonitor_UAVCAN.h"
+#include "AP_BattMonitor_Analog_Table.h"
 
 #include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_BoardConfig/AP_BoardConfig_CAN.h>
@@ -63,7 +64,7 @@ void AP_BattMonitor_UAVCAN::handle_bi_msg(float voltage, float current, float te
     _state.voltage = voltage;
     _state.current_amps = current;
 
-    bool need_log = strncmp((const char *)model_name, (const char *)_model_name, sizeof(model_name)) != 0;
+    bool batt_change = strncmp((const char *)model_name, (const char *)_model_name, sizeof(model_name)) != 0;
 
     model_instance_id = _model_instance_id;
     memcpy(model_name, _model_name, sizeof(model_name));
@@ -83,7 +84,9 @@ void AP_BattMonitor_UAVCAN::handle_bi_msg(float voltage, float current, float te
     _state.last_time_micros = tnow;
 
     _state.healthy = true;
-    if (need_log) {
+    if (batt_change) {
+        float soc_pct = AP_BattMonitor_Analog_Table::lookup_SoC_table(voltage);
+        reset_remaining(soc_pct);
         Write_DataFlash_Log_Startup_messages();
     }
 }
