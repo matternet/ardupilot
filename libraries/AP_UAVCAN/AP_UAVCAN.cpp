@@ -1322,7 +1322,7 @@ void AP_UAVCAN::update_mag_state(uint8_t node, uint8_t sensor_id)
     }
 }
 
-uint8_t AP_UAVCAN::register_BM_bi_listener_to_id(AP_BattMonitor_Backend* new_listener, uint8_t id)
+uint8_t AP_UAVCAN::register_BM_bi_listener_to_id(AP_BattMonitor_Backend* new_listener, int32_t id)
 {
     uint8_t sel_place = UINT8_MAX, ret = 0;
 
@@ -1338,7 +1338,7 @@ uint8_t AP_UAVCAN::register_BM_bi_listener_to_id(AP_BattMonitor_Backend* new_lis
     }
 
     for (uint8_t i = 0; i < AP_UAVCAN_MAX_BI_NUMBER; i++) {
-        if (_bi_id[i] != id) {
+        if (id != -1 && _bi_id[i] != id) {
             continue;
         }
         _bi_BM_listeners[sel_place] = new_listener;

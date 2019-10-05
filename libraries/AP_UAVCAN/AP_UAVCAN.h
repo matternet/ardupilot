@@ -122,7 +122,7 @@ public:
         uint8_t model_name[32+1];
     };
 
-    uint8_t register_BM_bi_listener_to_id(AP_BattMonitor_Backend* new_listener, uint8_t id);
+    uint8_t register_BM_bi_listener_to_id(AP_BattMonitor_Backend* new_listener, int32_t id);
     void remove_BM_bi_listener(AP_BattMonitor_Backend* rem_listener);
     BatteryInfo_Info *find_bi_id(uint8_t id);
     uint8_t find_smallest_free_bi_id();
