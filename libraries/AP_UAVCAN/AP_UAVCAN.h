@@ -118,6 +118,8 @@ public:
         float remaining_capacity_wh;
         float full_charge_capacity_wh;
         uint8_t status_flags;
+        uint32_t model_instance_id;
+        uint8_t model_name[32+1];
     };
 
     uint8_t register_BM_bi_listener_to_id(AP_BattMonitor_Backend* new_listener, uint8_t id);
