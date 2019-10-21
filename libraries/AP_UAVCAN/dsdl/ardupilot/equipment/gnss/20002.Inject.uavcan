@@ -1,0 +1,8 @@
+#
+# GNSS Inject, used by autopilots to forward GPS_RTCM_DATA or GPS_INJECT mavlink msgs
+# to GNSS nodes. Normally sent as broadcast
+
+# flags follows the same conventions as MAVLink GPS_RTCM_DATA
+uint8 flags
+
+uint8[<=180] data
