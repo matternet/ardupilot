@@ -403,7 +403,7 @@ SPIDEV ms5611         SPI1 DEVID3  BARO_CS      MODE3 20*MHZ 20*MHZ
 SPIDEV ms5611_ext     SPI4 DEVID2  BARO_EXT_CS  MODE3 20*MHZ 20*MHZ
 SPIDEV mpu6000        SPI1 DEVID4  MPU_CS       MODE3  2*MHZ  8*MHZ
 SPIDEV icm20608-am    SPI1 DEVID2  ACCEL_EXT_CS MODE3  4*MHZ  8*MHZ
-SPIDEV mpu9250        SPI1 DEVID4  MPU_CS       MODE3  4*MHZ  8*MHZ
+SPIDEV mpu9250        SPI1 DEVID4  MPU_CS       MODE3  2*MHZ  4*MHZ
 SPIDEV mpu9250_ext    SPI4 DEVID1  MPU_EXT_CS   MODE3  4*MHZ  8*MHZ
 SPIDEV hmc5843        SPI1 DEVID5  MAG_CS       MODE3 11*MHZ 11*MHZ
 SPIDEV lsm9ds0_g      SPI1 DEVID1  GYRO_EXT_CS  MODE3 11*MHZ 11*MHZ 
@@ -493,4 +493,5 @@ DMA_PRIORITY USART6*
 # we can automatically update the IOMCU firmware on boot. The format
 # is "ROMFS ROMFS-filename source-filename". Paths are relative to the
 # ardupilot root
-ROMFS io_firmware.bin Tools/IO_Firmware/fmuv2_IO.bin
+ROMFS io_firmware.bin Tools/IO_Firmware/iofirmware_lowpolh.bin
+
