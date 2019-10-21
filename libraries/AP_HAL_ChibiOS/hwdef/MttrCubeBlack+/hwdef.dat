@@ -1,0 +1,18 @@
+# hw definition for Matternet CubeBlack build
+
+include ../CubeBlack/hwdef.dat
+
+# board ID for firmware load
+APJ_BOARD_ID 1003
+
+SPIDEV icm20948_ext   SPI4 DEVID1  MPU_EXT_CS   MODE3  4*MHZ  8*MHZ
+SPIDEV icm20602_ext   SPI4 DEVID3  GYRO_EXT_CS  MODE3  4*MHZ  8*MHZ
+
+define MODE_SMARTRTL_ENABLED DISABLED
+define SPRAYER_ENABLED DISABLED
+define GRIPPER_ENABLED DISABLED
+define WINCH_ENABLED DISABLED
+
+undef ROMFS
+ROMFS io_firmware.bin Tools/IO_Firmware/iofirmware_highpolh.bin
+
