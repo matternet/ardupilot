@@ -18,6 +18,7 @@
 #include "AP_InertialSensor_LSM9DS0.h"
 #include "AP_InertialSensor_LSM9DS1.h"
 #include "AP_InertialSensor_Invensense.h"
+#include "AP_InertialSensor_Invensensev2.h"
 #include "AP_InertialSensor_PX4.h"
 #include "AP_InertialSensor_SITL.h"
 #include "AP_InertialSensor_RST.h"
@@ -714,7 +715,7 @@ AP_InertialSensor::detect_backends(void)
 #elif AP_FEATURE_BOARD_DETECT
     switch (AP_BoardConfig::get_board_type()) {
     case AP_BoardConfig::PX4_BOARD_PX4V1:
-        ADD_BACKEND(AP_InertialSensor_Invensense::probe(*this, hal.spi->get_device(HAL_INS_MPU60x0_NAME)));
+        ADD_BACKEND(AP_InertialSensor_Invensense::probe(*this, hal.spi->get_device(HAL_INS_MPU60x0_NAME), ROTATION_NONE));
         break;
 
     case AP_BoardConfig::PX4_BOARD_PIXHAWK:
@@ -737,6 +738,10 @@ AP_InertialSensor::detect_backends(void)
                                                       ROTATION_ROLL_180_YAW_270,
                                                       ROTATION_ROLL_180_YAW_90,
                                                       ROTATION_ROLL_180_YAW_90));
+        // new cubes have ICM20602, ICM20948, ICM20649
+        ADD_BACKEND(AP_InertialSensor_Invensense::probe(*this, hal.spi->get_device("icm20602_ext"), ROTATION_ROLL_180_YAW_270));
+        ADD_BACKEND(AP_InertialSensor_Invensensev2::probe(*this, hal.spi->get_device("icm20948_ext"), ROTATION_PITCH_180));
+        ADD_BACKEND(AP_InertialSensor_Invensensev2::probe(*this, hal.spi->get_device("icm20948"), ROTATION_YAW_270));
         ADD_BACKEND(AP_InertialSensor_Invensense::probe(*this, hal.spi->get_device(HAL_INS_MPU9250_NAME), ROTATION_YAW_270));
         break;
 
