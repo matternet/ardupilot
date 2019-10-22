@@ -28,15 +28,20 @@ extern const AP_HAL::HAL& hal;
 
 #define debug_gps_uavcan(level, fmt, args...) do { if ((level) <= AP_BoardConfig_CAN::get_can_debug()) { printf(fmt, ##args); }} while (0)
 
+uint8_t AP_GPS_UAVCAN::instance_count;
+
 AP_GPS_UAVCAN::AP_GPS_UAVCAN(AP_GPS &_gps, AP_GPS::GPS_State &_state, AP_HAL::UARTDriver *_port) :
     AP_GPS_Backend(_gps, _state, _port)
 {
     _sem_gnss = hal.util->new_semaphore();
+    instance = instance_count;
+    instance_count++;
 }
 
 // For each instance we need to deregister from AP_UAVCAN class
 AP_GPS_UAVCAN::~AP_GPS_UAVCAN()
 {
+    instance_count--;
     AP_UAVCAN *ap_uavcan = AP_UAVCAN::get_uavcan(_manager);
     if (ap_uavcan == nullptr) {
         return;
@@ -77,6 +82,24 @@ void AP_GPS_UAVCAN::handle_gnss_msg(const AP_GPS::GPS_State &msg)
         _interm_state = msg;
         _new_data = true;
         _sem_gnss->give();
+    }
+}
+
+/*
+  handle RTCM data from MAVLink GPS_RTCM_DATA, forwarding it over
+  MAVLink. We don't use the inject_data method as we want to retain
+  the fragmentation and let the GPS de-fragment it
+ */
+void AP_GPS_UAVCAN::handle_rtcm_data(uint8_t flags, const uint8_t *data, uint16_t len)
+{
+    // we only handle this if we are the first UAVCAN GPS, as we send
+    // the data as broadcast on all UAVCAN devive ports and we don't
+    // want to send duplicates
+    if (instance == 0) {
+        AP_UAVCAN *ap_uavcan = AP_UAVCAN::get_uavcan(_manager);
+        if (ap_uavcan != nullptr) {
+            ap_uavcan->send_GNSS_Inject(flags, data, len);
+        }
     }
 }
 
