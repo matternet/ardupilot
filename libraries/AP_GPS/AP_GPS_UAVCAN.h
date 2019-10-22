@@ -37,10 +37,15 @@ public:
 
     const char *name() const override { return "UAVCAN"; }
 
+    // handling of fragmented RTCM data
+    void handle_rtcm_data(uint8_t flags, const uint8_t *data, uint16_t len) override;
+
 private:
     bool _new_data;
     uint8_t _manager;
 
     AP_GPS::GPS_State _interm_state;
     AP_HAL::Semaphore *_sem_gnss;
+    static uint8_t instance_count;
+    uint8_t instance;
 };
