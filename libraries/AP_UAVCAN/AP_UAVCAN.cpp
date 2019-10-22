@@ -32,6 +32,7 @@
 #include <uavcan/equipment/indication/LightsCommand.hpp>
 #include <uavcan/equipment/indication/SingleLightCommand.hpp>
 #include <uavcan/equipment/indication/RGB565.hpp>
+#include <ardupilot/equipment/gnss/Inject.hpp>
 
 #include <uavcan/equipment/power/BatteryInfo.hpp>
 #include <uavcan/protocol/NodeStatus.hpp>
@@ -384,6 +385,7 @@ static void (*battery_info_st_cb_arr[2])(const uavcan::ReceivedDataStructure<uav
 static uavcan::Publisher<uavcan::equipment::actuator::ArrayCommand>* act_out_array[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::esc::RawCommand>* esc_raw[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::indication::LightsCommand>* rgb_led[MAX_NUMBER_OF_CAN_DRIVERS];
+static uavcan::Publisher<ardupilot::equipment::gnss::Inject>* gnss_inject[MAX_NUMBER_OF_CAN_DRIVERS];
 
 // handler TrafficReport
 UC_REGISTRY_BINDER(TrafficReportCb, com::matternet::equipment::trafficmonitor::TrafficReport);
@@ -598,6 +600,10 @@ bool AP_UAVCAN::try_init(void)
     rgb_led[_uavcan_i] = new uavcan::Publisher<uavcan::equipment::indication::LightsCommand>(*node);
     rgb_led[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
     rgb_led[_uavcan_i]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
+
+    gnss_inject[_uavcan_i] = new uavcan::Publisher<ardupilot::equipment::gnss::Inject>(*_node);
+    gnss_inject[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
+    gnss_inject[_uavcan_i]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
 
     _led_conf.devices_count = 0;
 
@@ -1269,6 +1275,24 @@ AP_UAVCAN::Mag_Info *AP_UAVCAN::find_mag_node(uint8_t node, uint8_t sensor_id)
 
     // If no space is left - return nullptr
     return nullptr;
+}
+
+/*
+ send GNSS Inject packet on all active UAVCAN drivers
+ Same conventions as MAVLink GPS_RTCM_DATA
+*/
+void AP_UAVCAN::send_GNSS_Inject(uint8_t flags, const uint8_t *data, uint8_t len)
+{
+    ardupilot::equipment::gnss::Inject msg;
+    msg.flags = flags;
+    while (len--) {
+        msg.data.push_back(*data++);
+    }
+    for (uint8_t i=0; i<MAX_NUMBER_OF_CAN_DRIVERS; i++) {
+        if (gnss_inject[i] != nullptr) {
+            gnss_inject[i]->broadcast(msg);
+        }
+    }
 }
 
 /*

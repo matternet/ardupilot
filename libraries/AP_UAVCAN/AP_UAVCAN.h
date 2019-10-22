@@ -155,6 +155,9 @@ public:
     void SRV_send_servos();
     void SRV_send_esc();
 
+    // send GNSS Inject packets. Same conventions as MAVLink GPS_RTCM_DATA
+    void send_GNSS_Inject(uint8_t flags, const uint8_t *data, uint8_t len);
+
     template <typename DataType_>
     class RegistryBinder {
     protected:
