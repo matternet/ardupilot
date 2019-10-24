@@ -762,7 +762,16 @@ void AP_GPS::update(void)
                     
                     GPS_Status status_i = state[i].status;
                     GPS_Status status_primary = state[primary_instance].status;
-                      
+
+                    if (_type[i] == GPS_TYPE_UAVCAN && _type[1-i] != GPS_TYPE_UAVCAN && status_i == GPS_OK_FIX_3D) {
+                        // if this is a UAVCAN GPS and the other GPS
+                        // is not UAVCAN then we don't know what type
+                        // it is. It is likely F9, so make status=3 be
+                        // equal to status=4 for comparison purposes
+                        // so we choose it over a 2nd M8 with SBAS
+                        // lock
+                        status_i = GPS_OK_FIX_3D_DGPS;
+                    }
 
                     // Treat U-blox F9 as SBAS if it has more than or equal to 16 satellites, as it is dual band GPS and is more accurate than M8 with SBAS                    
                     if (status_i == GPS_OK_FIX_3D && state[i].num_sats >= 16 && strcmp(drivers[i]->name(), "u-blox") == 0 && drivers[i]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9) {
