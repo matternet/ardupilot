@@ -1,4 +1,5 @@
 #include "Copter.h"
+#include <AP_RangeFinder/RangeFinder_Backend.h>
 
 // Code to detect a crash main ArduCopter code
 #define LAND_CHECK_ANGLE_ERROR_DEG  30.0f       // maximum angle error to be considered landing
@@ -70,9 +71,25 @@ void Copter::update_land_detector()
         bool descent_rate_low = fabsf(inertial_nav.get_velocity_z()) < 100;
 
         // if we have a healthy rangefinder only allow landing detection below 2 meters
-        int32_t rangefinder_height_above_terrain_cm;
-        bool rangefinder_height_above_terrain_cm_valid = get_rangefinder_height_above_terrain(rangefinder_height_above_terrain_cm);
-        bool rangefinder_check = (!rangefinder_height_above_terrain_cm_valid || rangefinder_height_above_terrain_cm < LAND_RANGEFINDER_MIN_ALT_CM);
+        bool rangefinder_check = false;
+        bool have_healthy_rangefinder = false;
+        for (uint8_t i=0; i<rangefinder.num_sensors(); i++) {
+            AP_RangeFinder_Backend *sensor = rangefinder.get_backend(i);
+            if (sensor->orientation() != ROTATION_PITCH_270 || sensor->status() != RangeFinder::RangeFinder_Good) {
+                continue;
+            }
+            have_healthy_rangefinder = true;
+            if (sensor->distance_cm() < LAND_RANGEFINDER_MIN_ALT_CM) {
+                rangefinder_check = true;
+                break;
+            }
+        }
+        if (!have_healthy_rangefinder) {
+            // if we have no healthy rangefinder than consider the
+            // rangefinder check a pass, and we rely on the other
+            // components of the landing detector
+            rangefinder_check = true;
+        }
 
         if (motor_at_lower_limit && accel_stationary && descent_rate_low && rangefinder_check) {
             // landed criteria met - increment the counter and check if we've triggered
