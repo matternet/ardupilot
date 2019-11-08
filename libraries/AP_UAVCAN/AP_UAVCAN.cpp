@@ -32,7 +32,7 @@
 #include <uavcan/equipment/indication/LightsCommand.hpp>
 #include <uavcan/equipment/indication/SingleLightCommand.hpp>
 #include <uavcan/equipment/indication/RGB565.hpp>
-#include <ardupilot/equipment/gnss/Inject.hpp>
+#include <uavcan/equipment/gnss/RTCMStream.hpp>
 
 #include <uavcan/equipment/power/BatteryInfo.hpp>
 #include <uavcan/protocol/NodeStatus.hpp>
@@ -385,7 +385,7 @@ static void (*battery_info_st_cb_arr[2])(const uavcan::ReceivedDataStructure<uav
 static uavcan::Publisher<uavcan::equipment::actuator::ArrayCommand>* act_out_array[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::esc::RawCommand>* esc_raw[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::indication::LightsCommand>* rgb_led[MAX_NUMBER_OF_CAN_DRIVERS];
-static uavcan::Publisher<ardupilot::equipment::gnss::Inject>* gnss_inject[MAX_NUMBER_OF_CAN_DRIVERS];
+static uavcan::Publisher<uavcan::equipment::gnss::RTCMStream>* rtcm_stream[MAX_NUMBER_OF_CAN_DRIVERS];
 
 // handler TrafficReport
 UC_REGISTRY_BINDER(TrafficReportCb, com::matternet::equipment::trafficmonitor::TrafficReport);
@@ -439,6 +439,7 @@ AP_UAVCAN::AP_UAVCAN() :
 
     SRV_sem = hal.util->new_semaphore();
     _led_out_sem = hal.util->new_semaphore();
+    _rtcm_stream.sem = hal.util->new_semaphore();
 
     debug_uavcan(2, "AP_UAVCAN constructed\n\r");
 }
@@ -601,9 +602,9 @@ bool AP_UAVCAN::try_init(void)
     rgb_led[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
     rgb_led[_uavcan_i]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
 
-    gnss_inject[_uavcan_i] = new uavcan::Publisher<ardupilot::equipment::gnss::Inject>(*_node);
-    gnss_inject[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
-    gnss_inject[_uavcan_i]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
+    rtcm_stream[_uavcan_i] = new uavcan::Publisher<uavcan::equipment::gnss::RTCMStream>(*_node);
+    rtcm_stream[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
+    rtcm_stream[_uavcan_i]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
 
     _led_conf.devices_count = 0;
 
@@ -775,6 +776,7 @@ void AP_UAVCAN::do_cyclic(void)
         led_out_sem_give();
     }
 
+    rtcm_stream_send();
 }
 
 bool AP_UAVCAN::led_out_sem_take()
@@ -1278,21 +1280,54 @@ AP_UAVCAN::Mag_Info *AP_UAVCAN::find_mag_node(uint8_t node, uint8_t sensor_id)
 }
 
 /*
- send GNSS Inject packet on all active UAVCAN drivers
- Same conventions as MAVLink GPS_RTCM_DATA
+ send RTCMStream packet on all active UAVCAN drivers
 */
-void AP_UAVCAN::send_GNSS_Inject(uint8_t flags, const uint8_t *data, uint8_t len)
+void AP_UAVCAN::send_RTCMStream(const uint8_t *data, uint32_t len)
 {
-    ardupilot::equipment::gnss::Inject msg;
-    msg.flags = flags;
-    while (len--) {
-        msg.data.push_back(*data++);
+    _rtcm_stream.sem->take_blocking();
+    if (_rtcm_stream.buf == nullptr) {
+        // give enough space for a full round from a NTRIP server with all
+        // constellations
+        _rtcm_stream.buf = new ByteBuffer(2400);
     }
-    for (uint8_t i=0; i<MAX_NUMBER_OF_CAN_DRIVERS; i++) {
-        if (gnss_inject[i] != nullptr) {
-            gnss_inject[i]->broadcast(msg);
+    if (_rtcm_stream.buf != nullptr) {
+        _rtcm_stream.buf->write(data, len);
+    }
+    _rtcm_stream.sem->give();
+}
+
+void AP_UAVCAN::rtcm_stream_send()
+{
+    _rtcm_stream.sem->take_blocking();
+    if (_rtcm_stream.buf == nullptr ||
+        _rtcm_stream.buf->available() == 0) {
+        // nothing to send
+        _rtcm_stream.sem->give();
+        return;
+    }
+    uint32_t now = AP_HAL::millis();
+    if (now - _rtcm_stream.last_send_ms < 10) {
+        // don't send more than 100 per second
+        _rtcm_stream.sem->give();
+        return;
+    }
+    _rtcm_stream.last_send_ms = now;
+    uavcan::equipment::gnss::RTCMStream msg;
+    uint32_t len = _rtcm_stream.buf->available();
+    if (len > 64) {
+        len = 64;
+    }
+    msg.protocol_id = uavcan::equipment::gnss::RTCMStream::PROTOCOL_ID_RTCM3;
+    for (uint8_t i=0; i<len; i++) {
+        uint8_t b;
+        if (!_rtcm_stream.buf->read_byte(&b)) {
+            _rtcm_stream.sem->give();
+            return;
         }
+        msg.data.push_back(b);
     }
+    rtcm_stream[_uavcan_i]->broadcast(msg);
+    _rtcm_stream.sem->give();
 }
 
 /*
