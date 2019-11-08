@@ -16,7 +16,7 @@
 #include <AP_BoardConfig/AP_BoardConfig_CAN.h>
 
 // Zubax GPS and other GPS, baro, magnetic sensors
-#include <uavcan/equipment/gnss/Fix.hpp>
+#include <uavcan/equipment/gnss/Fix2.hpp>
 #include <uavcan/equipment/gnss/Auxiliary.hpp>
 
 #include <uavcan/equipment/ahrs/MagneticFieldStrength.hpp>
@@ -109,7 +109,7 @@ static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equ
     }
 }
 
-static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg, uint8_t mgr)
+static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix2>& msg, uint8_t mgr)
 {
     AP_UAVCAN *ap_uavcan = AP_UAVCAN::get_uavcan(mgr);
     if (ap_uavcan == nullptr) {
@@ -123,20 +123,32 @@ static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::g
 
     bool process = false;
 
-    if (msg.status == uavcan::equipment::gnss::Fix::STATUS_NO_FIX) {
+    if (msg.status == uavcan::equipment::gnss::Fix2::STATUS_NO_FIX) {
         state->status = AP_GPS::GPS_Status::NO_FIX;
     } else {
-        if (msg.status == uavcan::equipment::gnss::Fix::STATUS_TIME_ONLY) {
+        if (msg.status == uavcan::equipment::gnss::Fix2::STATUS_TIME_ONLY) {
             state->status = AP_GPS::GPS_Status::NO_FIX;
-        } else if (msg.status == uavcan::equipment::gnss::Fix::STATUS_2D_FIX) {
+        } else if (msg.status == uavcan::equipment::gnss::Fix2::STATUS_2D_FIX) {
             state->status = AP_GPS::GPS_Status::GPS_OK_FIX_2D;
             process = true;
-        } else if (msg.status == uavcan::equipment::gnss::Fix::STATUS_3D_FIX) {
+        } else if (msg.status == uavcan::equipment::gnss::Fix2::STATUS_3D_FIX) {
             state->status = AP_GPS::GPS_Status::GPS_OK_FIX_3D;
             process = true;
         }
 
-        if (msg.gnss_time_standard == uavcan::equipment::gnss::Fix::GNSS_TIME_STANDARD_UTC) {
+        if (state->status == AP_GPS::GPS_Status::GPS_OK_FIX_3D) {
+            if (msg.mode == uavcan::equipment::gnss::Fix2::MODE_DGPS) {
+                state->status = AP_GPS::GPS_Status::GPS_OK_FIX_3D_DGPS;
+            } else if (msg.mode == uavcan::equipment::gnss::Fix2::MODE_RTK) {
+                if (msg.sub_mode == uavcan::equipment::gnss::Fix2::SUB_MODE_RTK_FLOAT) {
+                    state->status = AP_GPS::GPS_Status::GPS_OK_FIX_3D_RTK_FLOAT;
+                } else if (msg.sub_mode == uavcan::equipment::gnss::Fix2::SUB_MODE_RTK_FIXED) {
+                    state->status = AP_GPS::GPS_Status::GPS_OK_FIX_3D_RTK_FIXED;
+                }
+            }
+        }
+
+        if (msg.gnss_time_standard == uavcan::equipment::gnss::Fix2::GNSS_TIME_STANDARD_UTC) {
             uint64_t epoch_ms = uavcan::UtcTime(msg.gnss_timestamp).toUSec();
             epoch_ms /= 1000;
             uint64_t gps_ms = epoch_ms - UNIX_OFFSET_MSEC;
@@ -163,38 +175,27 @@ static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::g
             state->have_vertical_velocity = false;
         }
 
-        float pos_cov[9];
-        msg.position_covariance.unpackSquareMatrix(pos_cov);
-        if (!uavcan::isNaN(pos_cov[8])) {
-            if (pos_cov[8] > 0) {
-                state->vertical_accuracy = sqrtf(pos_cov[8]);
-                state->have_vertical_accuracy = true;
-            } else {
-                state->have_vertical_accuracy = false;
-            }
-        } else {
-            state->have_vertical_accuracy = false;
-        }
-
-        const float horizontal_pos_variance = MAX(pos_cov[0], pos_cov[4]);
-        if (!uavcan::isNaN(horizontal_pos_variance)) {
-            if (horizontal_pos_variance > 0) {
-                state->horizontal_accuracy = sqrtf(horizontal_pos_variance);
+        if (msg.covariance.size() == 6) {
+            if (!uavcan::isNaN(msg.covariance[0])) {
+                state->horizontal_accuracy = sqrtf(msg.covariance[0]);
                 state->have_horizontal_accuracy = true;
             } else {
                 state->have_horizontal_accuracy = false;
             }
-        } else {
-            state->have_horizontal_accuracy = false;
-        }
-
-        float vel_cov[9];
-        msg.velocity_covariance.unpackSquareMatrix(vel_cov);
-        if (!uavcan::isNaN(vel_cov[0])) {
-            state->speed_accuracy = sqrtf((vel_cov[0] + vel_cov[4] + vel_cov[8]) / 3.0);
-            state->have_speed_accuracy = true;
-        } else {
-            state->have_speed_accuracy = false;
+            if (!uavcan::isNaN(msg.covariance[2])) {
+                state->vertical_accuracy = sqrtf(msg.covariance[2]);
+                state->have_vertical_accuracy = true;
+            } else {
+                state->have_vertical_accuracy = false;
+            }
+            if (!uavcan::isNaN(msg.covariance[3]) &&
+                !uavcan::isNaN(msg.covariance[4]) &&
+                !uavcan::isNaN(msg.covariance[5])) {
+                state->speed_accuracy = sqrtf((msg.covariance[3] + msg.covariance[4] + msg.covariance[5])/3);
+                state->have_speed_accuracy = true;
+            } else {
+                state->have_speed_accuracy = false;
+            }
         }
 
         state->num_sats = msg.sats_used;
@@ -212,11 +213,11 @@ static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::g
     ap_uavcan->update_gps_state(msg.getSrcNodeID().get());
 }
 
-static void gnss_fix_cb0(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg)
+static void gnss_fix_cb0(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix2>& msg)
 {   gnss_fix_cb(msg, 0); }
-static void gnss_fix_cb1(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg)
+static void gnss_fix_cb1(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix2>& msg)
 {   gnss_fix_cb(msg, 1); }
-static void (*gnss_fix_cb_arr[2])(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg)
+static void (*gnss_fix_cb_arr[2])(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix2>& msg)
         = { gnss_fix_cb0, gnss_fix_cb1 };
 
 static void gnss_aux_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Auxiliary>& msg, uint8_t mgr)
@@ -509,8 +510,8 @@ bool AP_UAVCAN::try_init(void)
         debug_uavcan(1, "UAVCAN: node start problem\n\r");
     }
 
-    uavcan::Subscriber<uavcan::equipment::gnss::Fix> *gnss_fix;
-    gnss_fix = new uavcan::Subscriber<uavcan::equipment::gnss::Fix>(*node);
+    uavcan::Subscriber<uavcan::equipment::gnss::Fix2> *gnss_fix;
+    gnss_fix = new uavcan::Subscriber<uavcan::equipment::gnss::Fix2>(*node);
 
 
     uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation> *uwb_range;
