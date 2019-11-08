@@ -37,8 +37,7 @@ public:
 
     const char *name() const override { return "UAVCAN"; }
 
-    // handling of fragmented RTCM data
-    void handle_rtcm_data(uint8_t flags, const uint8_t *data, uint16_t len) override;
+    void inject_data(const uint8_t *data, uint16_t len) override;
 
 private:
     bool _new_data;
