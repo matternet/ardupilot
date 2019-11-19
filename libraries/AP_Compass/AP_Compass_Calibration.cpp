@@ -113,7 +113,7 @@ void Compass::_cancel_calibration(uint8_t i)
         AP_Notify::events.compass_cal_canceled = 1;
     }
     _cal_saved[i] = false;
-    _calibrator[i].clear();
+    _calibrator[i].stop();
 }
 
 void Compass::_cancel_calibration_mask(uint8_t mask)
@@ -169,7 +169,7 @@ bool Compass::_accept_calibration_mask(uint8_t mask)
             if (!_accept_calibration(i)) {
                 success = false;
             }
-            _calibrator[i].clear();
+            _calibrator[i].stop();
         }
     }
 
