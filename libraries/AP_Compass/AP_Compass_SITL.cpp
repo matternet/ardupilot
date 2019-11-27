@@ -114,6 +114,11 @@ void AP_Compass_SITL::_timer()
         if (i == 0) {
             // rotate the first compass, allowing for testing of external compass rotation
             f.rotate_inverse((enum Rotation)_sitl->mag_orient.get());
+
+            f.rotate(get_board_orientation());
+
+            // scale the first compass to simulate sensor scale factor errors
+            f *= _sitl->mag_scaling;
         }
         rotate_field(f, _compass_instance[i]);
         publish_raw_field(f, _compass_instance[i]);
