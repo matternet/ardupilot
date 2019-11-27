@@ -247,8 +247,7 @@ void Compass::send_mag_cal_report(mavlink_channel_t chan)
                 offdiag.x, offdiag.y, offdiag.z,
                 _calibrator[compass_id].get_orientation_confidence(),
                 _calibrator[compass_id].get_original_orientation(),
-                _calibrator[compass_id].get_orientation(),
-                scale_factor
+                _calibrator[compass_id].get_orientation()
             );
         }
     }

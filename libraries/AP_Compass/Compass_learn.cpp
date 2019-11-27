@@ -16,7 +16,6 @@ CompassLearn::CompassLearn(AP_AHRS &_ahrs, Compass &_compass) :
     ahrs(_ahrs),
     compass(_compass)
 {
-    gcs().send_text(MAV_SEVERITY_INFO, "CompassLearn: Initialised");
     for (uint8_t i=0; i<compass.get_count(); i++) {
         if (compass._state[i].use_for_yaw) {
             // reset scale factors, we can't learn scale factors in
@@ -134,7 +133,6 @@ void CompassLearn::update(void)
             best_error = 0;
             best_yaw_deg = 0;
             best_offsets.zero();
-            gcs().send_text(MAV_SEVERITY_INFO, "CompassLearn: finished");
             AP_Notify::flags.compass_cal_running = false;
             AP_Notify::events.compass_cal_saved = true;
         }
