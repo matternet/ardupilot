@@ -158,6 +158,8 @@ const AP_Param::GroupInfo SITL::var_info2[] = {
 
     AP_GROUPINFO("GPS_DRIFT_S", 35, SITL,  gps_drift_spd, 0),
 
+    AP_GROUPINFO("MAG_SCALING",    60, SITL,  mag_scaling, 1),
+
     AP_GROUPEND
 };
     
