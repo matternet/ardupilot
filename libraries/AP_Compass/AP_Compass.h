@@ -104,6 +104,7 @@ public:
     void set_and_save_offsets(uint8_t i, const Vector3f &offsets);
     void set_and_save_diagonals(uint8_t i, const Vector3f &diagonals);
     void set_and_save_offdiagonals(uint8_t i, const Vector3f &diagonals);
+    void set_and_save_scale_factor(uint8_t i, float scale_factor);
 
     /// Saves the current offset x/y/z values for one or all compasses
     ///
@@ -121,6 +122,9 @@ public:
     /// Return the current field as a Vector3f in milligauss
     const Vector3f &get_field(uint8_t i) const { return _state[i].field; }
     const Vector3f &get_field(void) const { return get_field(get_primary()); }
+
+    /// Return true if we have set a scale factor for a compass
+    bool have_scale_factor(uint8_t i) const;
 
     // compass calibrator interface
     void compass_cal_update();
@@ -442,6 +446,7 @@ private:
         AP_Vector3f offset;
         AP_Vector3f diagonals;
         AP_Vector3f offdiagonals;
+        AP_Float    scale_factor;
 
         // device id detected at init.
         // saved to eeprom when offsets are saved allowing ram &

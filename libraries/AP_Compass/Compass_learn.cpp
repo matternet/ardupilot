@@ -16,6 +16,14 @@ CompassLearn::CompassLearn(AP_AHRS &_ahrs, Compass &_compass) :
     ahrs(_ahrs),
     compass(_compass)
 {
+    gcs().send_text(MAV_SEVERITY_INFO, "CompassLearn: Initialised");
+    for (uint8_t i=0; i<compass.get_count(); i++) {
+        if (compass._state[i].use_for_yaw) {
+            // reset scale factors, we can't learn scale factors in
+            // flight
+            compass.set_and_save_scale_factor(i, 0.0);
+        }
+    }
 }
 
 /*
@@ -108,10 +116,27 @@ void CompassLearn::update(void)
         if (num_samples > 30 && best_error < 50 && worst_error > 65) {
             // set the offsets and enable compass for EKF use. Let the
             // EKF learn the remaining compass offset error
-            compass.save_offsets(0);
-            compass.set_use_for_yaw(0, true);
-            compass.set_learn_type(Compass::LEARN_EKF, true);
-            converged = true;
+            for (uint8_t i=0; i<compass.get_count(); i++) {
+                if (compass._state[i].use_for_yaw) {
+                    compass.save_offsets(i);
+                    compass.set_and_save_scale_factor(i, 0.0);
+                    compass.set_use_for_yaw(i, true);
+                }
+            }
+            compass.set_learn_type(Compass::LEARN_NONE, true);
+            // setup so use can trigger it again
+            converged = false;
+            sample_available = false;
+            num_samples = 0;
+            have_earth_field = false;
+            memset(predicted_offsets, 0, sizeof(predicted_offsets));
+            worst_error = 0;
+            best_error = 0;
+            best_yaw_deg = 0;
+            best_offsets.zero();
+            gcs().send_text(MAV_SEVERITY_INFO, "CompassLearn: finished");
+            AP_Notify::flags.compass_cal_running = false;
+            AP_Notify::events.compass_cal_saved = true;
         }
         sem->give();
     }
