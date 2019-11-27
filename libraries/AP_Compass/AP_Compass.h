@@ -478,6 +478,12 @@ private:
 
     AP_Int16 _offset_max;
 
+    // bitmask of options
+    enum class Option : uint16_t {
+        CAL_REQUIRE_GPS = (1U<<0),
+    };
+    AP_Int16 _options;
+
     CompassCalibrator _calibrator[COMPASS_MAX_INSTANCES];
 
     // per-motor compass compensation
