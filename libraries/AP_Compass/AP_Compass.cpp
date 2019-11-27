@@ -45,6 +45,10 @@ extern AP_HAL::HAL& hal;
 #define HAL_COMPASS_AUTO_ROT_DEFAULT 2
 #endif
 
+#ifndef HAL_COMPASS_MAX_SENSORS
+#define HAL_COMPASS_MAX_SENSORS 3
+#endif
+
 const AP_Param::GroupInfo Compass::var_info[] = {
     // index 0 was used for the old orientation matrix
 
