@@ -911,6 +911,10 @@ bool AP_Arming_Copter::disarm()
  */
 bool AP_Arming_Copter::pre_takeoff_checks(void)
 {
+    if (!hal.util->get_soft_armed()) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"Takeoff: not armed");
+        return false;
+    }
     float pos_change, alt_change;
     if (!copter.gps.get_pre_arm_pos_change(pos_change, alt_change)) {
         gcs().send_text(MAV_SEVERITY_CRITICAL,"Takeoff: no GPS data");
