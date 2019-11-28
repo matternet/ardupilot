@@ -1,14 +1,12 @@
-/*
+    /*
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -28,12 +26,12 @@
 
 extern const AP_HAL::HAL& hal;
 
-#define IRLOCK_I2C_ADDRESS		0x54
+#define IRLOCK_I2C_ADDRESS      0x54
 
-#define IRLOCK_SYNC			0xAA55AA55
 
-void AP_IRLock_I2C::init(int8_t bus)
-{
+
+void AP_IRLock_I2C::init(int8_t bus) {
+    // printf("\nINIT");
     if (bus < 0) {
         // default to i2c external bus
         bus = 1;
@@ -42,133 +40,105 @@ void AP_IRLock_I2C::init(int8_t bus)
     if (!dev) {
         return;
     }
-
     sem = hal.util->new_semaphore();
 
-    // read at 50Hz
-    printf("Starting IRLock on I2C\n");
-
-    dev->register_periodic_callback(20000, FUNCTOR_BIND_MEMBER(&AP_IRLock_I2C::read_frames, void));
-}
-
-/*
-   synchronise with frame start. We expect 0xAA55AA55 at the start of
-   a frame
-*/
-bool AP_IRLock_I2C::sync_frame_start(void)
-{
-    uint32_t sync_word;
-    if (!dev->transfer(nullptr, 0, (uint8_t *)&sync_word, 4)) {
-        return false;
-    }
-
-    // record sensor successfully responded to I2C request
-    _last_read_ms = AP_HAL::millis();
-
-    uint8_t count=40;
-    while (count-- && sync_word != IRLOCK_SYNC && sync_word != 0) {
-        uint8_t sync_byte;
-        if (!dev->transfer(nullptr, 0, &sync_byte, 1)) {
-            return false;
-        }
-        if (sync_byte == 0) {
-            break;
-        }
-        sync_word = (sync_word>>8) | (uint32_t(sync_byte)<<24);
-    }
-    return sync_word == IRLOCK_SYNC;
+//    // printf("Initializing IRLock on I2C\n");
+    dev->register_periodic_callback(200, FUNCTOR_BIND_MEMBER(&AP_IRLock_I2C::read_frames, void));
+    // printf("\nINIT END -----");
 }
 
 /*
   converts IRLOCK pixels to a position on a normal plane 1m in front of the lens
   based on a characterization of IR-LOCK with the standard lens, focused such that 2.38mm of threads are exposed
  */
-void AP_IRLock_I2C::pixel_to_1M_plane(float pix_x, float pix_y, float &ret_x, float &ret_y)
-{
+void AP_IRLock_I2C::pixel_to_1M_plane(float pix_x, float pix_y, float &ret_x, float &ret_y) {
+    // printf("\nPIXEL TO 1M PLANE");
+
     ret_x = (-0.00293875727162397f*pix_x + 0.470201163459835f)/(4.43013552642296e-6f*((pix_x - 160.0f)*(pix_x - 160.0f)) +
                                                                 4.79331390531725e-6f*((pix_y - 100.0f)*(pix_y - 100.0f)) - 1.0f);
     ret_y = (-0.003056843086277f*pix_y + 0.3056843086277f)/(4.43013552642296e-6f*((pix_x - 160.0f)*(pix_x - 160.0f)) +
                                                             4.79331390531725e-6f*((pix_y - 100.0f)*(pix_y - 100.0f)) - 1.0f);
+    // printf("\nPIXEL TO 1M PLANE END-----");
 }
 
-/*
-  read a frame from sensor
-*/
-bool AP_IRLock_I2C::read_block(struct frame &irframe)
-{
-    if (!dev->transfer(nullptr, 0, (uint8_t*)&irframe, sizeof(irframe))) {
-        return false;
+void AP_IRLock_I2C::copy_frame_from_parser() {
+    // printf("\nCOPY FRAME FROM PARSER");
+    for (size_t i=0; i<10; i++) {
+        pixy_parser::pixy_blob blob; 
+        if (!pixyObj.read_buffer(i, blob)) {
+            break;
+        }
+
+        int16_t corner1_pix_x = blob.center_x - blob.width/2;                         // 3. CONVERT frame
+        int16_t corner1_pix_y = blob.center_y - blob.height/2;
+        int16_t corner2_pix_x = blob.center_x + blob.width/2;
+        int16_t corner2_pix_y = blob.center_y + blob.height/2;
+        float corner1_pos_x, corner1_pos_y, corner2_pos_x, corner2_pos_y;
+        pixel_to_1M_plane(corner1_pix_x, corner1_pix_y, corner1_pos_x, corner1_pos_y);
+        pixel_to_1M_plane(corner2_pix_x, corner2_pix_y, corner2_pos_x, corner2_pos_y);
+
+        _target_info[i].pos_x = 0.5f*(corner1_pos_x+corner2_pos_x);      // 4. copy frame data from pixy parser to target info array
+        _target_info[i].pos_y = 0.5f*(corner1_pos_y+corner2_pos_y);
+        _target_info[i].size_x = corner2_pos_x-corner1_pos_x;
+        _target_info[i].size_x = corner2_pos_y-corner1_pos_y;
+
+        _num_targets = i+1;
+//        printf("\n Num_targets in the loop: %u", _num_targets);
+
+//            // printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", blob.center_x, blob.center_y, blob.width, blob.height);
+            //  printf("\nBLOCK:- \nX: %03u - Y: %03u - W: %03u - H: %03u\n\n\n", blob.center_x, blob.center_y, blob.width, blob.height);
     }
 
-    // record sensor successfully responded to I2C request
-    _last_read_ms = AP_HAL::millis();
+    _frame_timestamp = AP_HAL::millis();                    // 6. update frame_timestamp_us
+//    printf("\nFrame Timestamp Init: %u", _frame_timestamp);    
 
-    /* check crc */
-    uint32_t crc = irframe.signature + irframe.pixel_x + irframe.pixel_y + irframe.pixel_size_x + irframe.pixel_size_y;
-    if (crc != irframe.checksum) {
-        // printf("bad crc 0x%04x 0x%04x\n", crc, irframe.checksum);
-        return false;
-    }
-    return true;
+    // printf("\nCOPY FRAME FROM PARSER END----");
+
 }
 
-void AP_IRLock_I2C::read_frames(void)
-{
-    if (!sync_frame_start()) {
-        return;
-    }
-    struct frame irframe;
+void AP_IRLock_I2C::read_frames(void) {
+    // printf("\nREAD FRAMES");
+    uint8_t buf[16];
+    dev->transfer(nullptr, 0, buf, 16);
+    // printf("\nUPDATE CALL AFTER");
+
+    for (size_t i=0; i<16; i++) {
+        if (pixyObj.recv_byte_pixy(buf[i])) {
+            // printf("\nREAD FRAMES BEFORE SEMAPHORE");
+
+            if (sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {   // 2.  take semaphore
+                copy_frame_from_parser();
+                sem->give();                                                                // 7. give semaphore
+                // printf("\nGIVE SEMAPHORE");
     
-    if (!read_block(irframe)) {
-        return;
+            }
+        }
     }
+    // printf("\nREAD FRAMES END -----");
 
-    int16_t corner1_pix_x = irframe.pixel_x - irframe.pixel_size_x/2;
-    int16_t corner1_pix_y = irframe.pixel_y - irframe.pixel_size_y/2;
-    int16_t corner2_pix_x = irframe.pixel_x + irframe.pixel_size_x/2;
-    int16_t corner2_pix_y = irframe.pixel_y + irframe.pixel_size_y/2;
+//    // printf("\n&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&------------------OUT");
+//    // printf("\nBLOCK:- \nX: 0x%04x - Y: 0x%04x - W: 0x%04x - H: 0x%04x\n\n\n", blob.center_yr_x, blob.center_y, blob.width, blob.height);
 
-    float corner1_pos_x, corner1_pos_y, corner2_pos_x, corner2_pos_y;
-    pixel_to_1M_plane(corner1_pix_x, corner1_pix_y, corner1_pos_x, corner1_pos_y);
-    pixel_to_1M_plane(corner2_pix_x, corner2_pix_y, corner2_pos_x, corner2_pos_y);
-
-    if (sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
-        /* convert to angles */
-        _target_info.timestamp = AP_HAL::millis();
-        _target_info.pos_x = 0.5f*(corner1_pos_x+corner2_pos_x);
-        _target_info.pos_y = 0.5f*(corner1_pos_y+corner2_pos_y);
-        _target_info.size_x = corner2_pos_x-corner1_pos_x;
-        _target_info.size_y = corner2_pos_y-corner1_pos_y;
-        sem->give();
-    }
-
-#if 0
-    // debugging
-    static uint32_t lastt;
-    if (_target_info.timestamp - lastt > 2000) {
-        lastt = _target_info.timestamp;
-        printf("pos_x:%.5f pos_y:%.5f size_x:%.6f size_y:%.5f\n", 
-               _target_info.pos_x, _target_info.pos_y,
-               _target_info.size_x, _target_info.size_y);
-    }
-#endif
 }
 
 // retrieve latest sensor data - returns true if new data is available
-bool AP_IRLock_I2C::update()
-{
+bool AP_IRLock_I2C::update() {
+    // printf("\nUPDATE");
     bool new_data = false;
     if (!dev || !sem) {
-        return false;
+            return false;
     }
     if (sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
-        if (_last_update_ms != _target_info.timestamp) {
+        if (_last_update_ms != _frame_timestamp) {
             new_data = true;
         }
-        _last_update_ms = _target_info.timestamp;
-        _flags.healthy = (AP_HAL::millis() - _last_read_ms < 100);
+        _last_update_ms = _frame_timestamp;
+        _flags.healthy = (AP_HAL::millis() - _last_update_ms < 100);
+//        printf("\nHEALTHY COMPARE STATUS: %u", _flags.healthy);    
+//        printf("\nHEALTHY COMPARISON (AP_HAL::millis(): %u - _last_read_ms: %u < 100)", AP_HAL::millis(), _last_update_ms);
         sem->give();
     }
     // return true if new data found
+    // printf("\nUPDATE END ----");
     return new_data;
-}
+}   

@@ -77,6 +77,9 @@ public:
     // returns true when the landing target has been detected
     bool target_acquired();
 
+    // sets the value of _target_acquired
+    void set_target_acquired(bool _target_acquired_value);
+
     // process a LANDING_TARGET mavlink message
     void handle_msg(mavlink_message_t* msg);
 

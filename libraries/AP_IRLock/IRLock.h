@@ -1,3 +1,4 @@
+
 /*
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,7 +38,7 @@ public:
     uint32_t last_update_ms() const { return _last_update_ms; }
 
     // returns the number of blocks in the current frame
-    size_t num_targets() const { return _flags.healthy?1:0; }
+    size_t num_targets() const { return _flags.healthy?_num_targets:0; }
 
     // retrieve latest sensor data - returns true if new data is available
     virtual bool update() = 0;
@@ -58,15 +59,17 @@ protected:
 
     // internals
     uint32_t _last_update_ms;
+    uint32_t _frame_timestamp;   // milliseconds since system start
 
     // irlock_target_info is a duplicate of the PX4Firmware irlock_s structure
     typedef struct {
-        uint32_t timestamp;   // milliseconds since system start
         float pos_x;          // x-axis distance from center of image to center of target in units of tan(theta)
         float pos_y;          // y-axis distance from center of image to center of target in units of tan(theta)
         float size_x;         // size of target along x-axis in units of tan(theta)
         float size_y;         // size of target along y-axis in units of tan(theta)
     } irlock_target_info;
 
-    irlock_target_info _target_info;
+    irlock_target_info _target_info[10];
+    size_t _num_targets;
+
 };

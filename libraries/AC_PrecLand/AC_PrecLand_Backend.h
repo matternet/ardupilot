@@ -10,7 +10,7 @@ class AC_PrecLand_Backend
 {
 public:
     // Constructor
-    AC_PrecLand_Backend(const AC_PrecLand& frontend, AC_PrecLand::precland_state& state) :
+    AC_PrecLand_Backend(AC_PrecLand& frontend, AC_PrecLand::precland_state& state) :
         _frontend(frontend),
         _state(state) {}
 
@@ -43,6 +43,6 @@ public:
     int8_t get_bus(void) const { return _frontend._bus.get(); }
     
 protected:
-    const AC_PrecLand&  _frontend;          // reference to precision landing front end
+    AC_PrecLand&  _frontend;          // reference to precision landing front end
     AC_PrecLand::precland_state &_state;    // reference to this instances state
 };
