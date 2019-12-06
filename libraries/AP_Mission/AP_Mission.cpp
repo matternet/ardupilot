@@ -31,6 +31,12 @@ const AP_Param::GroupInfo AP_Mission::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("OPTIONS",  2, AP_Mission, _options, AP_MISSION_OPTIONS_DEFAULT),
 
+    // @Param: FLIGHT_ID
+    // @DisplayName: Mission flight ID
+    // @Description: Mission ID for log analysis
+    // @User: Advanced
+    AP_GROUPINFO("FLIGHT_ID",  20, AP_Mission, _flight_id, 0),
+    
     AP_GROUPEND
 };
 
