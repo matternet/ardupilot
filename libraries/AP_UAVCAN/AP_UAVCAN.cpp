@@ -40,6 +40,8 @@
 #include <com/matternet/equipment/trafficmonitor/TrafficReport.hpp>
 #include <AP_ADSB/AP_ADSB.h>
 
+#include <uavcan/equipment/range_sensor/Measurement.hpp>
+
 extern const AP_HAL::HAL& hal;
 
 #define debug_uavcan(level, fmt, args...) do { if ((level) <= AP_BoardConfig_CAN::get_can_debug()) { hal.console->printf(fmt, ##args); }} while (0)
@@ -381,6 +383,33 @@ static void battery_info_st_cb1(const uavcan::ReceivedDataStructure<uavcan::equi
 static void (*battery_info_st_cb_arr[2])(const uavcan::ReceivedDataStructure<uavcan::equipment::power::BatteryInfo>& msg)
         = { battery_info_st_cb0, battery_info_st_cb1 };
 
+
+static void rangefinder_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::range_sensor::Measurement>& msg, uint8_t mgr)
+{
+    AP_UAVCAN *ap_uavcan = AP_UAVCAN::get_uavcan(mgr);
+    if (ap_uavcan == nullptr) {
+        return;
+    }
+    
+    AP_UAVCAN::Rangefinder_Info *state = ap_uavcan->find_rangefinder_node(msg.getSrcNodeID().get());
+    if (state == nullptr) {
+        return;
+    }
+
+    state->distance = msg.range;
+    state->status = msg.reading_type;
+
+    // after all is filled, update all listeners with new data
+    ap_uavcan->update_rangefinder_state(msg.getSrcNodeID().get());
+}
+
+static void rangefinder_cb0(const uavcan::ReceivedDataStructure<uavcan::equipment::range_sensor::Measurement>& msg)
+{   rangefinder_cb(msg, 0); }
+static void rangefinder_cb1(const uavcan::ReceivedDataStructure<uavcan::equipment::range_sensor::Measurement>& msg)
+{   rangefinder_cb(msg, 1); }
+static void (*rangefinder_cb_arr[2])(const uavcan::ReceivedDataStructure<uavcan::equipment::range_sensor::Measurement>& msg)
+        = { rangefinder_cb0, rangefinder_cb1 };
+
 // publisher interfaces
 static uavcan::Publisher<uavcan::equipment::actuator::ArrayCommand>* act_out_array[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::esc::RawCommand>* esc_raw[MAX_NUMBER_OF_CAN_DRIVERS];
@@ -418,6 +447,11 @@ AP_UAVCAN::AP_UAVCAN() :
         _mag_node_max_sensorid_count[i] = 1;
     }
 
+    for (uint8_t i = 0; i < AP_UAVCAN_MAX_RANGEFINDER_NODES; i++) {
+        _rangefinder_nodes[i] = UINT8_MAX;
+        _rangefinder_node_taken[i] = 0;
+    }
+    
     for (uint8_t i = 0; i < AP_UAVCAN_MAX_LISTENERS; i++) {
         _gps_listener_to_node[i] = UINT8_MAX;
         _gps_listeners[i] = nullptr;
@@ -428,6 +462,9 @@ AP_UAVCAN::AP_UAVCAN() :
         _mag_listener_to_node[i] = UINT8_MAX;
         _mag_listeners[i] = nullptr;
         _mag_listener_sensor_ids[i] = 0;
+
+        _rangefinder_listener_to_node[i] = UINT8_MAX;
+        _rangefinder_listeners[i] = nullptr;
     }
 
     for (uint8_t i = 0; i < AP_UAVCAN_MAX_BI_NUMBER; i++) {
@@ -589,6 +626,14 @@ bool AP_UAVCAN::try_init(void)
         return false;
     }
 
+    uavcan::Subscriber<uavcan::equipment::range_sensor::Measurement> *rangefinder_sp;
+    rangefinder_sp = new uavcan::Subscriber<uavcan::equipment::range_sensor::Measurement>(*node);
+    const int rangefinder_start_res = rangefinder_sp->start(rangefinder_cb_arr[_uavcan_i]);
+    if (rangefinder_start_res < 0) {
+        debug_uavcan(1, "UAVCAN rangefinder subscriber start problem\n\r");
+        return false;
+    }
+    
     act_out_array[_uavcan_i] = new uavcan::Publisher<uavcan::equipment::actuator::ArrayCommand>(*node);
     act_out_array[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
     act_out_array[_uavcan_i]->setPriority(uavcan::TransferPriority::OneLowerThanHighest);
@@ -1276,6 +1321,161 @@ AP_UAVCAN::Mag_Info *AP_UAVCAN::find_mag_node(uint8_t node, uint8_t sensor_id)
     // If no space is left - return nullptr
     return nullptr;
 }
+
+
+uint8_t AP_UAVCAN::register_rangefinder_listener(AP_RangeFinder_Backend* new_listener, uint8_t preferred_channel)
+{
+    uint8_t sel_place = UINT8_MAX, ret = 0;
+
+    for (uint8_t i = 0; i < AP_UAVCAN_MAX_LISTENERS; i++) {
+        if (_rangefinder_listeners[i] == nullptr) {
+            sel_place = i;
+            break;
+        }
+    }
+
+    if (sel_place == UINT8_MAX) {
+        return 0;
+    }
+    if (preferred_channel != 0 && preferred_channel < AP_UAVCAN_MAX_RANGEFINDER_NODES) {
+        _rangefinder_listeners[sel_place] = new_listener;
+        _rangefinder_listener_to_node[sel_place] = preferred_channel - 1;
+        _rangefinder_node_taken[_rangefinder_listener_to_node[sel_place]]++;
+        ret = preferred_channel;
+
+        debug_uavcan(2, "reg_Rangefinder place:%d, chan: %d\n\r", sel_place, preferred_channel);
+    } else {
+        for (uint8_t i = 0; i < AP_UAVCAN_MAX_RANGEFINDER_NODES; i++) {
+            if (_rangefinder_node_taken[i] == 0) {
+                _rangefinder_listeners[sel_place] = new_listener;
+                _rangefinder_listener_to_node[sel_place] = i;
+                _rangefinder_node_taken[i]++;
+                ret = i + 1;
+
+                debug_uavcan(2, "reg_RANGEFINDER place:%d, chan: %d\n\r", sel_place, i);
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+uint8_t AP_UAVCAN::register_rangefinder_listener_to_node(AP_RangeFinder_Backend* new_listener, uint8_t node)
+{
+    uint8_t sel_place = UINT8_MAX, ret = 0;
+
+    for (uint8_t i = 0; i < AP_UAVCAN_MAX_LISTENERS; i++) {
+        if (_rangefinder_listeners[i] == nullptr) {
+            sel_place = i;
+            break;
+        }
+    }
+
+    if (sel_place != UINT8_MAX) {
+        for (uint8_t i = 0; i < AP_UAVCAN_MAX_RANGEFINDER_NODES; i++) {
+            if (_rangefinder_nodes[i] != node) {
+                continue;
+            }
+            _rangefinder_listeners[sel_place] = new_listener;
+            _rangefinder_listener_to_node[sel_place] = i;
+            _rangefinder_node_taken[i]++;
+            ret = i + 1;
+
+            debug_uavcan(2, "reg_RANGEFINDER place:%d, chan: %d\n\r", sel_place, i);
+            break;
+        }
+    }
+
+    return ret;
+}
+
+void AP_UAVCAN::remove_rangefinder_listener(AP_RangeFinder_Backend* rem_listener)
+{
+    // Check for all listeners and compare pointers
+    for (uint8_t i = 0; i < AP_UAVCAN_MAX_LISTENERS; i++) {
+        if (_rangefinder_listeners[i] != rem_listener) {
+            continue;
+        }
+        _rangefinder_listeners[i] = nullptr;
+
+        // Also decrement usage counter and reset listening node
+        if (_rangefinder_node_taken[_rangefinder_listener_to_node[i]] > 0) {
+            _rangefinder_node_taken[_rangefinder_listener_to_node[i]]--;
+        }
+        _rangefinder_listener_to_node[i] = UINT8_MAX;
+    }
+}
+
+AP_UAVCAN::Rangefinder_Info *AP_UAVCAN::find_rangefinder_node(uint8_t node)
+{
+    // Check if such node is already defined
+    for (uint8_t i = 0; i < AP_UAVCAN_MAX_RANGEFINDER_NODES; i++) {
+        if (_rangefinder_nodes[i] == node) {
+            return &_rangefinder_node_state[i];
+        }
+    }
+
+    // If not - try to find free space for it
+    for (uint8_t i = 0; i < AP_UAVCAN_MAX_RANGEFINDER_NODES; i++) {
+        if (_rangefinder_nodes[i] == UINT8_MAX) {
+
+            _rangefinder_nodes[i] = node;
+            return &_rangefinder_node_state[i];
+        }
+    }
+
+    // If no space is left - return nullptr
+    return nullptr;
+}
+
+void AP_UAVCAN::update_rangefinder_state(uint8_t node)
+{
+    // Go through all listeners of specified node and call their's update methods
+    for (uint8_t i = 0; i < AP_UAVCAN_MAX_RANGEFINDER_NODES; i++) {
+        if (_rangefinder_nodes[i] != node) {
+            continue;
+        }
+        for (uint8_t j = 0; j < AP_UAVCAN_MAX_LISTENERS; j++) {
+            if (_rangefinder_listener_to_node[j] == i) {
+                RangeFinder::RangeFinder_Status status;
+                switch (_rangefinder_node_state[i].status) {
+                case uavcan::equipment::range_sensor::Measurement::READING_TYPE_VALID_RANGE:
+                    status = RangeFinder::RangeFinder_Good;
+                    break;
+                case uavcan::equipment::range_sensor::Measurement::READING_TYPE_TOO_CLOSE:
+                    status = RangeFinder::RangeFinder_OutOfRangeLow;
+                    break;
+                case uavcan::equipment::range_sensor::Measurement::READING_TYPE_TOO_FAR:
+                    status = RangeFinder::RangeFinder_OutOfRangeHigh;
+                    break;
+                case uavcan::equipment::range_sensor::Measurement::READING_TYPE_UNDEFINED:
+                default:
+                    status = RangeFinder::RangeFinder_NoData;
+                    break;
+                }
+                _rangefinder_listeners[j]->handle_rangefinder_msg(_rangefinder_node_state[i].distance, status);
+            }
+        }
+    }
+}
+
+/*
+ * Find discovered not taken rangefinder node with smallest node ID
+ */
+uint8_t AP_UAVCAN::find_smallest_free_rangefinder_node()
+{
+    uint8_t ret = UINT8_MAX;
+
+    for (uint8_t i = 0; i < AP_UAVCAN_MAX_RANGEFINDER_NODES; i++) {
+        if (_rangefinder_node_taken[i] == 0) {
+            ret = MIN(ret, _rangefinder_nodes[i]);
+        }
+    }
+
+    return ret;
+}
+
 
 /*
  send GNSS Inject packet on all active UAVCAN drivers
