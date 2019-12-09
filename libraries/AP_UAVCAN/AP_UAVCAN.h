@@ -14,6 +14,7 @@
 
 #include <AP_GPS/GPS_Backend.h>
 #include <AP_Baro/AP_Baro_Backend.h>
+#include <AP_RangeFinder/RangeFinder_Backend.h>
 #include <AP_Compass/AP_Compass.h>
 #include <AP_BattMonitor/AP_BattMonitor_Backend.h>
 
@@ -36,6 +37,7 @@
 #define AP_UAVCAN_MAX_GPS_NODES 4
 #define AP_UAVCAN_MAX_MAG_NODES 4
 #define AP_UAVCAN_MAX_BARO_NODES 4
+#define AP_UAVCAN_MAX_RANGEFINDER_NODES 4
 #define AP_UAVCAN_MAX_BI_NUMBER 4
 
 #define AP_UAVCAN_SW_VERS_MAJOR 1
@@ -142,6 +144,18 @@ public:
     uint8_t find_smallest_free_bi_id();
     void update_bi_state(uint8_t id);
 
+    struct Rangefinder_Info {
+        float distance;
+        uint8_t status;
+    };
+
+    uint8_t register_rangefinder_listener(AP_RangeFinder_Backend* new_listener, uint8_t preferred_channel);
+    uint8_t register_rangefinder_listener_to_node(AP_RangeFinder_Backend* new_listener, uint8_t node);
+    void remove_rangefinder_listener(AP_RangeFinder_Backend* rem_listener);
+    Rangefinder_Info *find_rangefinder_node(uint8_t node);
+    uint8_t find_smallest_free_rangefinder_node();
+    void update_rangefinder_state(uint8_t node);
+    
     // synchronization for RC output
     void SRV_sem_take();
     void SRV_sem_give();
@@ -221,6 +235,13 @@ private:
     uint16_t _bi_BM_listener_to_id[AP_UAVCAN_MAX_LISTENERS];
     AP_BattMonitor_Backend* _bi_BM_listeners[AP_UAVCAN_MAX_LISTENERS];
 
+    // ------------------------- RANGEFINDER
+    uint8_t _rangefinder_nodes[AP_UAVCAN_MAX_RANGEFINDER_NODES];
+    uint8_t _rangefinder_node_taken[AP_UAVCAN_MAX_RANGEFINDER_NODES];
+    Rangefinder_Info _rangefinder_node_state[AP_UAVCAN_MAX_RANGEFINDER_NODES];
+    uint8_t _rangefinder_listener_to_node[AP_UAVCAN_MAX_LISTENERS];
+    AP_RangeFinder_Backend* _rangefinder_listeners[AP_UAVCAN_MAX_LISTENERS];
+    
     struct {
         uint16_t pulse;
         uint16_t safety_pulse;
