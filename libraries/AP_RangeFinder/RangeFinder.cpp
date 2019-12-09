@@ -35,6 +35,7 @@
 #include "AP_RangeFinder_NMEA.h"
 #include "AP_RangeFinder_Wasp.h"
 #include "AP_RangeFinder_Benewake.h"
+#include "AP_RangeFinder_UAVCAN.h"
 #include <AP_BoardConfig/AP_BoardConfig.h>
 
 extern const AP_HAL::HAL &hal;
@@ -764,6 +765,11 @@ void RangeFinder::detect_instance(uint8_t instance, uint8_t& serial_instance)
             drivers[instance] = new AP_RangeFinder_Benewake(state[instance], serial_manager, serial_instance++, AP_RangeFinder_Benewake::BENEWAKE_TFmini);
         }
         break;
+#if HAL_WITH_UAVCAN
+    case RangeFinder_TYPE_UAVCAN:
+        drivers[instance] = new AP_RangeFinder_UAVCAN(state[instance]);
+        break;
+#endif
     default:
         break;
     }

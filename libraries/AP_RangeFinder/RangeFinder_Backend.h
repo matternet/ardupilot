@@ -33,6 +33,9 @@ public:
 
     virtual void handle_msg(mavlink_message_t *msg) { return; }
 
+    // callback for UAVCAN messages
+    virtual void handle_rangefinder_msg(float distance, RangeFinder::RangeFinder_Status status) {}
+    
     void update_pre_arm_check();
 
     enum Rotation orientation() const { return (Rotation)state.orientation.get(); }
