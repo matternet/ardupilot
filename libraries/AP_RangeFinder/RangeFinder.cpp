@@ -35,7 +35,9 @@
 #include "AP_RangeFinder_NMEA.h"
 #include "AP_RangeFinder_Wasp.h"
 #include "AP_RangeFinder_Benewake.h"
+#if HAL_WITH_UAVCAN
 #include "AP_RangeFinder_UAVCAN.h"
+#endif
 #include <AP_BoardConfig/AP_BoardConfig.h>
 
 extern const AP_HAL::HAL &hal;
