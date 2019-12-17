@@ -462,6 +462,16 @@ void Copter::update_sensor_status_flags(void)
     // give mask of error flags to Frsky_Telemetry
     frsky_telemetry.update_sensor_status_flags(~control_sensors_health & control_sensors_enabled & control_sensors_present);
 #endif
+
+    // give GCS status of prearm checks. This is enabled if any arming checks are enabled.
+    // it is healthy if armed or checks are passing
+    control_sensors_present |= MAV_SYS_STATUS_PREARM_CHECK;
+    if (arming.get_enabled_checks()) {
+        control_sensors_enabled |= MAV_SYS_STATUS_PREARM_CHECK;
+        if (hal.util->get_soft_armed() || AP_Notify::flags.pre_arm_check) {
+            control_sensors_health |= MAV_SYS_STATUS_PREARM_CHECK;
+        }
+    }
 }
 
 // init visual odometry sensor
