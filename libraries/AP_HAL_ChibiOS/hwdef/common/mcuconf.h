@@ -384,3 +384,5 @@
  */
 #define STM32_WDG_USE_IWDG                  FALSE
 
+// limit to 6 interrupts per byte on I2C
+#define STM32_I2C_ISR_LIMIT 6
