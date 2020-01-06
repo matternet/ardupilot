@@ -212,6 +212,8 @@ private:
     Parameters g;
     ParametersG2 g2;
     ParametersMTTR matternet;
+    bool mttr_motor_test;
+    uint32_t mttr_motor_test_start_ms;
 
     void update_armed_pin();
 
@@ -847,6 +849,7 @@ private:
 
     // motor_test.cpp
     void motor_test_output();
+    void matternet_motor_test();
     bool mavlink_motor_test_check(mavlink_channel_t chan, bool check_rc);
     MAV_RESULT mavlink_motor_test_start(mavlink_channel_t chan, uint8_t motor_seq, uint8_t throttle_type, uint16_t throttle_value, float timeout_sec, uint8_t motor_count);
     void motor_test_stop();

@@ -213,3 +213,41 @@ void Copter::motor_test_stop()
     // turn off notify leds
     AP_Notify::flags.esc_calibration = false;
 }
+
+/*
+  matternet motor test ramp
+ */
+void Copter::matternet_motor_test()
+{
+    uint16_t ramp_s = copter.matternet.motor_test_ramp;
+    uint32_t now = AP_HAL::millis();
+    if (mttr_motor_test_start_ms == 0) {
+        mttr_motor_test_start_ms = now;
+        // enable and arm motors
+        if (!motors->armed()) {
+            init_rc_out();
+            enable_motor_output();
+            motors->armed(true);
+        }
+
+        // disable throttle and gps failsafe
+        g.failsafe_throttle = FS_THR_DISABLED;
+        g.failsafe_gcs = FS_GCS_DISABLED;
+        g.fs_ekf_action = 0;
+
+        // turn on notify leds
+        AP_Notify::flags.esc_calibration = true;
+    }
+    float throttle = (now - mttr_motor_test_start_ms) * 0.001 / ramp_s;
+    if (throttle > 1) {
+        motors->set_throttle_passthrough_for_esc_calibration(0);
+        motors->armed(false);
+        g.failsafe_throttle.load();
+        g.failsafe_gcs.load();
+        g.fs_ekf_action.load();
+        return;
+    }
+    for (uint8_t i=0; i<8; i++) {
+        motors->set_throttle_passthrough_for_esc_calibration(throttle);
+    }
+}

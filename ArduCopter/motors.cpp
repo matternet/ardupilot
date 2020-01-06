@@ -329,6 +329,8 @@ void Copter::motors_output()
     // check if we are performing the motor test
     if (ap.motor_test) {
         motor_test_output();
+    } else if (mttr_motor_test && copter.matternet.motor_test_ramp > 0) {
+        matternet_motor_test();
     } else {
         bool interlock = motors->armed() && !ap.in_arming_delay && (!ap.using_interlock || ap.motor_interlock_switch) && !ap.motor_emergency_stop;
         if (!motors->get_interlock() && interlock) {

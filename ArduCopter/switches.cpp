@@ -774,6 +774,15 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
         case AUXSW_USER_FUNC3:
             userhook_auxSwitch3(ch_flag);
             break;
+#else
+        case AUXSW_USER_FUNC3:
+            mttr_motor_test = (ch_flag == AUX_SWITCH_HIGH)?true:false;
+            if (!mttr_motor_test) {
+                mttr_motor_test_start_ms = 0;
+                ap.motor_test = false;
+                motors->armed(false);
+            }
+            break;
 #endif
     }
 }

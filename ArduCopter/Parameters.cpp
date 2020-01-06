@@ -1096,7 +1096,13 @@ const AP_Param::GroupInfo ParametersMTTR::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("ARMED_PIN", 7, ParametersMTTR, arm_pin, -1),
-    
+
+    // @Param: MOT_TEST_RAMP
+    // @DisplayName: Ramp time for motor test
+    // @Description: Time in seconds to ramp motors
+    // @User: Advanced
+    AP_GROUPINFO("MOT_TEST_RAMP", 8, ParametersMTTR, motor_test_ramp, -1),
+   
     AP_GROUPEND
 };
 
