@@ -692,6 +692,19 @@ struct PACKED log_Current_Cells {
     uint16_t cell_voltages[10];
 };
 
+struct PACKED log_ADSB {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint32_t ICAO_address;
+    int32_t lat;
+    int32_t lng;
+    int32_t alt;
+    uint16_t heading;
+    uint16_t hor_velocity;
+    int16_t ver_velocity;
+    uint16_t squawk;
+};
+
 struct PACKED log_Compass {
     LOG_PACKET_HEADER;
     uint64_t time_us;
@@ -1408,6 +1421,8 @@ Format characters in the format string for binary log messages
       "RATE", "Qffffffffffff",  "TimeUS,RDes,R,ROut,PDes,P,POut,YDes,Y,YOut,ADes,A,AOut", "skk-kk-kk-oo-", "F?????????BB-" }, \
     { LOG_RALLY_MSG, sizeof(log_Rally), \
       "RALY", "QBBLLh", "TimeUS,Tot,Seq,Lat,Lng,Alt", "s--DUm", "F--GGB" },  \
+    { LOG_ADSB_MSG, sizeof(log_ADSB), \
+      "ADSB",  "QIiiiHHhH", "TimeUS,ICAO_address,Lat,Lng,Alt,Heading,Hor_vel,Ver_vel,Squark", "s-DUmhnn-", "F-GGCBCC-" }, \
     { LOG_VISUALODOM_MSG, sizeof(log_VisualOdom), \
       "VISO", "Qffffffff", "TimeUS,dt,AngDX,AngDY,AngDZ,PosDX,PosDY,PosDZ,conf", "ssrrrmmm-", "FF000000-" }
 
@@ -1561,6 +1576,7 @@ enum LogMessages : uint8_t {
     LOG_ISBD_MSG,
     LOG_ASP2_MSG,
     LOG_PERFORMANCE_MSG,
+    LOG_ADSB_MSG,
     _LOG_LAST_MSG_
 };
 
