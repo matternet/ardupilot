@@ -816,10 +816,10 @@ protected:
     uint32_t wp_distance() const override;
     int32_t wp_bearing() const override;
     float crosstrack_error() const override;
+    void pos_control_start();
 
 private:
 
-    void pos_control_start();
     void vel_control_start();
     void posvel_control_start();
     void takeoff_run();
