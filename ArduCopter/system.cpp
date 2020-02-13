@@ -284,6 +284,9 @@ void Copter::init_ardupilot()
     // disable safety if requested
     BoardConfig.init_safety();
 
+    // init ESC telemetry
+    esc_telem.init();
+
     // default enable RC override
     copter.ap.rc_override_enable = true;
     

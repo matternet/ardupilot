@@ -589,7 +589,6 @@ public:
     // follow
     AP_Follow follow;
 #endif
-
 };
 
 /*
