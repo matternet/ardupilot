@@ -133,12 +133,15 @@ void AP_ESC_Telem::parse_packet(void)
                         decoded.voltage, unsigned(decoded.load), unsigned(decoded.current));
 #endif
 
-    DataFlash_Class::instance()->Log_Write("HESC", "TimeUS,CNT,RPM,ThrR,Thr,Volt,Load,Curr,Temp,Unk", "QIHHHfHHHH",
+    DataFlash_Class::instance()->Log_Write("HESC", "TimeUS,CNT,RPM,ThrR,Thr,Volt,Load,Curr,Temp,Unk",
+                                           "QIHHHfHfHH",
                                            AP_HAL::micros64(),
                                            decoded.counter,
                                            decoded.rpm,
                                            decoded.throttle_req, decoded.throttle,
-                                           decoded.voltage, decoded.load, decoded.current,
+                                           decoded.voltage,
+                                           decoded.load,
+                                           decoded.current,
                                            decoded.temperature, decoded.unknown);
 }
 
