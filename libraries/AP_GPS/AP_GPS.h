@@ -188,6 +188,9 @@ public:
 
     /// Query GPS status
     GPS_Status status(uint8_t instance) const {
+        if ((1U<<instance) & disable_mask) {
+            return NO_FIX;
+        }
         return state[instance].status;
     }
     GPS_Status status(void) const {
@@ -426,6 +429,14 @@ public:
     // handle possibly fragmented RTCM injection data
     void handle_gps_rtcm_fragment(uint8_t flags, const uint8_t *data, uint8_t len);
 
+    void force_disable(uint8_t instance, bool disable) {
+        if (disable) {
+            disable_mask |= (1U<<instance);
+        } else {
+            disable_mask &= ~(1U<<instance);
+        }
+    }
+
 protected:
 
     // configuration parameters
@@ -484,6 +495,8 @@ private:
     // which ports are locked
     uint8_t locked_ports:2;
 
+    uint8_t disable_mask;
+    
     // state of auto-detection process, per instance
     struct detect_state {
         uint32_t last_baud_change_ms;
