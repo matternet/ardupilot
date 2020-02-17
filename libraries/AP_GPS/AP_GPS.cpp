@@ -1798,7 +1798,7 @@ bool AP_GPS::get_pre_arm_pos_change(uint8_t instance, float &pos_change, float &
     if (!hal.util->get_soft_armed()) {
         return false;
     }
-    pos_change = get_distance(_arm_loc[instance], state[instance].location);
+    pos_change = _arm_loc[instance].get_distance(state[instance].location);
     alt_change = (_arm_loc[instance].alt - state[instance].location.alt) * 0.01;
     return true;
 }
