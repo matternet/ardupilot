@@ -85,8 +85,6 @@ public:
     // returns target velocity relative to vehicle
     bool get_target_velocity_relative_cms(Vector2f& ret);
 
-    bool get_height_above_target_cm(int32_t& ret);
-
     // returns true when the landing target has been detected
     bool target_acquired();
 
