@@ -1018,7 +1018,7 @@ void AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
         hacc * 1000,          // one-sigma standard deviation in mm
         vacc * 1000,          // one-sigma standard deviation in mm
         sacc * 1000,          // one-sigma standard deviation in mm/s
-        0);                   // TODO one-sigma heading accuracy standard deviation
+        0, 0);                // TODO one-sigma heading accuracy standard deviation
 }
 
 #if GPS_MAX_RECEIVERS > 1
@@ -1053,7 +1053,7 @@ void AP_GPS::send_mavlink_gps2_raw(mavlink_channel_t chan)
         ground_course(1)*100, // 1/100 degrees,
         num_sats(1),
         state[1].rtk_num_sats,
-        state[1].rtk_age_ms);
+        state[1].rtk_age_ms, 0);
 }
 #endif // GPS_MAX_RECEIVERS
 
@@ -1701,7 +1701,7 @@ bool AP_GPS::get_pre_arm_pos_change(uint8_t instance, float &pos_change, float &
     if (!hal.util->get_soft_armed()) {
         return false;
     }
-    pos_change = get_distance(_arm_loc[instance], state[instance].location);
+    pos_change = _arm_loc[instance].get_distance(state[instance].location);
     alt_change = (_arm_loc[instance].alt - state[instance].location.alt) * 0.01;
     return true;
 }
