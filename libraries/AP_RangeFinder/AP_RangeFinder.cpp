@@ -791,9 +791,17 @@ void RangeFinder::Log_RFND() const
 bool RangeFinder::prearm_healthy(char *failure_msg, const uint8_t failure_msg_len) const
 {
     for (uint8_t i = 0; i < RANGEFINDER_MAX_INSTANCES; i++) {
-        if (((Type)params[i].type.get() != Type::NONE) && (drivers[i] == nullptr)) {
-          hal.util->snprintf(failure_msg, failure_msg_len, "Rangefinder %X was not detected", i + 1);
-          return false;
+        if (params[i].type == uint8_t(Type::NONE)) {
+            continue;
+        }
+        if (drivers[i] == nullptr) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "Rangefinder %u was not detected", unsigned(i + 1));
+            return false;
+        }
+        if (drivers[i]->status() == Status::NotConnected ||
+            drivers[i]->status() == Status::NoData) {
+            hal.util->snprintf(failure_msg, failure_msg_len, "Rangefinder %u unhealthy", unsigned(i + 1));
+            return false;
         }
     }
 
