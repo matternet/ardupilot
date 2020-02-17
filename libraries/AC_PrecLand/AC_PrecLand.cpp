@@ -7,7 +7,7 @@
 #include "AC_PrecLand_IRLock.h"
 #include "AC_PrecLand_SITL_Gazebo.h"
 #include "AC_PrecLand_SITL.h"
-#include <DataFlash/DataFlash.h>
+#include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
 
 #include <AP_AHRS/AP_AHRS.h>
@@ -218,20 +218,6 @@ bool AC_PrecLand::target_acquired()
     return _target_acquired;
 }
 
-bool AC_PrecLand::get_height_above_target_cm(int32_t& ret) {
-    if (!target_acquired()) {
-        return false;
-    }
-
-    bool precland_uwb_range_valid = precland_uwb_range.valid && AP_HAL::millis()-precland_uwb_range.timestamp_ms < 100;
-    if (!precland_uwb_range_valid) {
-        return false;
-    }
-
-    ret = precland_uwb_range.range * 100;
-    return true;
-}
-
 bool AC_PrecLand::get_target_position_cm(Vector2f& ret)
 {
     if (!target_acquired()) {
@@ -325,7 +311,7 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
 
                 _last_update_ms = AP_HAL::millis();
                 if (!_target_acquired) {
-                    gcs().send_text(MAV_SEVERITY_INFO, "PL: target acquired %.1m", rangefinder_alt_m);
+                    gcs().send_text(MAV_SEVERITY_INFO, "PL: target acquired %.1fm", rangefinder_alt_m);
                 }
                 _target_acquired = true;
             }
@@ -396,22 +382,6 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
 
                 run_output_prediction();
             }
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-            {
-                static uint32_t last_print_ms;
-                uint32_t now = AP_HAL::millis();
-                if (now - last_print_ms >= 1000) {
-                    last_print_ms = now;
-                    float dist = 0;
-                    get_target_distance_m(dist);
-                    printf("PL: TA:%u pos=(%.1f,%.1f) d=%.1f\n",
-                           _target_acquired,
-                           _target_pos_rel_est_NE.x,
-                           _target_pos_rel_est_NE.y,
-                           dist);
-                }
-            }
-#endif
             break;
         }
     }
@@ -434,7 +404,7 @@ bool AC_PrecLand::retrieve_los_meas(Vector3f& target_vec_unit_body)
 
         target_vec_unit_body = Rz*target_vec_unit_body;
         
-        DataFlash_Class::instance()->Log_Write("LOSM", "TimeUS,LOSx,LOSy,LOSz", "Qfff", AP_HAL::micros64(), target_vec_unit_body.x, target_vec_unit_body.y, target_vec_unit_body.z);
+        AP::logger().Write("LOSM", "TimeUS,LOSx,LOSy,LOSz", "Qfff", AP_HAL::micros64(), target_vec_unit_body.x, target_vec_unit_body.y, target_vec_unit_body.z);
         return true;
     } else {
         return false;
@@ -453,7 +423,7 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
         if (target_vec_valid && alt_valid) {
             float dist, alt;
 
-            Vector3f cam_pos_ned = inertial_data_delayed.Tbn * _cam_offset.get();
+            Vector3f cam_pos_ned = inertial_data_delayed->Tbn * _cam_offset.get();
 
             if (_backend->distance_to_target() > 0.0f) {
                 dist = _backend->distance_to_target();
@@ -464,7 +434,8 @@ bool AC_PrecLand::construct_pos_meas_using_rangefinder(float rangefinder_alt_m, 
             }
 
             // Compute target position relative to IMU
-            Vector3f imu_pos_ned = inertial_data_delayed.Tbn * AP::ins().get_imu_pos_offset(_ahrs.get_primary_accel_index());
+            const AP_AHRS &ahrs = AP::ahrs();
+            Vector3f imu_pos_ned = inertial_data_delayed->Tbn * AP::ins().get_imu_pos_offset(ahrs.get_primary_accel_index());
             Vector3f cam_pos_ned_rel_imu = cam_pos_ned-imu_pos_ned;
             _target_pos_rel_meas_NED = Vector3f(target_vec_unit_ned.x*dist, target_vec_unit_ned.y*dist, alt) + cam_pos_ned_rel_imu;
             return true;
@@ -479,8 +450,8 @@ void AC_PrecLand::run_output_prediction()
     Vector2f target_vel_rel_est_corrected_NE = _target_vel_rel_est_NE;
 
     // Predict forward from delayed time horizon
-    for (uint8_t i=1; i<_inertial_history.size(); i++) {
-        const struct inertial_data_frame_s& inertial_data = _inertial_history.peek(i);
+    for (uint8_t i=1; i<_inertial_history->available(); i++) {
+        const struct inertial_data_frame_s& inertial_data = *(*_inertial_history)[i];
         target_vel_rel_est_corrected_NE.x -= inertial_data.correctedVehicleDeltaVelocityNED.x;
         target_vel_rel_est_corrected_NE.y -= inertial_data.correctedVehicleDeltaVelocityNED.y;
         target_pos_rel_est_corrected_NE.x += target_vel_rel_est_corrected_NE.x * inertial_data.dt;
@@ -512,7 +483,7 @@ void AC_PrecLand::run_output_prediction()
     target_pos_rel_est_corrected_NE.x += land_ofs_ned_m.x;
     target_pos_rel_est_corrected_NE.y += land_ofs_ned_m.y;
         
-    const struct inertial_data_frame_s& latest_inertial_data = _inertial_history.peek(_inertial_history.size()-1);
+    const struct inertial_data_frame_s& latest_inertial_data = *(*_inertial_history)[_inertial_history->available()-1];
     
     _target_pos_rel_out_NE += _target_vel_rel_est_NE * latest_inertial_data.dt;
     _target_vel_rel_out_NE += -Vector2f(latest_inertial_data.correctedVehicleDeltaVelocityNED.x, latest_inertial_data.correctedVehicleDeltaVelocityNED.y);
