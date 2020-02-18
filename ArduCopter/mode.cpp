@@ -542,6 +542,9 @@ void Mode::land_run_vertical_control(bool pause_descent)
 
     // compute desired velocity
     const float precland_acceptable_error_high = 100.0f;
+    const float precland_slow_descent_speed = 40.0f;
+    const float precland_slowdown_height = 50.0f;
+    const float precland_commit_height = 35.0f;
     const float precland_acceptable_error = 15.0f;
     const float precland_min_descent_speed = 10.0f;
 
@@ -558,13 +561,22 @@ void Mode::land_run_vertical_control(bool pause_descent)
         max_land_descent_velocity = MIN(max_land_descent_velocity, -abs(g.land_speed));
 
         // Compute a vertical velocity demand such that the vehicle approaches g2.land_alt_low. Without the below constraint, this would cause the vehicle to hover at g2.land_alt_low.
-        cmb_rate = AC_AttitudeControl::sqrt_controller(MAX(g2.land_alt_low,100)-get_alt_above_ground_cm(), pos_control->get_pos_z_p().kP(), pos_control->get_accel_z()*0.25, G_Dt);
+        cmb_rate = AC_AttitudeControl::sqrt_controller(MAX(g2.land_alt_low,100)-get_alt_above_ground_cm(), pos_control->get_pos_z_p().kP(), pos_control->get_max_accel_z()*0.25, G_Dt);
 
         // Constrain the demanded vertical velocity so that it is between the configured maximum descent speed and the configured minimum descent speed.
         cmb_rate = constrain_float(cmb_rate, max_land_descent_velocity, -abs(g.land_speed));
 
-        if (doing_precision_landing && copter.rangefinder_alt_ok() && copter.rangefinder_state.alt_cm > 35.0f && copter.rangefinder_state.alt_cm < 80.0f) {
-            float max_descent_speed = abs(g.land_speed)*0.5f;
+        int32_t rangefinder_height_above_terrain_cm;
+        bool rangefinder_height_above_terrain_cm_valid = copter.get_rangefinder_height_interpolated_cm(rangefinder_height_above_terrain_cm);
+        if (doing_precision_landing && rangefinder_height_above_terrain_cm_valid) {
+            // Smoothly slow for precision landing
+            const float p_alt_hold = pos_control->get_pos_z_p().kP();
+            cmb_rate = MAX(cmb_rate, AC_AttitudeControl::sqrt_controller(precland_slowdown_height-rangefinder_height_above_terrain_cm, p_alt_hold, pos_control->get_max_accel_z()*0.25f, G_Dt));
+            cmb_rate = MIN(cmb_rate, -precland_slow_descent_speed);
+        }
+
+        if (doing_precision_landing && rangefinder_height_above_terrain_cm_valid && rangefinder_height_above_terrain_cm > precland_commit_height && rangefinder_height_above_terrain_cm < precland_slowdown_height) {
+            float max_descent_speed = precland_slow_descent_speed;
             float land_slowdown = MAX(0.0f, pos_control->get_horizontal_error()*(max_descent_speed/precland_acceptable_error));
             cmb_rate = MIN(-precland_min_descent_speed, -max_descent_speed+land_slowdown);
         }
