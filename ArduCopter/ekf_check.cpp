@@ -166,7 +166,7 @@ void Copter::failsafe_ekf_event()
             break;
 
         case FS_EKF_ACTION_PARACHUTE:
-            Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_EKF_FAILSAFE);
+            AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_REASON_EKF_FAILSAFE);
             parachute_release();
             break;
 
