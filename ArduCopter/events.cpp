@@ -392,8 +392,13 @@ void Copter::do_failsafe_action(Failsafe_Action action, ModeReason reason){
 #else
             arming.disarm(AP_Arming::Method::FAILSAFE_ACTION_TERMINATE);
 #endif
+            break;
         }
-        break;
+        case Failsafe_Action_LandIfManual:
+            if (!flightmode->is_autopilot()) {
+                set_mode_land_with_pause(ModeReason::BATTERY_FAILSAFE);
+            }
+            break;
     }
 
 #if GRIPPER_ENABLED == ENABLED
