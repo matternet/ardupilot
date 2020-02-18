@@ -7,3 +7,7 @@ define SPRAYER_ENABLED DISABLED
 define GRIPPER_ENABLED DISABLED
 define WINCH_ENABLED DISABLED
 
+# increase arming delay
+define ARMING_DELAY_SEC 3.0f
+
+
