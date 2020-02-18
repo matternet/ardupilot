@@ -391,7 +391,7 @@ void Mode::auto_takeoff_run()
         wp_nav->shift_wp_origin_to_current_pos();
 
         // get initial alt for WP_NAVALT_MIN
-        copter.auto_takeoff_set_start_alt();
+        auto_takeoff_set_start_alt();
         return;
     }
 
