@@ -393,6 +393,12 @@ void Copter::do_failsafe_action(Failsafe_Action action, ModeReason reason){
 #else
             arming.disarm();
 #endif
+            break;
+        case Failsafe_Action_LandIfManual:
+            if (!flightmode->is_autopilot()) {
+                set_mode_land_with_pause(ModeReason::BATTERY_FAILSAFE);
+            }
+            break;
     }
 }
 
