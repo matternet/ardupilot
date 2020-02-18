@@ -152,8 +152,8 @@ void Mode::auto_takeoff_set_start_alt(void)
     }
 
     // reset the min baro alt seen in takeoff
-    takeoff_baro_min_alt_m = barometer.get_altitude();
-    takeoff_liftoff_complete = false;
+    copter.takeoff_baro_min_alt_m = copter.barometer.get_altitude();
+    copter.takeoff_liftoff_complete = false;
 }
 
 
@@ -173,9 +173,9 @@ void Mode::auto_takeoff_attitude_run(float target_yaw_rate)
       takeoff. This is used to detect the "dip" that happens on the
       baro when the motors start applying thrust.
      */
-    float barometer_alt = barometer.get_altitude();
-    if (barometer_alt < takeoff_baro_min_alt_m) {
-        takeoff_baro_min_alt_m = barometer_alt;
+    float barometer_alt = copter.barometer.get_altitude();
+    if (barometer_alt < copter.takeoff_baro_min_alt_m) {
+        copter.takeoff_baro_min_alt_m = barometer_alt;
     }
 
     /*
@@ -185,27 +185,27 @@ void Mode::auto_takeoff_attitude_run(float target_yaw_rate)
         2) the barometric height has risen from the minimum by at least TOFF_BARO_DIP
         2) the throttle has reached TOFF_HOV_PCT of the hover throttle
      */
-    if (!takeoff_liftoff_complete) {
+    if (!copter.takeoff_liftoff_complete) {
         if (copter.matternet.tkoff_baro_dip > 0 &&
-            barometer_alt - takeoff_baro_min_alt_m >= copter.matternet.tkoff_baro_dip) {
-            takeoff_liftoff_complete = true;
-            gcs().send_text(MAV_SEVERITY_INFO, "LIFTOFF: baro %.1f thr=%.2f\n", barometer_alt - takeoff_baro_min_alt_m, motors->get_throttle());
+            barometer_alt - copter.takeoff_baro_min_alt_m >= copter.matternet.tkoff_baro_dip) {
+            copter.takeoff_liftoff_complete = true;
+            gcs().send_text(MAV_SEVERITY_INFO, "LIFTOFF: baro %.1f thr=%.2f\n", barometer_alt - copter.takeoff_baro_min_alt_m, motors->get_throttle());
         }
         if (copter.matternet.tkoff_hover_pct > 0 &&
             motors->get_throttle() >= copter.matternet.tkoff_hover_pct * 0.01 * motors->get_throttle_hover()) {
-            takeoff_liftoff_complete = true;
-            gcs().send_text(MAV_SEVERITY_INFO, "LIFTOFF: throttle %.2f baro=%.1f\n", motors->get_throttle(), barometer_alt - takeoff_baro_min_alt_m);
+            copter.takeoff_liftoff_complete = true;
+            gcs().send_text(MAV_SEVERITY_INFO, "LIFTOFF: throttle %.2f baro=%.1f\n", motors->get_throttle(), barometer_alt - copter.takeoff_baro_min_alt_m);
         }
         if (copter.matternet.tkoff_baro_dip <= 0 &&
             copter.matternet.tkoff_hover_pct <= 0) {
             // both are disabled, do direct takeoff
-            takeoff_liftoff_complete = true;
+            copter.takeoff_liftoff_complete = true;
         }
     }
 
 
     float alt_cm = inertial_nav.get_altitude();
-    if (!takeoff_liftoff_complete) {
+    if (!copter.takeoff_liftoff_complete) {
         // below no nav alt we zero roll and pitch demand
         nav_roll = 0;
         nav_pitch = 0;
@@ -223,7 +223,7 @@ void Mode::auto_takeoff_attitude_run(float target_yaw_rate)
     } else if (g2.wp_navalt_max > 0 && alt_cm < auto_takeoff_max_nav_alt_cm) {
         // between no nav alt and max nav alt we interpolate
         // roll/pitch demand
-        float lean_limit = linear_interpolate(0, aparm.angle_max,
+        float lean_limit = linear_interpolate(0, copter.aparm.angle_max,
                                               alt_cm,
                                               auto_takeoff_no_nav_alt_cm, auto_takeoff_max_nav_alt_cm);
         if (fabsf(nav_roll) > lean_limit ||
