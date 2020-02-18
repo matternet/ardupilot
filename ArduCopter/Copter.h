@@ -431,7 +431,7 @@ private:
 
     bool any_failsafe_triggered() const {
         bool ret = battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain || failsafe.adsb;
-        if (control_mode != GUIDED && control_mode != AUTO && control_mode != BRAKE) {
+        if (control_mode != Mode::Number::GUIDED && control_mode != Mode::Number::AUTO && control_mode != Mode::Number::BRAKE) {
             ret |= failsafe.radio;
         }
         return ret;

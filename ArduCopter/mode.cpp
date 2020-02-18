@@ -304,7 +304,7 @@ bool Copter::set_mode(Mode::Number mode, ModeReason reason)
     notify_flight_mode();
 
     // we want to allow arming with no RC in GUIDED mode
-    arming.disable_RC_check(mode == GUIDED);
+    arming.disable_RC_check(mode == Mode::Number::GUIDED);
 
     // return success
     return true;
