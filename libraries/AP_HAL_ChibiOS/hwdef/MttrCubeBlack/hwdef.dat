@@ -10,4 +10,5 @@ define WINCH_ENABLED DISABLED
 # increase arming delay
 define ARMING_DELAY_SEC 3.0f
 
-
+# log for 60s after disarm
+define HAL_LOGGER_ARM_PERSIST 60
