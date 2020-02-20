@@ -531,6 +531,7 @@ bool AP_Arming_Copter::pre_arm_proximity_check(bool display_failure)
 //  has side-effect that logging is started
 bool AP_Arming_Copter::arm_checks(bool display_failure, bool arming_from_gcs)
 {
+/*
     // always check if inertial nav has started and is ready
     if (!ahrs.healthy()) {
         check_failed(ARMING_CHECK_NONE, display_failure, "Waiting for Nav Checks");
@@ -544,7 +545,6 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, bool arming_from_gcs)
         return false;
     }
 #endif
-
     if (_compass.is_calibrating()) {
         check_failed(ARMING_CHECK_NONE, display_failure, "Compass calibration running");
         return false;
@@ -589,6 +589,7 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, bool arming_from_gcs)
             return false;
         }
     }
+*/
 
     control_mode_t control_mode = copter.control_mode;
 
@@ -709,6 +710,7 @@ bool AP_Arming_Copter::pre_takeoff_checks(void)
         gcs().send_text(MAV_SEVERITY_CRITICAL,"Takeoff: not armed");
         return false;
     }
+/*    
     float pos_change, alt_change;
     if (!copter.gps.get_pre_arm_pos_change(pos_change, alt_change)) {
         gcs().send_text(MAV_SEVERITY_CRITICAL,"Takeoff: no GPS data");
@@ -722,5 +724,6 @@ bool AP_Arming_Copter::pre_takeoff_checks(void)
         gcs().send_text(MAV_SEVERITY_CRITICAL,"Takeoff: alt change %.2f", alt_change);
         return false;
     }
+*/
     return true;
 }
