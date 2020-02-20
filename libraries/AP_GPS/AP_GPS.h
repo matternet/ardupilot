@@ -188,9 +188,6 @@ public:
 
     /// Query GPS status
     GPS_Status status(uint8_t instance) const {
-        if ((1U<<instance) & disable_mask) {
-            return NO_FIX;
-        }
         return state[instance].status;
     }
     GPS_Status status(void) const {

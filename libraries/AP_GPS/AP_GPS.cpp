@@ -706,6 +706,11 @@ void AP_GPS::update(void)
 {
     for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
         update_instance(i);
+        if ((1U<<i) & disable_mask) {
+            if (state[i].status > NO_FIX) {
+                state[i].status = NO_FIX;
+            }
+        }
     }
 
     // calculate number of instances
