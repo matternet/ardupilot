@@ -801,7 +801,12 @@ void AP_GPS::update(void)
                     if (should_switch) {
                         primary_instance = i;
                         _last_instance_swap_ms = now;
-                        gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
+                        if (strcmp(drivers[i]->name(), "u-blox") == 0 && drivers[i]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9) {
+                            gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to F9P");
+                        }
+                        else {
+                            gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to M8");
+                        }
                     }
                 }
             }
