@@ -1565,15 +1565,29 @@ bool Copter::ModeAuto::verify_land()
                 land_start(dest);
 
                 // advance to next state
+                if (land_state != LandStateType_Descending) {
+                    gcs().send_text(MAV_SEVERITY_INFO,"Landing");
+                }
                 land_state = LandStateType_Descending;
-                gcs().send_text(MAV_SEVERITY_INFO,"Landing");
             }
             break;
 
         case LandStateType_Descending:
             // rely on THROTTLE_LAND mode to correctly update landing status
-            retval = ap.land_complete;
-            gcs().send_text(MAV_SEVERITY_INFO,"Landed");
+            retval = copter.ap.land_complete;
+            if (retval) {
+                gcs().send_text(MAV_SEVERITY_INFO,"Landed");
+            }
+            if (retval && !copter.mission.continue_after_land() && copter.motors->armed()) {
+                /*
+                  we want to stop mission processing on land
+                  completion. Disarm now, then return false. This
+                  leaves mission state machine in the current NAV_LAND
+                  mission item. After disarming the mission will reset
+                */
+                copter.init_disarm_motors();
+                retval = false;
+            }
             break;
 
         default:
