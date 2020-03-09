@@ -113,36 +113,37 @@ void AP_ESC_Telem::parse_packet(void)
     decoded.counter = be32toh(pkt.counter);
     decoded.throttle_req = be16toh(pkt.throttle_req);
     decoded.throttle = be16toh(pkt.throttle);
-    decoded.rpm = be16toh(pkt.rpm);
+    decoded.rpm = be16toh(pkt.erpm) * 5.0 / 7.0;
     decoded.voltage = be16toh(pkt.voltage) * 0.1;
     decoded.current = int16_t(be16toh(pkt.current)) * 0.01;
-    decoded.load = int16_t(be16toh(pkt.load));
+    decoded.phase_current = int16_t(be16toh(pkt.phase_current)) * 0.01;
     decoded.temperature = be16toh(pkt.temperature);
-    decoded.unknown = be16toh(pkt.unknown);
+    decoded.status = be16toh(pkt.status);
     sem->give();
 
 #if 0
-    uint32_t now = AP_HAL::millis();
-    static uint32_t last_ms;
-    uint32_t dt = now - last_ms;
-    last_ms = now;
-    hal.console->printf("dt=%u %u RPM:%u THR:%u:%u V:%.2f L:%u C:%u\n", dt,
+    hal.console->printf("%u RPM:%.0f THR:%u:%u V:%.2f PC:%.2f C:%.2f T:0x%x S:0x%x\n",
                         unsigned(decoded.counter),
                         decoded.rpm,
                         unsigned(decoded.throttle_req), unsigned(decoded.throttle),
-                        decoded.voltage, unsigned(decoded.load), unsigned(decoded.current));
+                        decoded.voltage,
+                        decoded.phase_current,
+                        decoded.current,
+                        unsigned(decoded.temperature),
+                        unsigned(decoded.status));
 #endif
 
-    DataFlash_Class::instance()->Log_Write("HESC", "TimeUS,CNT,RPM,ThrR,Thr,Volt,Load,Curr,Temp,Unk",
-                                           "QIHHHfHfHH",
+    DataFlash_Class::instance()->Log_Write("HESC", "TimeUS,CNT,RPM,ThrR,Thr,Volt,CurrP,Curr,Temp,Status",
+                                           "QIfHHfffHH",
                                            AP_HAL::micros64(),
                                            decoded.counter,
                                            decoded.rpm,
                                            decoded.throttle_req, decoded.throttle,
                                            decoded.voltage,
-                                           decoded.load,
+                                           decoded.phase_current,
                                            decoded.current,
-                                           decoded.temperature, decoded.unknown);
+                                           decoded.temperature,
+                                           decoded.status);
 }
 
 /*

@@ -38,12 +38,12 @@ private:
         uint32_t counter;
         uint16_t throttle_req;
         uint16_t throttle;
-        uint16_t rpm;
+        uint16_t erpm;
         uint16_t voltage;
         int16_t current;
-        int16_t load;
+        int16_t phase_current;
         uint16_t temperature;
-        uint16_t unknown;
+        uint16_t status;
         uint16_t crc;
     } pkt;
 
@@ -55,12 +55,12 @@ private:
         uint32_t counter;
         uint16_t throttle_req;
         uint16_t throttle;
-        uint16_t rpm;
+        float rpm;
         float voltage;
         float current;
-        int16_t load;
+        float phase_current;
         uint16_t temperature;
-        uint16_t unknown;
+        uint16_t status;
     } decoded;
 
     uint32_t last_mavlink_ms;
