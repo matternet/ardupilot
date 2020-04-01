@@ -42,7 +42,8 @@ private:
         uint16_t voltage;
         int16_t current;
         int16_t phase_current;
-        uint16_t temperature;
+        uint8_t mos_temperature;
+        uint8_t cap_temperature;
         uint16_t status;
         uint16_t crc;
     } pkt;
@@ -53,13 +54,14 @@ private:
 
     struct {
         uint32_t counter;
-        uint16_t throttle_req;
-        uint16_t throttle;
+        float throttle_req;
+        float throttle;
         float rpm;
         float voltage;
         float current;
         float phase_current;
-        uint16_t temperature;
+        uint8_t mos_temperature;
+        uint8_t cap_temperature;
         uint16_t status;
     } decoded;
 
@@ -68,4 +70,5 @@ private:
     AP_HAL::Semaphore *sem;
 
     void parse_packet(void);
+    uint8_t temperature_decode(uint8_t temp_raw) const;
 };
