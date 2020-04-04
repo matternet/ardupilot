@@ -125,6 +125,8 @@ bool Copter::ekf_over_threshold()
 
     const float mag_max = fmaxf(fmaxf(mag_variance.x,mag_variance.y),mag_variance.z);
 
+    const float mag_max = fmaxf(fmaxf(mag_variance.x,mag_variance.y),mag_variance.z);
+
     // return true if two of compass, velocity and position variances are over the threshold OR velocity variance is twice the threshold
     uint8_t over_thresh_count = 0;
     if (mag_max >= g.fs_ekf_thresh) {
