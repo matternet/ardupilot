@@ -1014,7 +1014,7 @@ bool DataFlash_Class::log_while_disarmed(void) const
     if (_params.log_disarmed != 0) {
         return true;
     }
-
+/*
     uint32_t now = AP_HAL::millis();
     uint32_t persist_ms = HAL_LOGGER_ARM_PERSIST*1000U;
 
@@ -1027,6 +1027,6 @@ bool DataFlash_Class::log_while_disarmed(void) const
     if (_last_arming_failure_ms && now - _last_arming_failure_ms < persist_ms) {
         return true;
     }
-
+*/
     return false;
 }
