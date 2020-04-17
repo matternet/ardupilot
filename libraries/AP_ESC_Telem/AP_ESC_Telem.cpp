@@ -1,0 +1,205 @@
+/*
+  ESC Telemetry for Hobbywing Pro 80A HV ESC. This will be
+  incorporated into a broader ESC telemetry library in ArduPilot
+  master in the future
+ */
+#include "AP_ESC_Telem.h"
+#include <AP_SerialManager/AP_SerialManager.h>
+#include <stdio.h>
+#include <AP_HAL/utility/sparse-endian.h>
+#include <DataFlash/DataFlash.h>
+#include <GCS_MAVLink/GCS_MAVLink.h>
+#include <GCS_MAVLink/GCS.h>
+
+extern const AP_HAL::HAL& hal;
+
+#define TELEM_HEADER 0x9B
+#define TELEM_LEN    0x16
+
+AP_ESC_Telem *AP_ESC_Telem::singleton;
+
+// constructor
+AP_ESC_Telem::AP_ESC_Telem(void)
+{
+    singleton = this;
+}
+
+void AP_ESC_Telem::init()
+{
+    AP_SerialManager *serial_manager = AP_SerialManager::get_instance();
+    if (!serial_manager) {
+        return;
+    }
+    uart = serial_manager->find_serial(AP_SerialManager::SerialProtocol_ESCTelemetry, 0);
+    if (uart) {
+        sem = hal.util->new_semaphore();
+        hal.scheduler->register_timer_process(FUNCTOR_BIND(this, &AP_ESC_Telem::timer_update, void));
+    }
+}
+
+/*
+  update ESC telemetry
+ */
+void AP_ESC_Telem::timer_update()
+{
+    if (!initialised) {
+        initialised = true;
+        uart->begin(19200);
+    }
+
+    uint32_t n = uart->available();
+    if (n == 0) {
+        return;
+    }
+
+    // we expect at least 50ms idle between frames
+    uint32_t now = AP_HAL::millis();
+    bool frame_gap = (now - last_read_ms) > 10;
+
+    last_read_ms = now;
+
+    // don't read too much in one loop to prevent too high CPU load
+    n = MIN(n, 500U);
+    if (len == 0 && !frame_gap) {
+        // discard
+        while (n--) {
+            uart->read();
+        }
+        return;
+    }
+
+    if (frame_gap) {
+        len = 0;
+    }
+
+    while (n--) {
+        uint8_t b = uart->read();
+        //hal.console->printf("t=%u 0x%02x\n", now, b);
+        if (len == 0 && b != TELEM_HEADER) {
+            continue;
+        }
+        if (len == 1 && b != TELEM_LEN) {
+            continue;
+        }
+        uint8_t *buf = (uint8_t *)&pkt;
+        buf[len++] = b;
+        if (len == sizeof(pkt)) {
+            parse_packet();
+            len = 0;
+        }
+    }
+}
+
+static uint16_t calc_crc(const uint8_t *buf, uint8_t len)
+{
+    uint16_t crc = 0;
+    while (len--) {
+        crc += *buf++;
+    }
+    return crc;
+}
+
+static const struct {
+    uint8_t adc_temp;
+    uint8_t temp_C;
+} temp_table[] = {
+    { 241, 	0}, 	{ 240, 	1}, 	{ 239, 	2}, 	{ 238, 	3}, 	{ 237, 	4}, 	{ 236, 	5}, 	{ 235, 	6}, 	{ 234, 	7}, 	{ 233, 	8}, 	{ 232, 	9},
+    { 231, 	10}, 	{ 230, 	11}, 	{ 229, 	12}, 	{ 228, 	13}, 	{ 227, 	14}, 	{ 226, 	15}, 	{ 224, 	16}, 	{ 223, 	17}, 	{ 222, 	18}, 	{ 220, 	19},
+    { 219, 	20}, 	{ 217, 	21}, 	{ 216, 	22}, 	{ 214, 	23}, 	{ 213, 	24}, 	{ 211, 	25}, 	{ 209, 	26}, 	{ 208, 	27}, 	{ 206, 	28}, 	{ 204, 	29},
+    { 202, 	30}, 	{ 201, 	31}, 	{ 199, 	32}, 	{ 197, 	33}, 	{ 195, 	34}, 	{ 193, 	35}, 	{ 191, 	36}, 	{ 189, 	37}, 	{ 187, 	38}, 	{ 185, 	39},
+    { 183, 	40}, 	{ 181, 	41}, 	{ 179, 	42}, 	{ 177, 	43}, 	{ 174, 	44}, 	{ 172, 	45}, 	{ 170, 	46}, 	{ 168, 	47}, 	{ 166, 	48}, 	{ 164, 	49},
+    { 161, 	50}, 	{ 159, 	51}, 	{ 157, 	52}, 	{ 154, 	53}, 	{ 152, 	54}, 	{ 150, 	55}, 	{ 148, 	56}, 	{ 146, 	57}, 	{ 143, 	58}, 	{ 141, 	59},
+    { 139, 	60}, 	{ 136, 	61}, 	{ 134, 	62}, 	{ 132, 	63}, 	{ 130, 	64}, 	{ 128, 	65}, 	{ 125, 	66}, 	{ 123, 	67}, 	{ 121, 	68}, 	{ 119, 	69},
+    { 117, 	70}, 	{ 115, 	71}, 	{ 113, 	72}, 	{ 111, 	73}, 	{ 109, 	74}, 	{ 106, 	75}, 	{ 105, 	76}, 	{ 103, 	77}, 	{ 101, 	78}, 	{ 99, 	79},
+    { 97, 	80}, 	{ 95, 	81}, 	{ 93, 	82}, 	{ 91, 	83}, 	{ 90, 	84}, 	{ 88, 	85}, 	{ 85, 	86}, 	{ 84, 	87}, 	{ 82, 	88}, 	{ 81, 	89},
+    { 79, 	90}, 	{ 77, 	91}, 	{ 76, 	92}, 	{ 74, 	93}, 	{ 73, 	94}, 	{ 72, 	95}, 	{ 69, 	96}, 	{ 68, 	97}, 	{ 66, 	98}, 	{ 65, 	99},
+    { 64, 	100}, 	{ 62, 	101}, 	{ 62, 	102}, 	{ 61, 	103}, 	{ 59, 	104}, 	{ 58, 	105}, 	{ 56, 	106}, 	{ 54, 	107}, 	{ 54, 	108}, 	{ 53, 	109},
+    { 51, 	110}, 	{ 51, 	111}, 	{ 50, 	112}, 	{ 48, 	113}, 	{ 48, 	114}, 	{ 46, 	115}, 	{ 46, 	116}, 	{ 44, 	117}, 	{ 43, 	118}, 	{ 43, 	119},
+    { 41, 	120}, 	{ 41, 	121}, 	{ 39, 	122}, 	{ 39, 	123}, 	{ 39, 	124}, 	{ 37, 	125}, 	{ 37, 	126}, 	{ 35, 	127}, 	{ 35, 	128}, 	{ 33, 	129},
+};
+
+uint8_t AP_ESC_Telem::temperature_decode(uint8_t temp_raw) const
+{
+    for (uint8_t i=0; i<ARRAY_SIZE(temp_table); i++) {
+        if (temp_table[i].adc_temp <= temp_raw) {
+            return temp_table[i].temp_C;
+        }
+    }
+    return 130U;
+}
+
+/*
+  parse packet
+ */
+void AP_ESC_Telem::parse_packet(void)
+{
+    uint16_t crc = calc_crc((uint8_t *)&pkt, sizeof(pkt)-2);
+    if (crc != pkt.crc) {
+        return;
+    }
+
+    sem->take_blocking();
+    decoded.counter = be32toh(pkt.counter);
+    decoded.throttle_req = be16toh(pkt.throttle_req) * 100.0 / 1024.0;
+    decoded.throttle = be16toh(pkt.throttle) * 100.0 / 1024.0;
+    decoded.rpm = be16toh(pkt.erpm) * 10.0 / 14.0;
+    decoded.voltage = be16toh(pkt.voltage) * 0.1;
+    decoded.current = int16_t(be16toh(pkt.current)) / 64.0;
+    decoded.phase_current = int16_t(be16toh(pkt.phase_current)) / 64.0;
+    decoded.mos_temperature = temperature_decode(pkt.mos_temperature);
+    decoded.cap_temperature = temperature_decode(pkt.cap_temperature);
+    decoded.status = be16toh(pkt.status);
+    sem->give();
+
+#if 0
+    uint32_t now = AP_HAL::millis();
+    static uint32_t last_ms;
+    uint32_t dt = now - last_ms;
+    last_ms = now;
+    hal.console->printf("dt=%u %u RPM:%.1f THR:%.1f:%.1f V:%.2f C:%.1f CP:%.1f\n", dt,
+                        unsigned(decoded.counter),
+                        decoded.rpm,
+                        decoded.throttle_req, decoded.throttle,
+                        decoded.voltage, decoded.current, decoded.phase_current);
+#endif
+
+    DataFlash_Class::instance()->Log_Write("HESC", "TimeUS,CNT,RPM,ThrR,Thr,Volt,Curr,CurrP,TempM,TempC,Status",
+                                           "QIffffffBBH",
+                                           AP_HAL::micros64(),
+                                           decoded.counter,
+                                           decoded.rpm,
+                                           decoded.throttle_req,
+                                           decoded.throttle,
+                                           decoded.voltage,
+                                           decoded.current,
+                                           decoded.phase_current,
+                                           decoded.mos_temperature,
+                                           decoded.cap_temperature,
+                                           decoded.status);
+}
+
+/*
+  send telemetry on mavlink
+ */
+void AP_ESC_Telem::send_esc_telemetry_mavlink(uint8_t chan)
+{
+    if (!uart) {
+        return;
+    }
+    uint8_t temperature[4] {};
+    uint16_t voltage[4] {};
+    uint16_t current[4] {};
+    uint16_t totalcurrent[4] {};
+    uint16_t rpm[4] {};
+    uint16_t count[4] {};
+    if (!HAVE_PAYLOAD_SPACE((mavlink_channel_t)chan, ESC_TELEMETRY_1_TO_4)) {
+        return;
+    }
+    sem->take_blocking();
+    voltage[0] = decoded.voltage * 1000;
+    current[0] = decoded.current;
+    rpm[0] = decoded.rpm;
+    temperature[0] = MAX(decoded.mos_temperature, decoded.cap_temperature);
+    sem->give();
+    mavlink_msg_esc_telemetry_1_to_4_send((mavlink_channel_t)chan, temperature, voltage, current, totalcurrent, rpm, count);
+}

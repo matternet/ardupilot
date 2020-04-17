@@ -34,6 +34,7 @@ def build(bld):
             'AP_Follow',
             'AP_Devo_Telem',
             'AP_OSD',
+            'AP_ESC_Telem',
         ],
     )
 

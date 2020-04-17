@@ -151,6 +151,8 @@
  #include <AP_Devo_Telem/AP_Devo_Telem.h>
 #endif
 
+#include <AP_ESC_Telem/AP_ESC_Telem.h>
+
 #if OSD_ENABLED == ENABLED
  #include <AP_OSD/AP_OSD.h>
 #endif
@@ -466,7 +468,9 @@ private:
 #if OSD_ENABLED == ENABLED
     AP_OSD osd;
 #endif
-    
+
+    AP_ESC_Telem esc_telem;
+
     // Variables for extended status MAVLink messages
     uint32_t control_sensors_present;
     uint32_t control_sensors_enabled;

@@ -22,6 +22,7 @@
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_Gripper/AP_Gripper.h>
 #include <AP_BLHeli/AP_BLHeli.h>
+#include <AP_ESC_Telem/AP_ESC_Telem.h>
 #include <AP_Parachute/AP_Parachute.h>
 
 #include "GCS.h"
@@ -3080,6 +3081,10 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
             blheli->send_esc_telemetry_mavlink(uint8_t(chan));
         }
 #endif
+        AP_ESC_Telem *esc_telem = AP_ESC_Telem::get_singleton();
+        if (esc_telem) {
+            esc_telem->send_esc_telemetry_mavlink(uint8_t(chan));
+        }
         break;
     }
 
