@@ -10,6 +10,8 @@
 #include "DataFlash_Revo.h"
 #endif
 
+#include <AP_Notify/AP_Notify.h>
+
 
 DataFlash_Class *DataFlash_Class::_instance;
 
@@ -1015,6 +1017,11 @@ bool DataFlash_Class::log_while_disarmed(void) const
         return true;
     }
 
+    // Keep logging if compass calibration is running
+    if (AP_Notify::flags.compass_cal_running && !AP_Notify::events.compass_cal_failed) {
+        return true;
+    }
+
     uint32_t now = AP_HAL::millis();
     uint32_t persist_ms = HAL_LOGGER_ARM_PERSIST*1000U;
 
@@ -1027,6 +1034,6 @@ bool DataFlash_Class::log_while_disarmed(void) const
     if (_last_arming_failure_ms && now - _last_arming_failure_ms < persist_ms) {
         return true;
     }
-
+    
     return false;
 }
