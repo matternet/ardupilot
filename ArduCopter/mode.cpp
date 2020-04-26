@@ -520,17 +520,21 @@ void Copter::Mode::land_run_horizontal_control(bool fixed_yaw, float yaw_command
     bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired();
     // run precision landing
     if (doing_precision_landing) {
-        Vector2f target_pos, target_vel_rel;
+        Vector2f target_pos;
+        Vector2f current_pos_xy { inertial_nav.get_position().x, inertial_nav.get_position().y };
+        const float xy_scale = constrain_float(precland.xy_target_scale(), 0.5, 1.0);
         if (!precland.get_target_position_cm(target_pos)) {
-            target_pos.x = inertial_nav.get_position().x;
-            target_pos.y = inertial_nav.get_position().y;
+            target_pos = current_pos_xy;
         }
-        if (!precland.get_target_velocity_relative_cms(target_vel_rel)) {
-            target_vel_rel.x = -inertial_nav.get_velocity().x;
-            target_vel_rel.y = -inertial_nav.get_velocity().y;
-        }
+        /*
+          we apply an optional scaling factor to cope with poor
+          rangefinder accuracy. It allows us to scale the position
+          controller of precland independently of the general position
+          controller
+         */
+        const Vector2f delta = target_pos - current_pos_xy;
+        target_pos = current_pos_xy + delta * xy_scale;
         pos_control->set_xy_target(target_pos.x, target_pos.y);
-        pos_control->override_vehicle_velocity_xy(-target_vel_rel);
     }
 #endif
 
