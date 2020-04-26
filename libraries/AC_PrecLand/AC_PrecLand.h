@@ -89,6 +89,9 @@ public:
     // parameter var table
     static const struct AP_Param::GroupInfo var_info[];
 
+    // XY target scale factor
+    float xy_target_scale() const { return _xy_targ_scale.get(); }
+    
 private:
     enum estimator_type_t {
         ESTIMATOR_TYPE_RAW_SENSOR = 0,
@@ -123,6 +126,7 @@ private:
     AP_Float                    _land_ofs_cm_x;     // Desired landing position of the camera forward of the target in vehicle body frame
     AP_Float                    _land_ofs_cm_y;     // Desired landing position of the camera right of the target in vehicle body frame
     AP_Float                    _accel_noise;       // accelometer process noise
+    AP_Float                    _xy_targ_scale;     // scale factor for landing controller
     AP_Vector3f                 _cam_offset;        // Position of the camera relative to the CG
 
     uint32_t                    _last_update_ms;    // system time in millisecond when update was last called

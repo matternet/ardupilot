@@ -95,6 +95,13 @@ const AP_Param::GroupInfo AC_PrecLand::var_info[] = {
     // @Values: -1:DefaultBus,0:InternalI2C,1:ExternalI2C
     // @User: Advanced
     AP_GROUPINFO("BUS",    8, AC_PrecLand, _bus, -1),
+
+    // @Param: XY_SCALE
+    // @DisplayName: XY target scale
+    // @Description: Scale factor for XY landing controller
+    // @Range: 0.5 1
+    // @User: Advanced
+    AP_GROUPINFO("XY_SCALE",  9, AC_PrecLand, _xy_targ_scale, 1.0),
     
     AP_GROUPEND
 };

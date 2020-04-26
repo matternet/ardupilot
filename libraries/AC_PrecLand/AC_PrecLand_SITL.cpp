@@ -50,10 +50,15 @@ bool AC_PrecLand_SITL::get_los_body(Vector3f& ret) {
 // returns distance to target in meters (0 means distance is not known)
 float AC_PrecLand_SITL::distance_to_target()
 {
+#if 0
+    // disabled to match using normal rangefinder
     if (AP_HAL::millis() - _los_meas_time_ms > 1000) {
         return 0;
     }
     return _target_distance_m;
+#else
+    return 0;
+#endif
 }
 
 #endif
