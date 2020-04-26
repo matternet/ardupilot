@@ -355,6 +355,7 @@ failed:
  */
 void Scheduler::check_thread_stacks(void)
 {
+#if 0
     WITH_SEMAPHORE(_thread_sem);
     for (struct thread_attr *p=threads; p; p=p->next) {
         const uint8_t ncheck = 8;
@@ -364,4 +365,5 @@ void Scheduler::check_thread_stacks(void)
             }
         }
     }
+#endif
 }
