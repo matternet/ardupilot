@@ -505,6 +505,12 @@ protected:
     AP_Float _blend_tc;
     AP_Int16 _driver_options;
 
+    // GPS_DRV_OPTIONS bits
+    enum class DRV_OPTIONS {
+        MB_USE_UART2 = 1U<<0,
+        NO_AUTOBAUD  = 1U<<1,
+    };
+    
     uint32_t _log_gps_bit = -1;
 
 private:
@@ -572,6 +578,7 @@ private:
     static const char _initialisation_blob[];
     static const char _initialisation_raw_blob[];
 
+    uint32_t get_baudrate(uint8_t instance, uint8_t step) const;
     void detect_instance(uint8_t instance);
     void update_instance(uint8_t instance);
 

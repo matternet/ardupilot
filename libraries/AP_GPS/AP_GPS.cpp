@@ -290,14 +290,13 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     AP_GROUPINFO("BLEND_TC", 21, AP_GPS, _blend_tc, 10.0f),
 #endif
 
-#if GPS_UBLOX_MOVING_BASELINE
+
     // @Param: DRV_OPTIONS
     // @DisplayName: driver options
     // @Description: Additional backend specific options
-    // @Bitmask: 0:Use UART2 for moving baseline on ublox
+    // @Bitmask: 0:Use UART2 for moving baseline on ublox,1:Use SERIALn_BAUD instead of auto-bauding
     // @User: Advanced
     AP_GROUPINFO("DRV_OPTIONS", 22, AP_GPS, _driver_options, 0),
-#endif
 
     AP_GROUPEND
 };
@@ -462,6 +461,18 @@ void AP_GPS::send_blob_update(uint8_t instance)
 }
 
 /*
+  get baudrate for a probe step
+ */
+uint32_t AP_GPS::get_baudrate(uint8_t instance, uint8_t step) const
+{
+    if (unsigned(_driver_options.get()) & unsigned(DRV_OPTIONS::NO_AUTOBAUD)) {
+        // use SERIALn_BAUD, ignoring _baudrates array
+        return AP::serialmanager().find_baudrate(AP_SerialManager::SerialProtocol_GPS, instance);
+    }
+    return _baudrates[step];
+}
+
+/*
   run detection step for one GPS instance. If this finds a GPS then it
   will fill in drivers[instance] and change state[instance].status
   from NO_GPS to NO_FIX.
@@ -536,7 +547,7 @@ void AP_GPS::detect_instance(uint8_t instance)
         if (dstate->current_baud == ARRAY_SIZE(_baudrates)) {
             dstate->current_baud = 0;
         }
-        uint32_t baudrate = _baudrates[dstate->current_baud];
+        uint32_t baudrate = get_baudrate(instance, dstate->current_baud);
         _port[instance]->begin(baudrate);
         _port[instance]->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
         dstate->last_baud_change_ms = now;
@@ -568,10 +579,9 @@ void AP_GPS::detect_instance(uint8_t instance)
           the uBlox into 115200 no matter what rate it is configured
           for.
         */
-        if ((_type[instance] == GPS_TYPE_AUTO ||
-             _type[instance] == GPS_TYPE_UBLOX) &&
-            ((!_auto_config && _baudrates[dstate->current_baud] >= 38400) ||
-             _baudrates[dstate->current_baud] == 115200) &&
+        if ((_type[instance] == GPS_TYPE_AUTO || _type[instance] == GPS_TYPE_UBLOX) &&
+            ((!_auto_config && get_baudrate(instance, dstate->current_baud) >= 38400) ||
+             get_baudrate(instance, dstate->current_baud) == 115200) &&
             AP_GPS_UBLOX::_detect(dstate->ublox_detect_state, data)) {
             new_gps = new AP_GPS_UBLOX(*this, state[instance], _port[instance], GPS_ROLE_NORMAL);
         }
