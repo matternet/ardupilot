@@ -1,0 +1,17 @@
+include ../f303-periph/hwdef.dat
+
+# use DNA
+define HAL_CAN_DEFAULT_NODE_ID 0
+
+define CAN_APP_NODE_NAME "org.ardupilot.USD1-Radar"
+
+# enable just rangefinder
+define HAL_PERIPH_ENABLE_RANGEFINDER
+
+define RANGEFINDER_MAX_INSTANCES 1
+
+# default ADSB off by setting 0 baudrate
+define HAL_PERIPH_ADSB_BAUD_DEFAULT 0
+
+undef AP_PARAM_MAX_EMBEDDED_PARAM
+define AP_PARAM_MAX_EMBEDDED_PARAM 1024
