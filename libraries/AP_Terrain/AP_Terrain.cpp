@@ -303,6 +303,7 @@ float AP_Terrain::lookahead(float bearing, float distance, float climb_ratio)
  */
 void AP_Terrain::update(void)
 {
+    if (!enable) { return; }
     // just schedule any needed disk IO
     schedule_disk_io();
 
