@@ -207,6 +207,13 @@ public:
     }
 #endif
 
+#if HAL_HAVE_IMU_HEATER
+    // get IMU target temperature in deg C
+    static float get_imu_target_temp(void) {
+        return _singleton?_singleton->heater.imu_target_temperature.get():0;
+    }
+#endif
+
 private:
     static AP_BoardConfig *_singleton;
     
