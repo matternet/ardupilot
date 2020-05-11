@@ -1,0 +1,20 @@
+# hw definition for Matternet CubeOrange build
+
+include ../CubeOrange/hwdef.dat
+
+define MODE_SMARTRTL_ENABLED DISABLED
+define SPRAYER_ENABLED DISABLED
+define GRIPPER_ENABLED DISABLED
+define WINCH_ENABLED DISABLED
+
+# disable internal compasses
+undef COMPASS
+
+# this is a dummy so we don't fall back to the AP_FEATURE_BOARD_DETECT compass list
+COMPASS LSM303D SPI:lsm9ds0_ext_am ROTATION_YAW_270
+
+# increase arming delay
+define ARMING_DELAY_SEC 3.0f
+
+# log for 60s after disarm
+define HAL_LOGGER_ARM_PERSIST 60
