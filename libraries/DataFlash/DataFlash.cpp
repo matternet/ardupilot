@@ -101,6 +101,7 @@ DataFlash_Class::DataFlash_Class(const AP_Int32 &log_bitmask)
 void DataFlash_Class::Init(const struct LogStructure *structures, uint8_t num_types)
 {
     gcs().send_text(MAV_SEVERITY_INFO, "Preparing log system");
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     validate_structures(structures, num_types);
     dump_structures(structures, num_types);
@@ -409,6 +410,14 @@ bool DataFlash_Class::logging_failed() const
             return true;
         }
     }
+
+    for (uint8_t i=0; i<_next_backend; i++) {
+//        backends[i]->start_new_log_reset_variables();
+        if (!backends[i]->Log_Write_Message("DF logging sactitity check successful for all backend instances")) {
+            return true;
+        }
+    }
+
     return false;
 }
 
