@@ -1017,8 +1017,8 @@ bool DataFlash_Class::log_while_disarmed(void) const
         return true;
     }
 
-    // Keep logging if compass calibration is running
-    if (AP_Notify::flags.compass_cal_running && !AP_Notify::events.compass_cal_failed) {
+    // Keep logging if compass calibration is running even if it fails
+    if (AP_Notify::flags.compass_cal_running) {
         return true;
     }
 
