@@ -25,6 +25,19 @@ AP_RangeFinder_UAVCAN::AP_RangeFinder_UAVCAN(RangeFinder::RangeFinder_State &_st
 {
     _sem = hal.util->new_semaphore();
 
+    _last_init_check_ms = AP_HAL::millis();
+    init_rangefinder();
+}
+
+/*
+  try to associate this backend instance with a uavcan rangefinder
+  node
+ */
+void AP_RangeFinder_UAVCAN::init_rangefinder()
+{
+    if (_initialized) {
+        return;
+    }
     for (uint8_t i = 0; i < MAX_NUMBER_OF_CAN_DRIVERS; i++) {
         AP_UAVCAN *ap_uavcan = AP_UAVCAN::get_uavcan(i);
         if (ap_uavcan == nullptr) {
@@ -62,8 +75,12 @@ AP_RangeFinder_UAVCAN::~AP_RangeFinder_UAVCAN()
 // Read the sensor
 void AP_RangeFinder_UAVCAN::update(void)
 {
-    _sem->take_blocking();
     uint32_t now = AP_HAL::millis();
+    if (!_initialized && now - _last_init_check_ms >= 1000) {
+        _last_init_check_ms = now;
+        init_rangefinder();
+    }
+    _sem->take_blocking();
     if (now - _last_update_ms > 200) {
         set_status(RangeFinder::RangeFinder_NoData);
     } else {

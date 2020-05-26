@@ -26,6 +26,9 @@ private:
     RangeFinder::RangeFinder_Status _status;
     uint8_t _manager;
     AP_HAL::Semaphore *_sem;
+    uint32_t _last_init_check_ms;
+
+    void init_rangefinder();
 
     bool _initialized;
 };
