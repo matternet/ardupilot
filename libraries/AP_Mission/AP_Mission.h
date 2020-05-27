@@ -39,6 +39,8 @@
 #define AP_MISSION_OPTIONS_DEFAULT          0       // Do not clear the mission when rebooting
 #define AP_MISSION_MASK_MISSION_CLEAR       (1<<0)  // If set then Clear the mission on boot
 
+#define AP_MISSION_MASK_CONTINUE_AFTER_LAND (1<<2)  // Allow mission to continue after land
+
 /// @class    AP_Mission
 /// @brief    Object managing Mission
 class AP_Mission {
@@ -487,6 +489,15 @@ public:
     // returns true if the mission has a terrain relative mission item
     bool contains_terrain_relative(void) const;
     
+    /*
+      return true if MIS_OPTIONS is set to allow continue of mission
+      logic after a land. If this is false then after a landing is
+      complete the vehicle should disarm and mission logic should stop
+     */
+    bool continue_after_land(void) const {
+        return (_options.get() & AP_MISSION_MASK_CONTINUE_AFTER_LAND) != 0;
+    }
+
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 

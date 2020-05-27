@@ -27,7 +27,7 @@ const AP_Param::GroupInfo AP_Mission::var_info[] = {
     // @Param: OPTIONS
     // @DisplayName: Mission options bitmask
     // @Description: Bitmask of what options to use in missions.
-    // @Bitmask: 0:Clear Mission on reboot
+    // @Bitmask: 0:Clear Mission on reboot, 2:ContinueAfterLand
     // @User: Advanced
     AP_GROUPINFO("OPTIONS",  2, AP_Mission, _options, AP_MISSION_OPTIONS_DEFAULT),
 
