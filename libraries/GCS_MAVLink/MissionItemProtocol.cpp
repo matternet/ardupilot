@@ -89,7 +89,7 @@ void MissionItemProtocol::handle_mission_count(
     }
 
     // start waypoint receiving
-    init_send_requests(_link, msg, 0, packet.count-1);
+    init_send_requests(_link, msg, 0, packet.count);
 }
 
 void MissionItemProtocol::handle_mission_request_list(
