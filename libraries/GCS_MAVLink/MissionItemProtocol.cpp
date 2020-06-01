@@ -258,7 +258,7 @@ void MissionItemProtocol::handle_mission_item(const mavlink_message_t &msg, cons
     timelast_receive_ms = AP_HAL::millis();
     request_i++;
 
-    if (request_i > request_last) {
+    if (request_i >= request_last) {
         transfer_is_complete(*link, msg);
         return;
     }
