@@ -74,7 +74,7 @@ void MissionItemProtocol::handle_mission_count(
         return;
     }
 
-    MAV_MISSION_RESULT ret_alloc = allocate_receive_resources(packet.count);
+    MAV_MISSION_RESULT ret_alloc = allocate_receive_resources(packet.count+1);
     if (ret_alloc != MAV_MISSION_ACCEPTED) {
         send_mission_ack(_link, msg, ret_alloc);
         return;
