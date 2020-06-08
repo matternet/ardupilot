@@ -436,6 +436,12 @@ void Copter::one_hz_loop()
         // set all throttle channel settings
         motors->set_throttle_range(channel_throttle->get_radio_min(), channel_throttle->get_radio_max());
 #endif
+
+        if (gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
+            // reset baro cal when on the ground
+            barometer.update_calibration();
+            ahrs.resetHeightDatum();
+        }
     }
 
     // update assigned functions and enable auxiliary servos
