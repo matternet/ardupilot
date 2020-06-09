@@ -12,8 +12,15 @@
 // initialise avoid_adsb controller
 bool Copter::ModeAvoidADSB::init(const bool ignore_checks)
 {
-    // re-use guided mode
-    return Copter::ModeGuided::init(ignore_checks);
+    if (copter.position_ok() || ignore_checks) {
+        // initialise yaw
+        auto_yaw.set_mode_to_default(false);
+        // start in position control mode
+        pos_control_start();
+        return true;
+    }else{
+        return false;
+    }
 }
 
 bool Copter::ModeAvoidADSB::set_velocity(const Vector3f& velocity_neu)

@@ -83,6 +83,7 @@ void Copter::handle_battery_failsafe(const char *type_str, const int8_t action)
 #else
                 init_disarm_motors();
 #endif
+                break;
             case Failsafe_Action_LandIfManual:
                 if (!flightmode->is_autopilot()) {
                     set_mode_land_with_pause(MODE_REASON_BATTERY_FAILSAFE);
