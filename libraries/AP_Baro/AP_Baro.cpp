@@ -279,11 +279,11 @@ void AP_Baro::calibrate(bool save)
 void AP_Baro::update_calibration()
 {
     const uint32_t now = AP_HAL::millis();
-    const bool do_notify = now - _last_notify_ms > 10000;
-    if (do_notify) {
-        _last_notify_ms = now;
-    }
     for (uint8_t i=0; i<_num_sensors; i++) {
+        const bool do_notify = now - _last_notify_ms[i] > 10000;
+        if (do_notify) {
+            _last_notify_ms[i] = now;
+        }
         if (healthy(i)) {
             float corrected_pressure = get_pressure(i) + sensors[i].p_correction;
             sensors[i].ground_pressure.set(corrected_pressure);
