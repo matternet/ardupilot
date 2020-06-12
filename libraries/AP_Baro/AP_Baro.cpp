@@ -253,9 +253,9 @@ void AP_Baro::update_calibration()
 
         // don't notify the GCS too rapidly or we flood the link
         uint32_t now = AP_HAL::millis();
-        if (now - _last_notify_ms > 10000) {
+        if (now - _last_notify_ms[i] > 10000) {
             sensors[i].ground_pressure.notify();
-            _last_notify_ms = now;
+            _last_notify_ms[i] = now;
         }
     }
 
