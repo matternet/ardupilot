@@ -32,6 +32,8 @@ extern const AP_HAL::HAL& hal;
 const size_t lx20_max_reply_len_bytes = 32;
 const size_t lx20_max_expected_stream_reply_len_bytes = 14;
 
+#define LIGHTWARE_OUT_OF_RANGE_ADD_CM   100
+
 #define stream_the_median_distance_to_the_first_return "ldf,0"
 #define stream_the_raw_distance_to_the_first_return    "ldf,1"
 #define stream_the_signal_strength_first_return        "lhf"
@@ -412,6 +414,17 @@ bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
             return false;
         }
         (*p_num_processed_chars)++;
+    }
+
+    /*
+      special case for being beyond maximum range, we receive a message like this:
+      ldl,1:-1.00
+      we will return max distance
+     */
+    if (strncmp((const char *)&stream_buf[*p_num_processed_chars], "-1.00", 5) == 0) {
+        val = uint16_t(max_distance_cm() + LIGHTWARE_OUT_OF_RANGE_ADD_CM);
+        (*p_num_processed_chars) += 5;
+        return true;
     }
 
     /* Number is always returned in hundredths. So 6.33 is returned as 633. 6.3 is returned as 630.
