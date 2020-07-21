@@ -81,12 +81,18 @@ void AP_RangeFinder_UAVCAN::update(void)
         init_rangefinder();
     }
     _sem->take_blocking();
+
     if (now - _last_update_ms > 200) {
+        //if data is older than 200ms, report NoData
         set_status(RangeFinder::RangeFinder_NoData);
-    } else {
+    } else if (_status == RangeFinder::RangeFinder_Good) {
         state.distance_cm = _distance * 100;
+        update_status();
+    } else if (_status != RangeFinder::RangeFinder_Good) {
+        // handle additional states received by measurement handler
         set_status(_status);
     }
+
     _sem->give();
 }
 
