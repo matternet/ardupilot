@@ -1179,6 +1179,9 @@ private:
     // string representing last reason for prearm failure
     char prearm_fail_string[40];
 
+    // true when we should align learned offsets with next z reading
+    bool pending_z_mag_correction;
+
     // performance counters
     AP_HAL::Util::perf_counter_t  _perf_UpdateFilter;
     AP_HAL::Util::perf_counter_t  _perf_CovariancePrediction;

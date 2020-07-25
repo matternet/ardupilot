@@ -1440,9 +1440,11 @@ void NavEKF2_core::MagOffsetConstrain(void)
 {
     if (frontend->_mag_learn_limit > 0) {
         float limit_ga = frontend->_mag_learn_limit * 0.001f;
+        // allow higher limit on Z due to more variability observed in vehicles
+        float limit_ga_z = limit_ga * 3;
         stateStruct.body_magfield.x = constrain_float(stateStruct.body_magfield.x, -limit_ga, limit_ga);
         stateStruct.body_magfield.y = constrain_float(stateStruct.body_magfield.y, -limit_ga, limit_ga);
-        stateStruct.body_magfield.z = constrain_float(stateStruct.body_magfield.z, -limit_ga, limit_ga);
+        stateStruct.body_magfield.z = constrain_float(stateStruct.body_magfield.z, -limit_ga_z, limit_ga_z);
     }
 }
 
