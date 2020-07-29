@@ -51,7 +51,7 @@ const AP_Param::GroupInfo SITL::var_info[] = {
     AP_GROUPINFO("SERVO_SPEED",   16, SITL,  servo_speed,  0.14),
     AP_GROUPINFO("GPS_GLITCH",    17, SITL,  gps_glitch,  0),
     AP_GROUPINFO("GPS_HZ",        18, SITL,  gps_hertz,  5),
-    AP_GROUPINFO("BATT_VOLTAGE",  19, SITL,  batt_voltage,  12.6f),
+    AP_GROUPINFO("BATT_VOLTAGE",  19, SITL,  batt_voltage,  48.0f),
     AP_GROUPINFO("ARSPD_RND",     20, SITL,  arspd_noise,  0.5f),
     AP_GROUPINFO("ACCEL_FAIL",    21, SITL,  accel_fail,  0),
     AP_GROUPINFO("BARO_DRIFT",    22, SITL,  baro_drift,  0),
@@ -167,7 +167,7 @@ const AP_Param::GroupInfo SITL::var_info2[] = {
     AP_GROUPINFO("TWIST_TIME",  40, SITL,  twist.t, 0),
 
     AP_GROUPINFO("GND_BEHAV",   41, SITL,  gnd_behav, -1),
-    AP_GROUPINFO("BARO_COUNT",  42, SITL,  baro_count,  1),
+    AP_GROUPINFO("BARO_COUNT",  42, SITL,  baro_count,  2),
 
     AP_GROUPINFO("GPS_HDG",     43, SITL,  gps_hdg_enabled, 0),
 
