@@ -53,6 +53,7 @@
 #include <AP_ADSB/AP_ADSB.h>
 #include "AP_UAVCAN_Server.h"
 #include <AP_Logger/AP_Logger.h>
+#include <AP_InertialSensor/AP_InertialSensor_UAVCAN.h>
 
 #define LED_DELAY_US 50000
 
@@ -248,6 +249,7 @@ void AP_UAVCAN::init(uint8_t driver_index, bool enable_filters)
     AP_Airspeed_UAVCAN::subscribe_msgs(this);
     AP_OpticalFlow_HereFlow::subscribe_msgs(this);
     AP_RangeFinder_UAVCAN::subscribe_msgs(this);
+    AP_InertialSensor_UAVCAN::subscribe_msgs(this);
 
     act_out_array[driver_index] = new uavcan::Publisher<uavcan::equipment::actuator::ArrayCommand>(*_node);
     act_out_array[driver_index]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(2));

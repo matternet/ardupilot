@@ -37,6 +37,8 @@
 
 #include <com/hex/equipment/flow/Measurement.hpp>
 
+#include <ardupilot/imu/FastIMU.hpp>
+
 void setup();
 void loop();
 
@@ -153,6 +155,15 @@ MSG_CB(uavcan::equipment::esc::RawCommand, RawCommand)
 MSG_CB(uavcan::equipment::indication::LightsCommand, LightsCommand);
 MSG_CB(com::hex::equipment::flow::Measurement, Measurement);
 
+static void cb_FastIMU(const uavcan::ReceivedDataStructure<ardupilot::imu::FastIMU>& msg) {
+    static uint8_t last_counter;
+    if (msg.counter != (last_counter + 1) % 256) {
+        ::printf("crt %u %u\n", last_counter, msg.counter);
+    }
+    last_counter = msg.counter;
+    count_msg(msg.getDataTypeFullName());
+}
+
 void UAVCAN_sniffer::init(void)
 {
     uint8_t interface = 0;
@@ -226,7 +237,7 @@ void UAVCAN_sniffer::init(void)
     START_CB(uavcan::equipment::esc::RawCommand, RawCommand);
     START_CB(uavcan::equipment::indication::LightsCommand, LightsCommand);
     START_CB(com::hex::equipment::flow::Measurement, Measurement);
-
+    START_CB(ardupilot::imu::FastIMU, FastIMU);
 
     /*
      * Informing other nodes that we're ready to work.
