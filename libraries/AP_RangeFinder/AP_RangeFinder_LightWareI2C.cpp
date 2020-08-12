@@ -27,7 +27,7 @@ extern const AP_HAL::HAL& hal;
 #define LIGHTWARE_DISTANCE_READ_REG 0
 #define LIGHTWARE_LOST_SIGNAL_TIMEOUT_READ_REG 22
 #define LIGHTWARE_LOST_SIGNAL_TIMEOUT_WRITE_REG 23
-#define LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE 5
+#define LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE 30
 
 const size_t lx20_max_reply_len_bytes = 32;
 const size_t lx20_max_expected_stream_reply_len_bytes = 14;
