@@ -192,6 +192,7 @@ public:
     void send_vfr_hud();
     void send_vibration() const;
     void send_named_float(const char *name, float value) const;
+    void send_named_int(const char *name, int32_t value) const;
     void send_home() const;
     void send_ekf_origin() const;
     virtual void send_position_target_global_int() { };
@@ -601,6 +602,7 @@ public:
     void send_message(enum ap_message id);
     void send_mission_item_reached_message(uint16_t mission_index);
     void send_named_float(const char *name, float value) const;
+    void send_named_int(const char *name, int32_t value) const;
     void send_home() const;
     void send_ekf_origin() const;
 
