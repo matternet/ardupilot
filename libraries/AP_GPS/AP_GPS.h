@@ -552,6 +552,9 @@ private:
     bool _output_is_blended; // true when a blended GPS solution being output
     uint8_t _blend_health_counter;  // 0 = perfectly health, 100 = very unhealthy
 
+    // time of last GPS primary report
+    uint32_t last_gps_primary_ms;
+
     /*
       track change in position and height since arming. Used for
       pre-takeoff check

@@ -814,6 +814,13 @@ void AP_GPS::update(void)
     AP_Notify::flags.gps_status = state[primary_instance].status;
     AP_Notify::flags.gps_num_sats = state[primary_instance].num_sats;
 
+    uint32_t now = AP_HAL::millis();
+    if (now - last_gps_primary_ms > 1000) {
+        // tell the GCS which GPS is primary
+        last_gps_primary_ms = now;
+        gcs().send_named_int("GPSPRIMARY", primary_instance);
+    }
+
 }
 
 void AP_GPS::handle_gps_inject(const mavlink_message_t *msg)
