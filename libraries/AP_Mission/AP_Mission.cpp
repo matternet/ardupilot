@@ -195,7 +195,12 @@ bool AP_Mission::clear()
 {
     // do not allow clearing the mission while it is running
     if (_flags.state == MISSION_RUNNING) {
-        return false;
+        if (hal.util->get_soft_armed()) {
+            // don't allow clear while running if armed
+            return false;
+        }
+        // if disarmed then allow clear, but reset state
+        reset();
     }
 
     // remove all commands
