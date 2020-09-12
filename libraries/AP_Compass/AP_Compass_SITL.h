@@ -36,7 +36,7 @@ private:
     uint32_t _last_sample_time;
 
     Vector3f _mag_accum[SITL_NUM_COMPASSES];
-    uint32_t _accum_count;
+    uint32_t _accum_count[SITL_NUM_COMPASSES];
 
     void _setup_eliptical_correcion();
     
