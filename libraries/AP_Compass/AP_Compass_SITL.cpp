@@ -22,7 +22,13 @@ AP_Compass_SITL::AP_Compass_SITL(Compass &compass):
             // save so the compass always comes up configured in SITL
             save_dev_id(_compass_instance[i]);
         }
-        
+
+        // we want to simulate a calibrated compass by default, so set
+        // scale to 1
+        AP_Param::set_default_by_name("COMPASS_SCALE", 1);
+        AP_Param::set_default_by_name("COMPASS_SCALE2", 1);
+        AP_Param::set_default_by_name("COMPASS_SCALE3", 1);
+
         // make first compass external
         set_external(_compass_instance[0], true);
 
