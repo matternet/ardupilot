@@ -608,6 +608,9 @@ private:
     // check for new altitude measurement data and update stored measurement if available
     void readBaroData();
 
+    // reset body mag variances
+    void resetMagBodyVariances(void);
+
     // try changing to another compass
     void tryChangeCompass();
 
