@@ -789,7 +789,13 @@ void AP_GPS::update(void)
                         should_switch = true;
                     }
                     
-                    else if (status_i == status_primary && !hal.util->get_soft_armed() && state[i].num_sats >= state[primary_instance].num_sats+3) {
+                    // When vehicle is Disarmed, and current primary GPS has less than 3 satellites, switch to the other available GPS.
+                    else if (!hal.util->get_soft_armed() && status_i == status_primary && state[i].num_sats >= state[primary_instance].num_sats+3) {
+                        should_switch = true;                        
+                    }
+
+                    // When vehicle is Armed, and current primary GPS has less than 6 satellites, switch to the other available GPS.
+                    else if (hal.util->get_soft_armed() && status_i == status_primary && state[i].num_sats >= state[primary_instance].num_sats+6) {
                         should_switch = true;                        
                     }
 
