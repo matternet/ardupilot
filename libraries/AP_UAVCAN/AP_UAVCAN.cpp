@@ -371,6 +371,12 @@ static void battery_info_st_cb(const uavcan::ReceivedDataStructure<uavcan::equip
     state->full_charge_capacity_wh = msg.full_charge_capacity_wh;
     state->remaining_capacity_wh = msg.remaining_capacity_wh;
     state->status_flags = msg.status_flags;
+    state->model_instance_id = msg.model_instance_id;
+    memset(state->model_name, 0, sizeof(state->model_name));
+    const uint8_t len = msg.model_name.size();
+    for (uint8_t i=0; i<len; i++) {
+        state->model_name[i] = msg.model_name[i];
+    }
 
     // after all is filled, update all listeners with new data
     ap_uavcan->update_bi_state((uint16_t) msg.battery_id);
@@ -1552,7 +1558,7 @@ void AP_UAVCAN::update_mag_state(uint8_t node, uint8_t sensor_id)
     }
 }
 
-uint8_t AP_UAVCAN::register_BM_bi_listener_to_id(AP_BattMonitor_Backend* new_listener, uint8_t id)
+uint8_t AP_UAVCAN::register_BM_bi_listener_to_id(AP_BattMonitor_Backend* new_listener, int32_t id)
 {
     uint8_t sel_place = UINT8_MAX, ret = 0;
 
@@ -1568,7 +1574,7 @@ uint8_t AP_UAVCAN::register_BM_bi_listener_to_id(AP_BattMonitor_Backend* new_lis
     }
 
     for (uint8_t i = 0; i < AP_UAVCAN_MAX_BI_NUMBER; i++) {
-        if (_bi_id[i] != id) {
+        if (id != -1 && _bi_id[i] != id) {
             continue;
         }
         _bi_BM_listeners[sel_place] = new_listener;
@@ -1646,7 +1652,8 @@ void AP_UAVCAN::update_bi_state(uint8_t id)
             if (_bi_BM_listener_to_id[j] != i) {
                 continue;
             }
-            _bi_BM_listeners[j]->handle_bi_msg(_bi_id_state[i].voltage, _bi_id_state[i].current, _bi_id_state[i].temperature);
+            _bi_BM_listeners[j]->handle_bi_msg(_bi_id_state[i].voltage, _bi_id_state[i].current, _bi_id_state[i].temperature,
+                                               _bi_id_state[i].model_instance_id, _bi_id_state[i].model_name);
         }
     }
 }

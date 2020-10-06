@@ -26,8 +26,13 @@ public:
         return true;
     }
 
-    void handle_bi_msg(float voltage, float current, float temperature) override;
+    void handle_bi_msg(float voltage, float current, float temperature, uint32_t model_instance_id, uint8_t model_name[33]) override;
+
+    void Write_DataFlash_Log_Startup_messages() override;
 
 protected:
     BattMonitor_UAVCAN_Type _type;
+    uint32_t model_instance_id;
+    char model_name[33];
+    bool batt_changed;
 };

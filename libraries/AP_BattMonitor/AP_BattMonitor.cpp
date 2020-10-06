@@ -520,6 +520,15 @@ bool AP_BattMonitor::reset_remaining(uint16_t battery_mask, float percentage)
     return ret;
 }
 
+void AP_BattMonitor::Write_DataFlash_Log_Startup_messages()
+{
+    for (uint8_t i = 0; i < _num_instances; i++) {
+        if (drivers[i]) {
+            drivers[i]->Write_DataFlash_Log_Startup_messages();
+        }
+    }
+}
+
 namespace AP {
 
 AP_BattMonitor &battery()
