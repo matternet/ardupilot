@@ -67,6 +67,14 @@ const AP_Param::GroupInfo AC_WPNav::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("RFND_USE",   10, AC_WPNav, _rangefinder_use, 1),
 
+    // @Param: XTRACK_MAX
+    // @DisplayName: Waypoint crosstrack maximum
+    // @Description: This controls the maximum crosstrack distance in waypoint missions for fast waypoints. A value of zero means no limit
+    // @Range: 0 200
+    // @User: Advanced
+    // @Units: m
+    AP_GROUPINFO("XTRACK_MAX", 11, AC_WPNav, _crosstrack_max, 0),
+    
     AP_GROUPEND
 };
 
@@ -376,6 +384,16 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
 
     // check if target is already beyond the leash
     if (_track_desired > track_desired_max) {
+        reached_leash_limit = true;
+    }
+
+    /*
+      also check for crosstrack limit, allowing us to constrain leash
+      point to within a given distance of the track. This can be used
+      to prevent high wind from causing a blowout of the distance from
+      the desired track
+     */
+    if (_crosstrack_max > 0 && _track_error_xy*0.01 > _crosstrack_max) {
         reached_leash_limit = true;
     }
 
