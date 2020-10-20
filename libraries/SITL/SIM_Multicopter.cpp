@@ -27,20 +27,15 @@ MultiCopter::MultiCopter(const char *home_str, const char *frame_str) :
     Aircraft(home_str, frame_str),
     frame(nullptr)
 {
-    mass = 1.5f;
-
     frame = Frame::find_frame(frame_str);
     if (frame == nullptr) {
         printf("Frame '%s' not found", frame_str);
         exit(1);
     }
-    // initial mass is passed through to Frame for it to calculate a
-    // hover thrust requirement.
-    if (strstr(frame_str, "-fast")) {
-        frame->init(gross_mass(), 0.5, 85, 4*radians(360));
-    } else {
-        frame->init(gross_mass(), 0.51, 15, 4*radians(360));
-    }
+
+    frame->init(frame_str);
+
+    mass = frame->get_mass();
     frame_height = 0.1;
     ground_behavior = GROUND_BEHAVIOR_NO_MOVEMENT;
 }

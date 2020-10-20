@@ -20,6 +20,23 @@
 #include <AP_Motors/AP_Motors.h>
 
 #include <stdio.h>
+#include <sys/stat.h>
+
+/*
+  use picojson to load optional frame files
+ */
+#define PICOJSON_NOEXCEPT
+#ifndef PICOJSON_ASSERT
+#define PICOJSON_ASSERT(e)                                                                                                         \
+  do {                                                                                                                             \
+    if (!(e))                                                                                                                      \
+        ::printf(#e "\n");                          \
+  } while (0)
+#endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#include "picojson.h"
+#pragma GCC diagnostic pop
 
 using namespace SITL;
 
@@ -206,16 +223,145 @@ static Frame supported_frames[] =
     Frame("firefly",   6, firefly_motors)
 };
 
-void Frame::init(float _mass, float hover_throttle, float _terminal_velocity, float _terminal_rotation_rate)
+// get air density in kg/m^3
+float Frame::get_air_density(float alt_amsl) const
 {
-    /*
-       scaling from total motor power to Newtons. Allows the copter
-       to hover against gravity when each motor is at hover_throttle
-    */
-    thrust_scale = (_mass * GRAVITY_MSS) / (num_motors * hover_throttle);
+    float sigma, delta, theta;
 
-    terminal_velocity = _terminal_velocity;
-    terminal_rotation_rate = _terminal_rotation_rate;
+    AP_Baro::SimpleAtmosphere(alt_amsl * 0.001f, sigma, delta, theta);
+
+    const float air_pressure = SSL_AIR_PRESSURE * delta;
+    return air_pressure / (ISA_GAS_CONSTANT * (C_TO_KELVIN + model.refTempC));
+}
+
+/*
+  load frame specific parameters from a json file if available
+ */
+void Frame::load_frame_params(const char *model_json)
+{
+    ::printf("Loading model %s\n", model_json);
+    int fd = open(model_json, O_RDONLY);
+    if (fd == -1) {
+        AP_HAL::panic("%s failed to load\n", model_json);
+    }
+    struct stat st;
+    if (fstat(fd, &st) != 0) {
+        AP_HAL::panic("%s failed to load\n", model_json);
+    }
+    char buf[st.st_size];
+    if (read(fd, buf, st.st_size) != st.st_size) {
+        AP_HAL::panic("%s failed to load\n", model_json);
+    }
+    close(fd);
+
+    const char *start = strchr(buf, '{');
+    if (!start) {
+        AP_HAL::panic("Invalid json %s", model_json);
+    }
+
+    picojson::value obj;
+    std::string err = picojson::parse(obj, start);
+    if (!err.empty()) {
+        AP_HAL::panic("Failed to load %s: %s", model_json, err.c_str());
+        exit(1);
+    }
+
+    struct {
+        const char *label;
+        float &v;
+    } vars[] = {
+        "mass", model.mass,
+        "diagonal_size", model.diagonal_size,
+        "refSpd", model.refSpd,
+        "refAngle", model.refAngle,
+        "refVoltage", model.refVoltage,
+        "refCurrent", model.refCurrent,
+        "refAlt", model.refAlt,
+        "refTempC", model.refTempC,
+        "maxVoltage", model.maxVoltage,
+        "hovCurr", model.hovCurr,
+        "refBatRes", model.refBatRes,
+        "propExpo", model.propExpo,
+        "refRotRate", model.refRotRate,
+        "hoverThrOut", model.hoverThrOut,
+        "pwmMin", model.pwmMin,
+        "pwmMax", model.pwmMax,
+        "spin_min", model.spin_min,
+        "spin_max", model.spin_max,
+        "slew_max", model.slew_max,
+    };
+
+    for (uint8_t i=0; i<ARRAY_SIZE(vars); i++) {
+        auto v = obj.get(vars[i].label);
+        if (v.is<picojson::null>()) {
+            // use default value
+            continue;
+        }
+        if (!v.is<double>()) {
+            AP_HAL::panic("Bad json type for %s: %s", vars[i].label, v.to_str().c_str());
+        }
+        vars[i].v = v.get<double>();
+    }
+
+    ::printf("Loaded model params from %s\n", model_json);
+}
+
+/*
+  initialise the frame
+ */
+void Frame::init(const char *frame_str)
+{
+    model = default_model;
+
+    const char *colon = strchr(frame_str, ':');
+    size_t slen = strlen(frame_str);
+    if (colon != nullptr && slen > 5 && strcmp(&frame_str[slen-5], ".json") == 0) {
+        load_frame_params(colon+1);
+    }
+    mass = model.mass;
+
+    const float drag_force = model.mass * GRAVITY_MSS * tanf(radians(model.refAngle));
+
+    for (uint8_t i=0; i<num_motors; i++) {
+        motors[i].setup_params(model.pwmMin, model.pwmMax, model.spin_min, model.spin_max, model.propExpo, model.slew_max,
+                               model.mass, model.diagonal_size);
+    }
+
+    float ref_air_density = get_air_density(model.refAlt);
+
+    areaCd = drag_force / (0.5 * ref_air_density * sq(model.refSpd));
+
+    terminal_rotation_rate = model.refRotRate;
+
+    float hover_thrust = mass * GRAVITY_MSS;
+    float hover_power = model.refCurrent * model.refVoltage;
+    float hover_velocity_out = 2 * hover_power / hover_thrust;
+    float effective_disc_area = hover_thrust / (0.5 * ref_air_density * sq(hover_velocity_out));
+    velocity_max = hover_velocity_out / sqrtf(model.hoverThrOut);
+    // float thrust_max = 0.5 * ref_air_density * effective_disc_area * sq(velocity_max);
+    effective_prop_area = effective_disc_area / num_motors;
+
+#if 0
+    // useful debug code for thrust curve
+    {
+        motors[0].setup_params(model.pwmMin, model.pwmMax, model.spin_min, model.spin_max, model.propExpo, 0,
+                               model.mass, model.diagonal_size);
+        struct sitl_input input {};
+        for (uint16_t pwm = 1000; pwm < 2000; pwm += 50) {
+            input.servos[0] = pwm;
+
+            const float scaling = 1.0;
+            Vector3f rot_accel {}, thrust {};
+            Vector3f vel_air_bf {};
+            motors[0].calculate_forces(input, scaling, motor_offset, rot_accel, thrust, vel_air_bf,
+                                       ref_air_density, velocity_max, effective_prop_area);
+            ::printf("pwm[%u] cmd=%.3f thrust=%.3f hovthst=%.3f\n",
+                     pwm, motors[0].pwm_to_command(pwm), -thrust.z*num_motors, hover_thrust);
+        }
+        motors[0].setup_params(model.pwmMin, model.pwmMax, model.spin_min, model.spin_max, model.propExpo, model.slew_max,
+                               model.mass, model.diagonal_size);
+    }
+#endif
 }
 
 /*
@@ -236,13 +382,22 @@ Frame *Frame::find_frame(const char *name)
 void Frame::calculate_forces(const Aircraft &aircraft,
                              const struct sitl_input &input,
                              Vector3f &rot_accel,
-                             Vector3f &body_accel)
+                             Vector3f &body_accel,
+                             float* rpm,
+                             bool use_drag)
 {
     Vector3f thrust; // newtons
 
+    const float air_density = get_air_density(aircraft.get_location().alt*0.01);
+
+    // scale thrust for altitude
+    float scaling = 1.0;
+    // thrust_scale * AP::baro().get_air_density_ratio();
+    Vector3f vel_air_bf = aircraft.get_dcm().transposed() * aircraft.get_velocity_air_ef();
+
     for (uint8_t i=0; i<num_motors; i++) {
         Vector3f mraccel, mthrust;
-        motors[i].calculate_forces(input, thrust_scale, motor_offset, mraccel, mthrust);
+        motors[i].calculate_forces(input, scaling, motor_offset, mraccel, mthrust, vel_air_bf, air_density, velocity_max, effective_prop_area);
         rot_accel += mraccel;
         thrust += mthrust;
     }
@@ -257,22 +412,18 @@ void Frame::calculate_forces(const Aircraft &aircraft,
         rot_accel.z -= gyro.z * radians(400.0) / terminal_rotation_rate;
     }
 
-    if (terminal_velocity > 0) {
-        // air resistance
-        Vector3f air_resistance = -aircraft.get_velocity_air_ef() * (GRAVITY_MSS/terminal_velocity);
-        body_accel += aircraft.get_dcm().transposed() * air_resistance;
+    if (use_drag) {
+        // use the model params to calculate drag
+        Vector3f drag_force;
+        const Vector3f vel_air_ef = aircraft.get_velocity_air_ef();
+        for (uint8_t i=0; i<3; i++) {
+            drag_force[i] = areaCd * 0.5 * air_density * sq(vel_air_ef[i]);
+            if (vel_air_ef[i] > 0) {
+                drag_force[i] *= -1;
+            }
+        }
+        body_accel += aircraft.get_dcm().transposed() * drag_force / mass;
     }
-
-    // add some noise
-    const float gyro_noise = radians(0.1);
-    const float accel_noise = 0.3;
-    const float noise_scale = thrust.length() / (thrust_scale * num_motors);
-    rot_accel += Vector3f(aircraft.rand_normal(0, 1),
-                          aircraft.rand_normal(0, 1),
-                          aircraft.rand_normal(0, 1)) * gyro_noise * noise_scale;
-    body_accel += Vector3f(aircraft.rand_normal(0, 1),
-                           aircraft.rand_normal(0, 1),
-                           aircraft.rand_normal(0, 1)) * accel_noise * noise_scale;
 }
 
 

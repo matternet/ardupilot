@@ -44,19 +44,65 @@ public:
     static Frame *find_frame(const char *name);
     
     // initialise frame
-    void init(float mass, float hover_throttle, float terminal_velocity, float terminal_rotation_rate);
-
+    void init(const char *frame_str);
+    
     // calculate rotational and linear accelerations
     void calculate_forces(const Aircraft &aircraft,
                           const struct sitl_input &input,
-                          Vector3f &rot_accel, Vector3f &body_accel);
-    
+                          Vector3f &rot_accel, Vector3f &body_accel, float* rpm,
+                          bool use_drag=true);
+
     float terminal_velocity;
     float terminal_rotation_rate;
-    float thrust_scale;
     uint8_t motor_offset;
 
     // calculate current and voltage
     void current_and_voltage(const struct sitl_input &input, float &voltage, float &current);
+
+    // get mass in kg
+    float get_mass(void) const {
+        return mass;
+    }
+
+private:
+    /*
+      parameters that define the multicopter model. Can be loaded from
+      a json file to give a custom model
+     */
+    const struct Model {
+        float mass = 1.5;
+        float diagonal_size = 0.35;
+        float refSpd = 7.4;
+        float refAngle = 20;
+        float refVoltage = 12.14;
+        float refCurrent = 25.37;
+        float refAlt = 618;
+        float refTempC = 25;
+        float maxVoltage = 4.1*3;
+        float hovCurr = 22.7;
+        float hoverThrOut = 0.4;
+        float refBatRes = 0.006;
+        float propExpo = 0;
+        float refRotRate = 120;
+        float pwmMin = 1100;
+        float pwmMax = 1900;
+        float spin_min = 0.0;
+        float spin_max = 1.0;
+        float slew_max = 0;
+    } default_model;
+    struct Model model;
+
+    // exposed area times coefficient of drag
+    float areaCd;
+    float mass;
+    float velocity_max;
+    float effective_prop_area;
+
+    // get air density in kg/m^3
+    float get_air_density(float alt_amsl) const;
+
+    // load frame parameters from a json model file
+    void load_frame_params(const char *model_json);
+
 };
 }
