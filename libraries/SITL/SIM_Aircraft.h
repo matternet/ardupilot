@@ -28,7 +28,7 @@
 #include "SIM_Gripper_EPM.h"
 #include "SIM_Parachute.h"
 #include "SIM_Precland.h"
-#include "SIM_Buzzer.h"
+#include "SIM_Battery.h"
 #include <Filter/Filter.h>
 
 namespace SITL {
@@ -159,6 +159,8 @@ protected:
     uint8_t rcin_chan_count = 0;
     float rcin[8];
     float range = -1.0f;                 // rangefinder detection in m
+    // battery model
+    Battery battery;
 
     struct {
         // data from simulated laser scanner, if available
