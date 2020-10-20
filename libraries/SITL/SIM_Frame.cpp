@@ -322,11 +322,6 @@ void Frame::init(const char *frame_str)
 
     const float drag_force = model.mass * GRAVITY_MSS * tanf(radians(model.refAngle));
 
-    for (uint8_t i=0; i<num_motors; i++) {
-        motors[i].setup_params(model.pwmMin, model.pwmMax, model.spin_min, model.spin_max, model.propExpo, model.slew_max,
-                               model.mass, model.diagonal_size);
-    }
-
     float ref_air_density = get_air_density(model.refAlt);
 
     areaCd = drag_force / (0.5 * ref_air_density * sq(model.refSpd));
@@ -341,25 +336,34 @@ void Frame::init(const char *frame_str)
     // float thrust_max = 0.5 * ref_air_density * effective_disc_area * sq(velocity_max);
     effective_prop_area = effective_disc_area / num_motors;
 
+    // power_factor is ratio of power consumed per newton of thrust
+    float power_factor = hover_power / hover_thrust;
+
+    // init voltage
+    voltage_filter.reset(AP::sitl()->batt_voltage);
+    
+    for (uint8_t i=0; i<num_motors; i++) {
+        motors[i].setup_params(model.pwmMin, model.pwmMax, model.spin_min, model.spin_max, model.propExpo, model.slew_max,
+                               model.mass, model.diagonal_size, power_factor, model.maxVoltage);
+    }
+
+
 #if 0
     // useful debug code for thrust curve
     {
-        motors[0].setup_params(model.pwmMin, model.pwmMax, model.spin_min, model.spin_max, model.propExpo, 0,
-                               model.mass, model.diagonal_size);
+        motors[0].set_slew_max(0);
         struct sitl_input input {};
         for (uint16_t pwm = 1000; pwm < 2000; pwm += 50) {
             input.servos[0] = pwm;
 
-            const float scaling = 1.0;
             Vector3f rot_accel {}, thrust {};
             Vector3f vel_air_bf {};
-            motors[0].calculate_forces(input, scaling, motor_offset, rot_accel, thrust, vel_air_bf,
-                                       ref_air_density, velocity_max, effective_prop_area);
+            motors[0].calculate_forces(input, motor_offset, rot_accel, thrust, vel_air_bf,
+                                       ref_air_density, velocity_max, effective_prop_area, voltage_filter.get());
             ::printf("pwm[%u] cmd=%.3f thrust=%.3f hovthst=%.3f\n",
                      pwm, motors[0].pwm_to_command(pwm), -thrust.z*num_motors, hover_thrust);
         }
-        motors[0].setup_params(model.pwmMin, model.pwmMax, model.spin_min, model.spin_max, model.propExpo, model.slew_max,
-                               model.mass, model.diagonal_size);
+        motors[0].set_slew_max(model.slew_max);
     }
 #endif
 }
@@ -390,14 +394,15 @@ void Frame::calculate_forces(const Aircraft &aircraft,
 
     const float air_density = get_air_density(aircraft.get_location().alt*0.01);
 
-    // scale thrust for altitude
-    float scaling = 1.0;
     // thrust_scale * AP::baro().get_air_density_ratio();
     Vector3f vel_air_bf = aircraft.get_dcm().transposed() * aircraft.get_velocity_air_ef();
 
+    float current = 0;
     for (uint8_t i=0; i<num_motors; i++) {
         Vector3f mraccel, mthrust;
-        motors[i].calculate_forces(input, scaling, motor_offset, mraccel, mthrust, vel_air_bf, air_density, velocity_max, effective_prop_area);
+        motors[i].calculate_forces(input, motor_offset, mraccel, mthrust, vel_air_bf, air_density, velocity_max,
+                                   effective_prop_area, voltage_filter.get());
+        current += motors[i].get_current();
         rot_accel += mraccel;
         thrust += mthrust;
     }
@@ -424,20 +429,18 @@ void Frame::calculate_forces(const Aircraft &aircraft,
         }
         body_accel += aircraft.get_dcm().transposed() * drag_force / mass;
     }
+
+    float voltage_drop = current * model.refBatRes;
+    voltage_filter.apply(AP::sitl()->batt_voltage - voltage_drop);
 }
 
 
 // calculate current and voltage
-void Frame::current_and_voltage(const struct sitl_input &input, float &voltage, float &current)
+void Frame::current_and_voltage(float &voltage, float &current)
 {
-    voltage = 0;
+    voltage = voltage_filter.get();
     current = 0;
     for (uint8_t i=0; i<num_motors; i++) {
-        float c, v;
-        motors[i].current_and_voltage(input, v, c, motor_offset);
-        current += c;
-        voltage += v;
+        current += motors[i].get_current();
     }
-    // use average for voltage, total for current
-    voltage /= num_motors;
 }

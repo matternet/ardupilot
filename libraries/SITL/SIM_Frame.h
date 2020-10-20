@@ -20,6 +20,7 @@
 
 #include "SIM_Aircraft.h"
 #include "SIM_Motor.h"
+#include <Filter/LowPassFilter.h>
 
 namespace SITL {
 
@@ -57,7 +58,7 @@ public:
     uint8_t motor_offset;
 
     // calculate current and voltage
-    void current_and_voltage(const struct sitl_input &input, float &voltage, float &current);
+    void current_and_voltage(float &voltage, float &current);
 
     // get mass in kg
     float get_mass(void) const {
@@ -97,6 +98,9 @@ private:
     float mass;
     float velocity_max;
     float effective_prop_area;
+
+    // 10Hz filter for battery voltage
+    LowPassFilterFloat voltage_filter{10};
 
     // get air density in kg/m^3
     float get_air_density(float alt_amsl) const;

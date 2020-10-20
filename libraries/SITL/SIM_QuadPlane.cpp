@@ -110,7 +110,7 @@ void QuadPlane::update(const struct sitl_input &input)
     frame->calculate_forces(*this, input, quad_rot_accel, quad_accel_body, &rpm[1], false);
 
     // estimate voltage and current
-    frame->current_and_voltage(input, battery_voltage, battery_current);
+    frame->current_and_voltage(battery_voltage, battery_current);
 
     float throttle;
     if (reverse_thrust) {

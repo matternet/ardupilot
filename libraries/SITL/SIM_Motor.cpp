@@ -23,20 +23,21 @@ using namespace SITL;
 
 // calculate rotational accel and thrust for a motor
 void Motor::calculate_forces(const struct sitl_input &input,
-                             const float thrust_scale,
                              uint8_t motor_offset,
                              Vector3f &rot_accel,
                              Vector3f &thrust,
                              const Vector3f &velocity_air_bf,
                              float air_density,
                              float velocity_max,
-                             float effective_prop_area)
+                             float effective_prop_area,
+                             float voltage)
 {
     // fudge factors
     const float yaw_scale = radians(400);
 
     const float pwm = input.servos[motor_offset+servo];
     float command = pwm_to_command(pwm);
+    float voltage_scale = voltage / voltage_max;
 
     // apply slew limiter to command
     uint64_t now_us = AP_HAL::micros64();
@@ -49,13 +50,13 @@ void Motor::calculate_forces(const struct sitl_input &input,
     last_command = command;
 
     // the yaw torque of the motor
-    Vector3f rotor_torque(0, 0, yaw_factor * command * yaw_scale);
+    Vector3f rotor_torque(0, 0, yaw_factor * command * yaw_scale * voltage_scale);
 
     // calculate velocity into prop, clipping at zero, assumes zero roll/pitch
     float velocity_in = MAX(0, -velocity_air_bf.z);
 
     // get thrust for untilted motor
-    float motor_thrust = calc_thrust(command, air_density, effective_prop_area, velocity_in, velocity_max);
+    float motor_thrust = calc_thrust(command * voltage_scale, air_density, effective_prop_area, velocity_in, velocity_max);
 
     // thrust in NED
     thrust = {0, 0, -motor_thrust};
@@ -104,8 +105,9 @@ void Motor::calculate_forces(const struct sitl_input &input,
     rot_accel.y = torque.y / moment_of_inertia.y;
     rot_accel.z = torque.z / moment_of_inertia.z;
 
-    // scale the thrust
-    thrust = thrust * thrust_scale;
+    // calculate current
+    float power = power_factor * fabsf(motor_thrust);
+    current = power / MAX(voltage, 0.1);
 }
 
 /*
@@ -136,24 +138,14 @@ uint16_t Motor::update_servo(uint16_t demand, uint64_t time_usec, float &last_va
 
 
 // calculate current and voltage
-void Motor::current_and_voltage(const struct sitl_input &input, float &voltage, float &current,
-                                uint8_t motor_offset)
+float Motor::get_current(void) const
 {
-    // get motor speed from 0 to 1
-    float motor_speed = constrain_float((input.servos[motor_offset+servo]-1100)/900.0, 0, 1);
-
-    // assume 10A per motor at full speed
-    current = 10 * motor_speed;
-
-    // assume 3S, and full throttle drops voltage by 0.7V
-    if (AP::sitl()) {
-        voltage = AP::sitl()->batt_voltage - motor_speed * 0.7;
-    }
+    return current;
 }
 
 // setup PWM ranges for this motor
 void Motor::setup_params(uint16_t _pwm_min, uint16_t _pwm_max, float _spin_min, float _spin_max, float _expo, float _slew_max,
-                         float _vehicle_mass, float _diagonal_size)
+                         float _vehicle_mass, float _diagonal_size, float _power_factor, float _voltage_max)
 {
     mot_pwm_min = _pwm_min;
     mot_pwm_max = _pwm_max;
@@ -163,6 +155,8 @@ void Motor::setup_params(uint16_t _pwm_min, uint16_t _pwm_max, float _spin_min, 
     slew_max = _slew_max;
     vehicle_mass = _vehicle_mass;
     diagonal_size = _diagonal_size;
+    power_factor = _power_factor;
+    voltage_max = _voltage_max;
 
     // assume 50% of mass on ring around center
     moment_of_inertia.x = vehicle_mass * 0.25 * sq(diagonal_size*0.5);
