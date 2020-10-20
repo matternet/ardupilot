@@ -107,7 +107,7 @@ void QuadPlane::update(const struct sitl_input &input)
     Vector3f quad_rot_accel;
     Vector3f quad_accel_body;
 
-    frame->calculate_forces(*this, input, quad_rot_accel, quad_accel_body, &rpm[1], false);
+    frame->calculate_forces(*this, input, quad_rot_accel, quad_accel_body, &rpm1, false);
 
     // estimate voltage and current
     frame->current_and_voltage(battery_voltage, battery_current);
