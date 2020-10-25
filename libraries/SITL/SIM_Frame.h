@@ -70,38 +70,38 @@ private:
       a json file to give a custom model
      */
     const struct Model {
-        float mass = 1.5;
-        float diagonal_size = 0.35;
+        float mass = 13.2;
+        float diagonal_size = 1.13;
         /*
           the ref values are for a test at fixed angle, used to estimate drag
          */
-        float refSpd = 15.08; // m/s
-        float refAngle = 45;  // degrees
-        float refVoltage = 12.09; // Volts
-        float refCurrent = 29.3; // Amps
-        float refAlt = 593; // altitude AMSL
+        float refSpd = 18.0; // m/s
+        float refAngle = 26;  // degrees
+        float refVoltage = 46.0; // Volts
+        float refCurrent = 34.0; // Amps
+        float refAlt = 185; // altitude AMSL
         float refTempC = 25; // temperature C
-        float refBatRes = 0.01; // BAT.Res
+        float refBatRes = 0.06; // BAT.Res
 
         // full pack voltage
-        float maxVoltage = 4.2*3;
+        float maxVoltage = 50.4;
 
         // battery capacity in Ah. Use zero for unlimited
-        float battCapacityAh = 0.0;
+        float battCapacityAh = 13.0;
 
         // CTUN.ThO at bover at refAlt
-        float hoverThrOut = 0.39;
+        float hoverThrOut = 0.16;
 
         // MOT_THST_EXPO
-        float propExpo = 0.65;
+        float propExpo = 0.8;
 
         // scaling factor for yaw response, deg/sec
         float refRotRate = 120;
-        float pwmMin = 1100;
-        float pwmMax = 1900;
-        float spin_min = 0.0;
+        float pwmMin = 1060;
+        float pwmMax = 1940;
+        float spin_min = 0.15;
         float spin_max = 1.0;
-        float slew_max = 0;
+        float slew_max = 150;
     } default_model;
     struct Model model;
 
