@@ -20,7 +20,6 @@
 
 #include "SIM_Aircraft.h"
 #include "SIM_Motor.h"
-#include <Filter/LowPassFilter.h>
 
 namespace SITL {
 
@@ -36,17 +35,17 @@ public:
     Frame(const char *_name,
           uint8_t _num_motors,
           Motor *_motors) :
-        name(_name),
-        num_motors(_num_motors),
-        motors(_motors) {}
+          name(_name),
+          num_motors(_num_motors),
+          motors(_motors) {}
 
 
     // find a frame by name
     static Frame *find_frame(const char *name);
     
     // initialise frame
-    void init(const char *frame_str);
-    
+    void init(const char *frame_str, Battery *_battery);
+
     // calculate rotational and linear accelerations
     void calculate_forces(const Aircraft &aircraft,
                           const struct sitl_input &input,
@@ -73,17 +72,30 @@ private:
     const struct Model {
         float mass = 1.5;
         float diagonal_size = 0.35;
-        float refSpd = 7.4;
-        float refAngle = 20;
-        float refVoltage = 12.14;
-        float refCurrent = 25.37;
-        float refAlt = 618;
-        float refTempC = 25;
-        float maxVoltage = 4.1*3;
-        float hovCurr = 22.7;
-        float hoverThrOut = 0.4;
-        float refBatRes = 0.006;
-        float propExpo = 0;
+        /*
+          the ref values are for a test at fixed angle, used to estimate drag
+         */
+        float refSpd = 15.08; // m/s
+        float refAngle = 45;  // degrees
+        float refVoltage = 12.09; // Volts
+        float refCurrent = 29.3; // Amps
+        float refAlt = 593; // altitude AMSL
+        float refTempC = 25; // temperature C
+        float refBatRes = 0.01; // BAT.Res
+
+        // full pack voltage
+        float maxVoltage = 4.2*3;
+
+        // battery capacity in Ah. Use zero for unlimited
+        float battCapacityAh = 0.0;
+
+        // CTUN.ThO at bover at refAlt
+        float hoverThrOut = 0.39;
+
+        // MOT_THST_EXPO
+        float propExpo = 0.65;
+
+        // scaling factor for yaw response, deg/sec
         float refRotRate = 120;
         float pwmMin = 1100;
         float pwmMax = 1900;
@@ -97,10 +109,10 @@ private:
     float areaCd;
     float mass;
     float velocity_max;
+    float thrust_max;
     float effective_prop_area;
-
-    // 10Hz filter for battery voltage
-    LowPassFilterFloat voltage_filter{10};
+    Battery *battery;
+    float last_param_voltage;
 
     // get air density in kg/m^3
     float get_air_density(float alt_amsl) const;

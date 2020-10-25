@@ -52,7 +52,7 @@ const AP_Param::GroupInfo SITL::var_info[] = {
     AP_GROUPINFO("GPS_GLITCH",    17, SITL,  gps_glitch,  0),
     AP_GROUPINFO("GPS_HZ",        18, SITL,  gps_hertz,  5),
     AP_GROUPINFO("BATT_VOLTAGE",  19, SITL,  batt_voltage,  12.6f),
-    AP_GROUPINFO("ARSPD_RND",     20, SITL,  arspd_noise,  0.5f),
+    AP_GROUPINFO("BATT_CAP_AH",   20, SITL,  batt_capacity_ah,  0),
     AP_GROUPINFO("ACCEL_FAIL",    21, SITL,  accel_fail,  0),
     AP_GROUPINFO("BARO_DRIFT",    22, SITL,  baro_drift,  0),
     AP_GROUPINFO("SONAR_GLITCH",  23, SITL,  sonar_glitch, 0),
