@@ -38,6 +38,11 @@ void GCS::send_named_float(const char *name, float value) const
     FOR_EACH_ACTIVE_CHANNEL(send_named_float(name, value));
 }
 
+void GCS::send_named_int(const char *name, int32_t value) const
+{
+    FOR_EACH_ACTIVE_CHANNEL(send_named_int(name, value));
+}
+
 void GCS::send_home() const
 {
     FOR_EACH_ACTIVE_CHANNEL(send_home());
