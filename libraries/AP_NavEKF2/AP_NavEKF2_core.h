@@ -608,6 +608,12 @@ private:
     // check for new altitude measurement data and update stored measurement if available
     void readBaroData();
 
+    // reset body mag variances
+    void resetMagBodyVariances(void);
+
+    // try changing to another compass
+    void tryChangeCompass();
+
     // check for new magnetometer data and update store measurements if available
     void readMagData();
 
@@ -844,6 +850,7 @@ private:
     uint32_t timeAtLastAuxEKF_ms;   // last time the auxiliary filter was run to fuse range or optical flow measurements
     uint32_t secondLastGpsTime_ms;  // time of second last GPS fix used to determine how long since last update
     uint32_t lastHealthyMagTime_ms; // time the magnetometer was last declared healthy
+    uint32_t lastMagRead_ms;        // last successful read from mag
     bool allMagSensorsFailed;       // true if all magnetometer sensors have timed out on this flight and we are no longer using magnetometer data
     uint32_t lastYawTime_ms;        // time stamp when yaw observation was last fused (msec)
     uint32_t ekfStartTime_ms;       // time the EKF was started (msec)
@@ -862,6 +869,7 @@ private:
     float tasTestRatio;             // sum of squares of true airspeed innovation divided by fail threshold
     bool inhibitWindStates;         // true when wind states and covariances are to remain constant
     bool inhibitMagStates;          // true when magnetic field states and covariances are to remain constant
+    bool lastInhibitMagStates;      // previous inhibitMagStates
     bool gpsNotAvailable;           // bool true when valid GPS data is not available
     uint8_t last_gps_idx;           // sensor ID of the GPS receiver used for the last fusion or reset
     struct Location EKF_origin;     // LLH origin of the NED axis system
@@ -1178,6 +1186,9 @@ private:
 
     // string representing last reason for prearm failure
     char prearm_fail_string[40];
+
+    // true when we should align learned offsets with next z reading
+    bool pending_z_mag_correction;
 
     // performance counters
     AP_HAL::Util::perf_counter_t  _perf_UpdateFilter;

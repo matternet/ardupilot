@@ -14,7 +14,9 @@ AP_Compass_SITL::AP_Compass_SITL(Compass &compass):
         _compass._setup_earth_field();
         for (uint8_t i=0; i<SITL_NUM_COMPASSES; i++) {
             // default offsets to correct value
-            compass.set_offsets(i, _sitl->mag_ofs);
+            if (_compass.get_offsets(i).is_zero()) {
+                compass.set_offsets(i, _sitl->mag_ofs);
+            }
             
             _compass_instance[i] = register_compass();
             set_dev_id(_compass_instance[i], AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SITL, i, 0, DEVTYPE_SITL));
@@ -22,7 +24,13 @@ AP_Compass_SITL::AP_Compass_SITL(Compass &compass):
             // save so the compass always comes up configured in SITL
             save_dev_id(_compass_instance[i]);
         }
-        
+
+        // we want to simulate a calibrated compass by default, so set
+        // scale to 1
+        AP_Param::set_default_by_name("COMPASS_SCALE", 1);
+        AP_Param::set_default_by_name("COMPASS_SCALE2", 1);
+        AP_Param::set_default_by_name("COMPASS_SCALE3", 1);
+
         // make first compass external
         set_external(_compass_instance[0], true);
 
@@ -110,6 +118,9 @@ void AP_Compass_SITL::_timer()
     new_mag_data -= _sitl->mag_ofs.get();
 
     for (uint8_t i=0; i<SITL_NUM_COMPASSES; i++) {
+        if (_sitl->mag_fail_mask.get() & (1U<<i)) {
+            continue;
+        }
         Vector3f f = new_mag_data;
         if (i == 0) {
             // rotate the first compass, allowing for testing of external compass rotation
@@ -123,19 +134,19 @@ void AP_Compass_SITL::_timer()
         correct_field(f, _compass_instance[i]);
 
         _mag_accum[i] += f;
+        _accum_count[i]++;
     }
 
     if (!_sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
         return;
     }
 
-    _accum_count++;
-    if (_accum_count == 10) {
-        for (uint8_t i=0; i<SITL_NUM_COMPASSES; i++) {
+    for (uint8_t i=0; i<SITL_NUM_COMPASSES; i++) {
+        if (_accum_count[i] == 10) {
             _mag_accum[i] /= 2;
+            _accum_count[i] = 5;
+            _has_sample = true;
         }
-        _accum_count = 5;
-        _has_sample = true;
     }
     _sem->give();
 }
@@ -149,12 +160,14 @@ void AP_Compass_SITL::read()
         }
 
         for (uint8_t i=0; i<SITL_NUM_COMPASSES; i++) {
-            Vector3f field(_mag_accum[i]);
-            field /= _accum_count;
-            _mag_accum[i].zero();
-            publish_filtered_field(field, _compass_instance[i]);
+            if (_accum_count[i] > 0) {
+                Vector3f field(_mag_accum[i]);
+                field /= _accum_count[i];
+                _mag_accum[i].zero();
+                publish_filtered_field(field, _compass_instance[i]);
+                _accum_count[i] = 0;
+            }
         }
-        _accum_count = 0;
 
         _has_sample = false;
         _sem->give();

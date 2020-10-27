@@ -230,6 +230,9 @@ public:
     // weight on wheels pin
     AP_Int8 wow_pin;
 
+    // compass failure mask
+    AP_Int8 mag_fail_mask;
+
     // vibration frequencies in Hz on each axis
     AP_Vector3f vibe_freq;
 
