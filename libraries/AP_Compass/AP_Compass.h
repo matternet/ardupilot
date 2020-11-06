@@ -340,6 +340,11 @@ public:
     MAV_RESULT mag_cal_fixed_yaw(float yaw_deg, uint8_t compass_mask,
                                  float lat_deg, float lon_deg);
 
+    // option to kill primary compass
+    void set_kill_primary(bool set) {
+        _kill_primary = set;
+    }
+
 private:
     static Compass *_singleton;
     /// Register a new compas driver, allocating an instance number
@@ -498,6 +503,9 @@ private:
     AP_Int32 _driver_type_mask;
     
     AP_Int8 _filter_range;
+
+    // enable killing of primary sensor
+    bool _kill_primary;
 };
 
 namespace AP {
