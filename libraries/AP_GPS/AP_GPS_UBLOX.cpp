@@ -387,6 +387,9 @@ AP_GPS_UBLOX::read(void)
 
         // read the next byte
         data = port->read();
+        if (state.disabled) {
+            continue;
+        }
 
         _stats.total_bytes++;
 
