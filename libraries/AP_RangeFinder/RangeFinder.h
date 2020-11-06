@@ -106,6 +106,9 @@ public:
         AP_Vector3f pos_offset; // position offset in body frame
         AP_Int8  orientation;
         const struct AP_Param::GroupInfo *var_info;
+
+        // disabled by user switch
+        bool disabled;
     };
 
     static const struct AP_Param::GroupInfo *backend_var_info[RANGEFINDER_MAX_INSTANCES];
@@ -169,6 +172,12 @@ public:
 
     static RangeFinder *get_singleton(void) { return _singleton; }
 
+    // allow for killing of rangefinders
+    void set_kill(bool set) {
+        for (uint8_t i=0; i<RANGEFINDER_MAX_INSTANCES; i++) {
+            state[i].disabled = set;
+        }
+    }
 
 private:
     static RangeFinder *_singleton;

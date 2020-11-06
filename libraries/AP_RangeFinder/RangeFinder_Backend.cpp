@@ -33,6 +33,10 @@ AP_RangeFinder_Backend::AP_RangeFinder_Backend(RangeFinder::RangeFinder_State &_
 // update status based on distance measurement
 void AP_RangeFinder_Backend::update_status()
 {
+    if (state.disabled) {
+        state.status = RangeFinder::RangeFinder_NoData;
+        return;
+    }
     // check distance
     if ((int16_t)state.distance_cm > state.max_distance_cm) {
         set_status(RangeFinder::RangeFinder_OutOfRangeHigh);
@@ -46,6 +50,10 @@ void AP_RangeFinder_Backend::update_status()
 // set status and update valid count
 void AP_RangeFinder_Backend::set_status(RangeFinder::RangeFinder_Status _status)
 {
+    if (state.disabled) {
+        state.status = RangeFinder::RangeFinder_NoData;
+        return;
+    }
     state.status = _status;
 
     // update valid count
@@ -66,6 +74,9 @@ void AP_RangeFinder_Backend::set_status(RangeFinder::RangeFinder_Status _status)
  */
 void AP_RangeFinder_Backend::update_pre_arm_check()
 {
+    if (state.disabled) {
+        return;
+    }
     // return immediately if already passed or no sensor data
     if (state.pre_arm_check || state.status == RangeFinder::RangeFinder_NotConnected || state.status == RangeFinder::RangeFinder_NoData) {
         return;
