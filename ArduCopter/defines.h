@@ -84,6 +84,9 @@ enum aux_sw_func {
     AUXSW_KILL_MOT3  =         113,
     AUXSW_KILL_MOT4  =         114,
     AUXSW_KILL_MAGPRIMARY =    115,
+    AUXSW_KILL_RANGEFINDER =   116,
+    AUXSW_KILL_GPS1 =          117,
+    AUXSW_KILL_GPS2 =          118,
     AUXSW_SWITCH_MAX,
 };
 
