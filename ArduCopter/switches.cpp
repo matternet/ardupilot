@@ -785,6 +785,15 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
     case AUXSW_KILL_MAGPRIMARY:
         compass.set_kill_primary(ch_flag == AUX_SWITCH_HIGH);
         break;
+    case AUXSW_KILL_RANGEFINDER:
+        rangefinder.set_kill(ch_flag == AUX_SWITCH_HIGH);
+        break;
+    case AUXSW_KILL_GPS1:
+        gps.set_kill(0, ch_flag == AUX_SWITCH_HIGH);
+        break;
+    case AUXSW_KILL_GPS2:
+        gps.set_kill(1, ch_flag == AUX_SWITCH_HIGH);
+        break;
         
 #ifdef USERHOOK_AUXSWITCH
         case AUXSW_USER_FUNC1:
