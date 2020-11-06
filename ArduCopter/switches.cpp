@@ -782,6 +782,9 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
     case AUXSW_KILL_MOT4:
         motkill.kill_mot[3] = (ch_flag == AUX_SWITCH_HIGH);
         break;
+    case AUXSW_KILL_MAGPRIMARY:
+        compass.set_kill_primary(ch_flag == AUX_SWITCH_HIGH);
+        break;
         
 #ifdef USERHOOK_AUXSWITCH
         case AUXSW_USER_FUNC1:
