@@ -1,3 +1,4 @@
+# inherit from f303-periph
 include ../f303-periph/hwdef.dat
 
 #STDOUT_SERIAL SD1
@@ -11,3 +12,37 @@ define HAL_CAN_DEFAULT_NODE_ID 0
 # ADSB enable
 define ADSB_PORT hal.uartB
 define HAL_PERIPH_ENABLE_ADSB
+#undef HAL_PERIPH_ADSB_BAUD_DEFAULT
+define HAL_PERIPH_ADSB_BAUD_DEFAULT 115200
+
+
+######################################
+# disable features set in f303-periph
+######################################
+
+# I2C is not used
+undef PB6
+undef PB7
+undef HAL_USE_I2C
+undef STM32_I2C_USE_I2C1
+undef I2C_ORDER
+undef HAL_I2C_CLEAR_ON_TIMEOUT
+
+# no compass
+undef PB0
+undef HAL_COMPASS_MAX_SENSORS
+
+# SPI1 is not used
+undef PA5
+undef PA6
+undef PA7
+undef SPI1
+
+# disable debugger support (TODO - disable this when ready for production)
+undef PA13
+undef PA14
+
+# no GPS
+undef GPS_MAX_RECEIVERS
+undef GPS_MAX_INSTANCES
+
