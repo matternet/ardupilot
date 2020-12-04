@@ -708,6 +708,10 @@ bool AP_IOMCU::check_rcinput(uint32_t &last_frame_us, uint8_t &num_channels, uin
 // set IMU heater target
 void AP_IOMCU::set_heater_duty_cycle(uint8_t duty_cycle)
 {
+    AP_BoardConfig *boardconfig = AP_BoardConfig::get_singleton();
+    if (boardconfig) {
+        duty_cycle = MIN(duty_cycle, uint8_t(boardconfig->heater_max_duty()));
+    }
     heater_duty_cycle = duty_cycle;
     trigger_event(IOEVENT_SET_HEATER_TARGET);
 }
