@@ -279,6 +279,8 @@ const AP_Param::GroupInfo AP_BoardConfig::var_info[] = {
     // @User: Advanced
     AP_SUBGROUPINFO(heater.pi_controller, "IMUHEAT_",  21, AP_BoardConfig, AC_PI),
 #endif
+
+    AP_GROUPINFO("HEAT_MAXDUTY", 22, AP_BoardConfig, _heater_max_duty, 100),
     
     AP_GROUPEND
 };

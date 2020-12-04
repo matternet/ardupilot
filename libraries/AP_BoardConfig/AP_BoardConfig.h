@@ -174,11 +174,18 @@ public:
     void set_imu_temp(float current_temp_c);
 #endif
 
+    // get max duty cycle of heater
+    static int8_t heater_max_duty(void) {
+        return _singleton?_singleton->_heater_max_duty:0;
+    }
+    
 private:
     static AP_BoardConfig *_singleton;
     
     AP_Int16 vehicleSerialNumber;
     AP_Int8 pwm_count;
+
+    AP_Int8 _heater_max_duty;
 
     struct {
         AP_Int8 safety_enable;
