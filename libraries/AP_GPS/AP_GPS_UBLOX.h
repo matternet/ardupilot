@@ -144,6 +144,17 @@ public:
 
     // ublox specific healthy checks
     bool is_healthy(void) const override;
+
+    enum ubx_hardware_version {
+        ANTARIS = 0,
+        UBLOX_5,
+        UBLOX_6,
+        UBLOX_7,
+        UBLOX_M8,
+        UBLOX_F9 = 0x80, // comes from MON_VER hwVersion string
+        UBLOX_UNKNOWN_HARDWARE_GENERATION = 0xff // not in the ublox spec used for
+                                                 // flagging state in the driver
+    };
     
 private:
     // u-blox UBX protocol essentials
@@ -619,16 +630,6 @@ private:
     enum ubx_nav_status_bits {
         NAV_STATUS_FIX_VALID = 1,
         NAV_STATUS_DGPS_USED = 2
-    };
-    enum ubx_hardware_version {
-        ANTARIS = 0,
-        UBLOX_5,
-        UBLOX_6,
-        UBLOX_7,
-        UBLOX_M8,
-        UBLOX_F9 = 0x80, // comes from MON_VER hwVersion string
-        UBLOX_UNKNOWN_HARDWARE_GENERATION = 0xff // not in the ublox spec used for
-                                                 // flagging state in the driver
     };
 
     enum config_step {
