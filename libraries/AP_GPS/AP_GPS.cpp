@@ -1036,9 +1036,31 @@ void AP_GPS::update_primary(void)
 
     // handle switch between real GPSs
     for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
-        if (i == primary_instance) {
+        if (i == primary_instance || drivers[i] == nullptr) {
             continue;
         }
+
+        // if primary is not a F9 and altternative is a F9 with 3D fix then use the F9
+        const uint8_t hw_UBLOX_F9 = 0x80;
+        if (state[i].status >= GPS_OK_FIX_3D &&
+            strcmp(drivers[i]->name(), "u-blox") == 0 && drivers[i]->hardware_generation() == hw_UBLOX_F9 &&
+            drivers[primary_instance] != nullptr &&
+            strcmp(drivers[primary_instance]->name(), "u-blox") == 0 && drivers[primary_instance]->hardware_generation() != hw_UBLOX_F9) {
+            primary_instance = i;
+            _last_instance_swap_ms = now;
+            continue;
+        }
+
+        // if primary F9 has 3D lock, and 2nd GPS is a M8, don't switch
+        if (state[primary_instance].status >= GPS_OK_FIX_3D &&
+            drivers[primary_instance] != nullptr &&
+            strcmp(drivers[primary_instance]->name(), "u-blox") == 0 && drivers[primary_instance]->hardware_generation() == hw_UBLOX_F9 &&
+            strcmp(drivers[i]->name(), "u-blox") == 0 && drivers[i]->hardware_generation() != hw_UBLOX_F9) {
+            // don't switch away from a F9 with 3D lock to a M8
+            continue;
+        }
+        
+
         if (state[i].status > state[primary_instance].status) {
             // we have a higher status lock, or primary is set to the blended GPS, change GPS
             primary_instance = i;
