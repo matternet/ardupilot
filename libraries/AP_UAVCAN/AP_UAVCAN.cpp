@@ -119,7 +119,7 @@ static uavcan::Subscriber<ardupilot::indication::Button, ButtonCb> *safety_butto
 
 // handler TrafficReport
 UC_REGISTRY_BINDER(TrafficReportCb, com::matternet::equipment::trafficmonitor::TrafficReport);
-static uavcan::Subscriber<com::ardupilot::equipment::trafficmonitor::TrafficReport, TrafficReportCb> *traffic_report_listener[HAL_MAX_CAN_PROTOCOL_DRIVERS];
+static uavcan::Subscriber<com::matternet::equipment::trafficmonitor::TrafficReport, TrafficReportCb> *traffic_report_listener[HAL_MAX_CAN_PROTOCOL_DRIVERS];
 
 // handler actuator status
 UC_REGISTRY_BINDER(ActuatorStatusCb, uavcan::equipment::actuator::Status);
