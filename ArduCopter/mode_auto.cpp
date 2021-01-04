@@ -533,6 +533,11 @@ bool Copter::ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
         break;
 #endif
 
+    case MAV_CMD_USER_1:
+        // used for conditional jump to waypoint based on failsafe condition
+        do_failsafe_jump(cmd);
+        break;
+
     default:
         // do nothing with unrecognized MAVLink messages
         break;
@@ -696,6 +701,9 @@ bool Copter::ModeAuto::verify_command(const AP_Mission::Mission_Command& cmd)
 
     case MAV_CMD_CONDITION_YAW:
         return verify_yaw();
+
+    case MAV_CMD_USER_1:
+        return do_failsafe_jump(cmd);
 
     // do commands (always return true)
     case MAV_CMD_DO_CHANGE_SPEED:
@@ -1930,6 +1938,31 @@ bool Copter::ModeAuto::verify_nav_delay(const AP_Mission::Mission_Command& cmd)
         nav_delay_time_max = 0;
         return true;
     }
+    return false;
+}
+
+/*
+  do a failsafe jump. This is like a DO_JUMP, but only jumps to the
+  target if we have not heard from the GCS for the given number of
+  seconds
+ */
+bool Copter::ModeAuto::do_failsafe_jump(const AP_Mission::Mission_Command& cmd)
+{
+    uint16_t jump_target = cmd.content.user_command.param1;
+
+    // we use a failsafe timeout of at least 2 seconds, to allow for some packet loss
+    float failsafe_timeout = MAX(2.0, cmd.content.user_command.param2);
+    float time_since_gcs_heartbeat = (AP_HAL::millis() - copter.failsafe.last_heartbeat_ms) * 0.001;
+
+    if (time_since_gcs_heartbeat <= failsafe_timeout) {
+        // nothing to do
+        return true;
+    }
+    if (copter.mission.set_current_cmd(jump_target)) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: failsafe jump to %u", unsigned(jump_target));
+        return true;
+    }
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: FAILED failsafe jump to %u", unsigned(jump_target));
     return false;
 }
 
