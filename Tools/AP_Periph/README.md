@@ -31,7 +31,12 @@ More can be added using the hwdef.dat system
    - Sync'ed to Arudpilot/ardupilot (master) at hash b0fa5fa
    - Current CAN TXR AP_Periph projects supported are:
      - f303-ADSB
-     - f303-USD1  
+     - f303-USD1
+
+## Mattern AP_Periph Release
+| Version     | Comments                                                     |
+| ----------- | ------------------------------------------------------------ |
+| 1.0.0       | Initial release for CAN TXR supporting ADSB and radar (USD1) |
 
 # Features
 
