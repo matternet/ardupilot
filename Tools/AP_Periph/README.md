@@ -19,6 +19,20 @@ Currently we have four targets building for AP_Periph firmwares:
 
 More can be added using the hwdef.dat system
 
+# Matternet Notes
+- AP_Periph is the binary that is loaded on to the STM32F303 for the CAN TXR board.  This board is Matternet's replacement for the CAN board made by MRO.  Matternet's CAN TXR board differs from MRO's board as follows:
+  - All UART traffic from the peripheral is through UART2 (PA9/PA10)
+  - The only MCU peripherals buses used are UART and CAN (I2C, SPI, etc are disabled)
+-  Matternet/ardupilot vs Arudpilot/ardupilot
+   - matternet/ardupilot was forked from Ardupilot/ardupilot.  However, the two master branches have diverged greatly
+   - In order to build AP_Periph for CAN TXR, we had to sync the Ardupilot/ardupilot (master) to take advantage of numerous fixes
+- master_can_txr
+   - This is the branch used to build AP_Periph for CAN TXR
+   - Sync'ed to Arudpilot/ardupilot (master) at hash b0fa5fa
+   - Current CAN TXR AP_Periph projects supported are:
+     - f303-ADSB
+     - f303-USD1  
+
 # Features
 
 The AP_Periph firmware can be configured to enable a wide range of
