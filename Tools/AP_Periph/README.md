@@ -33,7 +33,7 @@ More can be added using the hwdef.dat system
      - f303-ADSB
      - f303-USD1
 
-## Mattern AP_Periph Release
+## Matternet CAN TXR Release
 | Version     | Comments                                                     |
 | ----------- | ------------------------------------------------------------ |
 | 1.0.0       | Initial release for CAN TXR supporting ADSB and radar (USD1) |
