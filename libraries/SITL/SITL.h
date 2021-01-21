@@ -42,6 +42,7 @@ struct sitl_fdm {
     double battery_current; // Amps
     double rpm1;            // main prop RPM
     double rpm2;            // secondary RPM
+    double battery_remaining; // Ah, if non-zero capacity
     uint8_t rcin_chan_count;
     float  rcin[8];         // RC input 0..1
     double range;           // rangefinder value
@@ -162,6 +163,7 @@ public:
     AP_Vector3f gps2_glitch; // glitch offsets in lat, lon and altitude for 2nd GPS
     AP_Int8  gps_hertz;   // GPS update rate in Hz
     AP_Float batt_voltage; // battery voltage base
+    AP_Float batt_capacity_ah; // battery capacity in Ah
     AP_Float accel_fail;  // accelerometer failure value
     AP_Int8  rc_fail;     // fail RC input
     AP_Int8  rc_chancount; // channel count
