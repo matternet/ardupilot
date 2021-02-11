@@ -5,15 +5,16 @@ set -ex
 rm -rf /tmp/deploy_files
 mkdir -p "/tmp/deploy_files"
 
+Tools/scripts/install-prereqs-ubuntu.sh
+python --version
+
 python Tools/autotest/param_metadata/param_parse.py --vehicle ArduCopter
 mv apm.pdef.xml "/tmp/deploy_files"
 
-wget https://firmware.ardupilot.org/Tools/STM32-tools/gcc-arm-none-eabi-6-2017-q2-update-linux.tar.bz2
+wget --quiet https://firmware.ardupilot.org/Tools/STM32-tools/gcc-arm-none-eabi-6-2017-q2-update-linux.tar.bz2
 tar xjf gcc-arm-none-eabi-6-2017-q2-update-linux.tar.bz2
 export PATH=$PATH:$PWD/gcc-arm-none-eabi-6-2017-q2-update/bin
 echo $PATH
-
-./waf distclean
 
 ./waf configure --board=MttrCubeBlack
 ./waf copter
