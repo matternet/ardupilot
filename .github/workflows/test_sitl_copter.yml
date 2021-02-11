@@ -10,10 +10,6 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       fail-fast: false  # don't cancel if a job from the matrix fails
-      matrix:
-        config: [
-            mttr-test
-        ]
 
     steps:
       # git checkout the PR
@@ -21,24 +17,33 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: install tools
+      - name: install
         shell: bash
         run: |
           Tools/scripts/install-prereqs-ubuntu.sh
 
-      - name: build ${{matrix.config}}
-        env:
-          CI_BUILD_TARGET: ${{matrix.config}}
+      - name: build
         shell: bash
         run: |
           PATH="/usr/lib/ccache:/opt/gcc-arm-none-eabi-6/bin:$PATH"
           PATH="/github/home/.local/bin:$PATH"
           Tools/scripts/mttr-build-ci.sh
 
+      - name: test
+        shell: bash
+        run: |
+          PATH="/usr/lib/ccache:/opt/gcc-arm-none-eabi-6/bin:$PATH"
+          PATH="/github/home/.local/bin:$PATH"
+          pip install --user -U argparse empy pyserial pexpect future lxml
+          pip install --user -U mavproxy
+          pip install --user -U intelhex
+          Tools/autotest/autotest.py build.ArduCopter
+          Tools/autotest/autotest.py fly.ArduCopter
+
       - name: Archive builds
         uses: actions/upload-artifact@v2
         with:
-           name: builds-${{matrix.config}}
+           name: builds
            path: /tmp/deploy_files
            retention-days: 60
 
@@ -46,13 +51,13 @@ jobs:
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-           name: fail-${{matrix.config}}
+           name: fail
            path: /tmp/buildlogs
            retention-days: 14
 
       - name: Archive .bin artifacts
         uses: actions/upload-artifact@v2
         with:
-           name: BIN-${{matrix.config}}
+           name: BIN
            path: /__w/ardupilot/ardupilot/logs
            retention-days: 7
