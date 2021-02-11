@@ -20,7 +20,13 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
-      - name: test ${{matrix.config}}
+
+      - name: install tools
+        shell: bash
+        run: |
+          Tools/scripts/install-prereqs-ubuntu.sh
+
+      - name: build ${{matrix.config}}
         env:
           CI_BUILD_TARGET: ${{matrix.config}}
         shell: bash

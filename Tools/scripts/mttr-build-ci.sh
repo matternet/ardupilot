@@ -5,9 +5,6 @@ set -ex
 rm -rf /tmp/deploy_files
 mkdir -p "/tmp/deploy_files"
 
-Tools/scripts/install-prereqs-ubuntu.sh
-python --version
-
 python Tools/autotest/param_metadata/param_parse.py --vehicle ArduCopter
 mv apm.pdef.xml "/tmp/deploy_files"
 
