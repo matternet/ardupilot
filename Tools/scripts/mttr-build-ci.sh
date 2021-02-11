@@ -8,8 +8,6 @@ mkdir -p "/tmp/deploy_files"
 python Tools/autotest/param_metadata/param_parse.py --vehicle ArduCopter
 mv apm.pdef.xml "/tmp/deploy_files"
 
-unset CXX CC
-
 wget https://firmware.ardupilot.org/Tools/STM32-tools/gcc-arm-none-eabi-6-2017-q2-update-linux.tar.bz2
 tar xjf gcc-arm-none-eabi-6-2017-q2-update-linux.tar.bz2
 export PATH=$PATH:$PWD/gcc-arm-none-eabi-6-2017-q2-update/bin
@@ -19,6 +17,10 @@ echo $PATH
 
 ./waf configure --board=MttrCubeBlack
 ./waf copter
+
+sudo apt-get install g++-7
+export CXX=g++-7
+export CC=gcc-7
 
 ./waf configure --board=sitl --debug
 ./waf copter
