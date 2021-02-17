@@ -112,8 +112,7 @@ env ROMFS_UNCOMPRESSED True
 # reduce the number of CAN RX Buffer
 define HAL_CAN_RX_QUEUE_SIZE 64
 
-#define CAN_APP_NODE_NAME "com.matternet.ap_periph_rangefinder"
-define CAN_APP_NODE_NAME "com.matternet.USD1-Radar"
+define CAN_APP_NODE_NAME "org.ardupilot.USD1-Radar"
 
 # hardcode Node ID to 118
 define HAL_CAN_DEFAULT_NODE_ID 118
