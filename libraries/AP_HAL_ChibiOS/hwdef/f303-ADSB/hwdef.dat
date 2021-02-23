@@ -117,8 +117,8 @@ define HAL_CAN_RX_QUEUE_SIZE 64
 
 define CAN_APP_NODE_NAME "com.matternet.trafficmonitor"
 
-# hardcode Node ID to 125
-define HAL_CAN_DEFAULT_NODE_ID 125
+# hardcode Node ID to 113
+define HAL_CAN_DEFAULT_NODE_ID 113
 
 # ADSB enable
 #define ADSB_PORT 0
