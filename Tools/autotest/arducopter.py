@@ -21,13 +21,16 @@ testdir = os.path.dirname(os.path.realpath(__file__))
 HOME = mavutil.location(-35.362938, 149.165085, 584, 270)
 AVCHOME = mavutil.location(40.072842, -105.230575, 1586, 0)
 
+# alt_hold hover throttle
+HOVER_THROTTLE = 1500
+
 # Flight mode switch positions are set-up in arducopter.param to be
 #   switch 1 = Circle
 #   switch 2 = Land
 #   switch 3 = RTL
-#   switch 4 = Auto
+#   switch 4 = GUIDED
 #   switch 5 = Loiter
-#   switch 6 = Stabilize
+#   switch 6 = ALT_HOLD
 
 
 class AutoTestCopter(AutoTest):
@@ -150,10 +153,10 @@ class AutoTestCopter(AutoTest):
         if self.copy_tlog:
             shutil.copy(self.logfile, self.buildlog)
 
-    def takeoff(self, alt_min=30, takeoff_throttle=1700, arm=False):
+    def takeoff(self, alt_min=30, takeoff_throttle=1900, arm=False):
         """Takeoff get to 30m altitude."""
-        self.mavproxy.send('switch 6\n')  # stabilize mode
-        self.wait_mode('STABILIZE')
+        self.mavproxy.send('switch 6\n')
+        self.wait_mode('ALT_HOLD')
         if arm:
             self.set_rc(3, 1000)
             self.arm_vehicle()
@@ -176,7 +179,7 @@ class AutoTestCopter(AutoTest):
         self.wait_altitude(-5, 1, relative=True)
         self.progress("LANDING: ok!")
 
-    def hover(self, hover_throttle=1500):
+    def hover(self, hover_throttle=HOVER_THROTTLE):
         self.set_rc(3, hover_throttle)
 
     # loiter - fly south west, then loiter within 5m position and altitude
@@ -266,10 +269,10 @@ class AutoTestCopter(AutoTest):
         self.progress("Save WP 1 & 2")
         self.save_wp()
 
-        # switch back to stabilize mode
-        self.set_rc(3, 1500)
+        # switch to ALT_HOLD
+        self.set_rc(3, HOVER_THROTTLE)
         self.mavproxy.send('switch 6\n')
-        self.wait_mode('STABILIZE')
+        self.wait_mode('ALT_HOLD')
 
         # pitch forward to fly north
         self.progress("Going north %u meters" % side)
@@ -359,11 +362,11 @@ class AutoTestCopter(AutoTest):
         self.set_rc(4, 1500)
 
         # raise throttle slightly to avoid hitting the ground
-        self.set_rc(3, 1600)
+        self.set_rc(3, 1800)
 
         # switch to stabilize mode
         self.mavproxy.send('switch 6\n')
-        self.wait_mode('STABILIZE')
+        self.wait_mode('ALT_HOLD')
         self.hover()
 
         # fly east 60 meters
@@ -387,14 +390,14 @@ class AutoTestCopter(AutoTest):
             if alt <= 1 and home_distance < 10:
                 # reduce throttle
                 self.set_rc(3, 1100)
-                # switch back to stabilize
+                # switch back to alt_hold
                 self.mavproxy.send('switch 2\n')  # land mode
                 self.wait_mode('LAND')
                 self.progress("Waiting for disarm")
                 self.mav.motors_disarmed_wait()
                 self.progress("Reached failsafe home OK")
-                self.mavproxy.send('switch 6\n')  # stabilize mode
-                self.wait_mode('STABILIZE')
+                self.mavproxy.send('switch 6\n')  # alt_hold mode
+                self.wait_mode('ALT_HOLD')
                 self.set_rc(3, 1000)
                 self.arm_vehicle()
                 return
@@ -402,11 +405,11 @@ class AutoTestCopter(AutoTest):
                       "timed out after %u seconds" % timeout)
         # reduce throttle
         self.set_rc(3, 1100)
-        # switch back to stabilize mode
+        # switch back to alt_hold mode
         self.mavproxy.send('switch 2\n')  # land mode
         self.wait_mode('LAND')
-        self.mavproxy.send('switch 6\n')  # stabilize mode
-        self.wait_mode('STABILIZE')
+        self.mavproxy.send('switch 6\n')  # alt_hold mode
+        self.wait_mode('ALT_HOLD')
         raise AutoTestTimeoutException()
 
     def fly_battery_failsafe(self, timeout=30):
@@ -523,14 +526,14 @@ class AutoTestCopter(AutoTest):
             if alt <= 1 and home_distance < 10:
                 # reduce throttle
                 self.set_rc(3, 1000)
-                # switch mode to stabilize
+                # switch mode to alt_hold
                 self.mavproxy.send('switch 2\n')  # land mode
                 self.wait_mode('LAND')
                 self.progress("Waiting for disarm")
                 self.mav.motors_disarmed_wait()
                 self.progress("Reached home OK")
-                self.mavproxy.send('switch 6\n')  # stabilize mode
-                self.wait_mode('STABILIZE')
+                self.mavproxy.send('switch 6\n')  # alt_hold mode
+                self.wait_mode('ALT_HOLD')
                 self.set_rc(3, 1000)
                 # remove if we ever clear battery failsafe flag on disarm:
                 self.mavproxy.send('arm uncheck all\n')
@@ -546,11 +549,11 @@ class AutoTestCopter(AutoTest):
 
         # reduce throttle
         self.set_rc(3, 1000)
-        # switch mode to stabilize
+        # switch mode to alt_hold
         self.mavproxy.send('switch 2\n')  # land mode
         self.wait_mode('LAND')
-        self.mavproxy.send('switch 6\n')  # stabilize mode
-        self.wait_mode('STABILIZE')
+        self.mavproxy.send('switch 6\n')  # alt_hold mode
+        self.wait_mode('ALT_HOLD')
         self.progress("Fence test failed to reach home - "
                       "timed out after %u seconds" % timeout)
         raise AutoTestTimeoutException()
@@ -590,8 +593,8 @@ class AutoTestCopter(AutoTest):
 
         self.set_rc(3, 1000)
 
-        self.mavproxy.send('switch 6\n')  # stabilize mode
-        self.wait_mode('STABILIZE')
+        self.mavproxy.send('switch 6\n')  # alt_hold mode
+        self.wait_mode('ALT_HOLD')
         # remove if we ever clear battery failsafe flag on disarm
         self.mavproxy.send('arm uncheck all\n')
         self.arm_vehicle()
@@ -743,9 +746,9 @@ class AutoTestCopter(AutoTest):
         self.mavproxy.send('wp set 1\n')
 
         # switch into AUTO mode and raise throttle
-        self.mavproxy.send('switch 4\n')  # auto mode
-        self.wait_mode('AUTO')
-        self.set_rc(3, 1500)
+        self.mavproxy.send('switch 4\n')
+        self.wait_mode('GUIDED')
+        self.mavproxy.send('long MISSION_START\n')
 
         # wait until 100m from home
         try:
@@ -821,10 +824,10 @@ class AutoTestCopter(AutoTest):
         # set SIMPLE mode for all flight modes
         self.mavproxy.send('param set SIMPLE 63\n')
 
-        # switch to stabilize mode
+        # switch to alt_hold mode
         self.mavproxy.send('switch 6\n')
-        self.wait_mode('STABILIZE')
-        self.set_rc(3, 1500)
+        self.wait_mode('ALT_HOLD')
+        self.set_rc(3, HOVER_THROTTLE)
 
         # fly south 50m
         self.progress("# Flying south %u meters" % side)
@@ -876,10 +879,10 @@ class AutoTestCopter(AutoTest):
         # set SUPER SIMPLE mode for all flight modes
         self.mavproxy.send('param set SUPER_SIMPLE 63\n')
 
-        # switch to stabilize mode
+        # switch to alt_hold mode
         self.mavproxy.send('switch 6\n')
-        self.wait_mode('STABILIZE')
-        self.set_rc(3, 1500)
+        self.wait_mode('ALT_HOLD')
+        self.set_rc(3, HOVER_THROTTLE)
 
         # start copter yawing slowly
         self.set_rc(4, 1550)
@@ -955,8 +958,8 @@ class AutoTestCopter(AutoTest):
 
         # switch into AUTO mode and raise throttle
         self.mavproxy.send('switch 4\n')  # auto mode
-        self.wait_mode('AUTO')
-        self.set_rc(3, 1500)
+        self.wait_mode('GUIDED')
+        self.mavproxy.send('long MISSION_START\n')
 
         # fly the mission
         self.wait_waypoint(0, num_wp-1, timeout=500)
@@ -993,8 +996,8 @@ class AutoTestCopter(AutoTest):
 
         # switch into AUTO mode and raise throttle
         self.mavproxy.send('switch 4\n')  # auto mode
-        self.wait_mode('AUTO')
-        self.set_rc(3, 1500)
+        self.wait_mode('GUIDED')
+        self.mavproxy.send('long MISSION_START\n')
 
         # fly the mission
         self.wait_waypoint(0, num_wp-1, timeout=500)
@@ -1119,12 +1122,14 @@ class AutoTestCopter(AutoTest):
 
         return True
 
-    def fly_mission(self, height_accuracy=-1.0, target_altitude=None):
+    def fly_mission(self, height_accuracy=-1.0, target_altitude=None, num_wp=-1):
         """Fly a mission from a file."""
-        global num_wp
         self.progress("test: Fly a mission from 1 to %u" % num_wp)
-        self.mavproxy.send('wp set 1\n')
-        self.mavproxy.send('switch 4\n')  # auto mode
+        self.mavproxy.send('disarm force\n')
+        self.mavproxy.send('mode guided\n')
+        self.wait_mode('GUIDED')
+        self.arm_vehicle()
+        self.mavproxy.send("long MISSION_START\n")
         self.wait_mode('AUTO')
         self.wait_waypoint(0, num_wp-1, timeout=500)
         self.progress("test: MISSION COMPLETE: passed!")
@@ -1138,9 +1143,9 @@ class AutoTestCopter(AutoTest):
 
         self.progress("Waiting for location")
         start = self.mav.location()
-        self.mavproxy.send('switch 6\n')  # stabilize mode
+        self.mavproxy.send('switch 6\n')  # alt_hold mode
         self.mav.wait_heartbeat()
-        self.wait_mode('STABILIZE')
+        self.wait_mode('ALT_HOLD')
         self.progress("Waiting reading for arm")
         self.wait_ready_to_arm()
 
@@ -1238,12 +1243,16 @@ class AutoTestCopter(AutoTest):
             self.progress("Setting up RC parameters")
             self.set_rc_default()
             self.set_rc(3, 1000)
+            self.mavproxy.send('param set FLTMODE6 2\n')  # ALT_HOLD
+            self.mavproxy.send('param set FLTMODE4 4\n')  # GUIDED
+            self.mavproxy.send('param set SIM_BATT_CAP_AH 0\n') # infinite battery
+            self.reboot_sitl()
             self.progress("Waiting for location")
             self.homeloc = self.mav.location()
             self.progress("Home location: %s" % self.homeloc)
-            self.mavproxy.send('switch 6\n')  # stabilize mode
+            self.mavproxy.send('switch 6\n')
             self.mav.wait_heartbeat()
-            self.wait_mode('STABILIZE')
+            self.wait_mode('ALT_HOLD')
             self.progress("Waiting reading for arm")
             self.wait_ready_to_arm()
 
@@ -1254,22 +1263,18 @@ class AutoTestCopter(AutoTest):
             self.run_test("Takeoff to test fly Square",
                           lambda: self.takeoff(10))
 
-            # Fly a square in Stabilize mode
+            # Fly a square in ALT_HOLD mode
             self.run_test("Fly a square and save WPs with CH7",
                           self.fly_square)
 
-            # save the stored mission to file
-            global num_wp
-            num_wp = self.save_mission_to_file(os.path.join(testdir,
-                                                            "ch7_mission.txt"))
-            if not num_wp:
-                self.fail_list.append("save_mission_to_file")
-                self.progress("save_mission_to_file failed")
+            self.run_test("land", self.land)
+
+            num_wp = self.load_mission("mission_simple.txt")
 
             # fly the stored mission
-            self.run_test("Fly CH7 saved mission",
+            self.run_test("Fly simple mission",
                           lambda: self.fly_mission(height_accuracy=0.5,
-                                                   target_altitude=10))
+                                                   target_altitude=10,num_wp=num_wp))
 
             # Throttle Failsafe
             self.run_test("Test Failsafe",
@@ -1298,14 +1303,6 @@ class AutoTestCopter(AutoTest):
             self.run_test("Takeoff to test horizontal fence",
                           lambda: self.takeoff(10))
 
-            # Fence test
-            self.run_test("Test horizontal fence",
-                          lambda: self.fly_fence_test(180))
-
-            # Fence test
-            self.run_test("Test Max Alt Fence",
-                          lambda: self.fly_alt_max_fence_test(180))
-
             # Takeoff
             self.run_test("Takeoff to test GPS glitch loiter",
                           lambda: self.takeoff(10))
@@ -1318,14 +1315,10 @@ class AutoTestCopter(AutoTest):
             self.run_test("RTL after GPS Glitch Loiter test", self.fly_RTL)
 
             # Arm
-            self.mavproxy.send('mode stabilize\n')  # stabilize mode
-            self.wait_mode('STABILIZE')
+            self.mavproxy.send('mode alt_hold\n')
+            self.wait_mode('ALT_HOLD')
             self.set_rc(3, 1000)
             self.run_test("Arm motors", self.arm_vehicle)
-
-            # Fly GPS Glitch test in auto mode
-            self.run_test("GPS Glitch Auto Test",
-                          self.fly_gps_glitch_auto_test)
 
             # Takeoff
             self.run_test("Takeoff to test loiter", lambda: self.takeoff(10))
@@ -1376,8 +1369,8 @@ class AutoTestCopter(AutoTest):
 
             # Arm
             self.set_rc(3, 1000)
-            self.mavproxy.send('mode stabilize\n')  # stabilize mode
-            self.wait_mode('STABILIZE')
+            self.mavproxy.send('mode alt_hold\n')
+            self.wait_mode('ALT_HOLD')
 
             # Takeoff
             self.run_test("Takeoff to test motor failure",
@@ -1391,21 +1384,12 @@ class AutoTestCopter(AutoTest):
 
             # Arm
             self.set_rc(3, 1000)
-            self.mavproxy.send('mode stabilize\n')  # stabilize mode
-            self.wait_mode('STABILIZE')
+            self.mavproxy.send('mode alt_hold\n')
+            self.wait_mode('ALT_HOLD')
             self.run_test("Arm motors", self.arm_vehicle)
-
-            # Fly auto test
-            self.run_test("Fly copter mission", self.fly_auto_test)
-
-            # land
-            self.run_test("Fly copter mission", self.land)
 
             # wait for disarm
             self.mav.motors_disarmed_wait()
-
-            '''vision position''' # expects vehicle to be disarmed
-            self.run_test("Fly Vision Position", self.fly_vision_position)
 
             # Download logs
             self.run_test("log download",
@@ -1438,8 +1422,8 @@ class AutoTestCopter(AutoTest):
 
             self.progress("Lowering rotor speed")
             self.set_rc(8, 1000)
-            self.mavproxy.send('switch 6\n')  # stabilize mode
-            self.wait_mode('STABILIZE')
+            self.mavproxy.send('switch 6\n')
+            self.wait_mode('ALT_HOLD')
             self.wait_ready_to_arm()
 
             # Arm

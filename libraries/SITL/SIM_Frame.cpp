@@ -341,7 +341,13 @@ void Frame::init(const char *frame_str, Battery *_battery)
     // power_factor is ratio of power consumed per newton of thrust
     float power_factor = hover_power / hover_thrust;
 
-    battery->setup(model.battCapacityAh, model.refBatRes, model.maxVoltage);
+    // setup reasonable defaults for battery
+    AP_Param::set_default_by_name("SIM_BATT_VOLTAGE", model.maxVoltage);
+    AP_Param::set_default_by_name("SIM_BATT_CAP_AH", model.battCapacityAh);
+
+    auto *sitl = AP::sitl();
+
+    battery->setup(sitl->batt_capacity_ah, model.refBatRes, sitl->batt_voltage);
 
     for (uint8_t i=0; i<num_motors; i++) {
         motors[i].setup_params(model.pwmMin, model.pwmMax, model.spin_min, model.spin_max, model.propExpo, model.slew_max,
@@ -368,9 +374,6 @@ void Frame::init(const char *frame_str, Battery *_battery)
     }
 #endif
 
-    // setup reasonable defaults for battery
-    AP_Param::set_default_by_name("SIM_BATT_VOLTAGE", model.maxVoltage);
-    AP_Param::set_default_by_name("SIM_BATT_CAP_AH", model.battCapacityAh);
     AP_Param::set_default_by_name("BATT_CAPACITY", model.battCapacityAh*1000);
 }
 
