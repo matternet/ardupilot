@@ -205,9 +205,11 @@ void Copter::failsafe_terrain_on_event()
 #if MODE_RTL_ENABLED == ENABLED
     } else if (control_mode == RTL) {
         mode_rtl.restart_without_terrain();
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"Failsafe: Setting to RTL restart");
 #endif
     } else {
         set_mode_land_with_pause(MODE_REASON_TERRAIN_FAILSAFE);
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"Failsafe: Setting to LAND");
     }
 }
 
