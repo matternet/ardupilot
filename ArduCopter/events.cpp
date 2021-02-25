@@ -207,7 +207,7 @@ void Copter::failsafe_terrain_on_event()
         mode_rtl.restart_without_terrain();
 #endif
     } else {
-        set_mode_land_with_pause(reason);
+        set_mode_land_with_pause(MODE_REASON_TERRAIN_FAILSAFE);
     }
 }
 
