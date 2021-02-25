@@ -232,8 +232,8 @@ void Copter::gpsglitch_check()
 }
 
 // set_mode_RTL_or_land_with_pause - sets mode to RTL if possible or LAND with 4 second delay before descent starts
-//  this is always called from a set_mode_RTL_or_land_with_pausefailsafe so we trigger notification to pilot
-void Copter::(mode_reason_t reason)
+//  this is always called from a failsafe so we trigger notification to pilot
+void Copter::set_mode_RTL_or_land_with_pause(mode_reason_t reason)
 {
     // attempt to switch to RTL, if this fails then switch to Land
     if (!set_mode(RTL, reason)) {
