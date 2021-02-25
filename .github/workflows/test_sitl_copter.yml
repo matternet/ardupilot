@@ -1,0 +1,63 @@
+name: test copter
+
+on: [push, pull_request, workflow_dispatch]
+# paths:
+# - "*"
+# - "!README.md" <-- don't rebuild on doc change
+
+jobs:
+  autotest:
+    runs-on: ubuntu-18.04
+    strategy:
+      fail-fast: false  # don't cancel if a job from the matrix fails
+
+    steps:
+      # git checkout the PR
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
+      - name: install
+        shell: bash
+        run: |
+          Tools/scripts/install-prereqs-ubuntu.sh
+
+      - name: build
+        shell: bash
+        run: |
+          PATH="/usr/lib/ccache:/opt/gcc-arm-none-eabi-6/bin:$PATH"
+          PATH="/github/home/.local/bin:$PATH"
+          Tools/scripts/mttr-build-ci.sh
+
+      - name: test
+        shell: bash
+        run: |
+          PATH="/usr/lib/ccache:/opt/gcc-arm-none-eabi-6/bin:$PATH"
+          PATH="/github/home/.local/bin:$PATH"
+          pip install --user -U argparse empy pyserial pexpect future lxml
+          pip install --user -U mavproxy
+          pip install --user -U intelhex
+          Tools/autotest/autotest.py build.ArduCopter
+          Tools/autotest/autotest.py fly.ArduCopter
+
+      - name: Archive builds
+        uses: actions/upload-artifact@v2
+        with:
+           name: builds
+           path: /tmp/deploy_files
+           retention-days: 60
+
+      - name: Archive buildlog artifacts
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+           name: fail
+           path: /tmp/buildlogs
+           retention-days: 14
+
+      - name: Archive .bin artifacts
+        uses: actions/upload-artifact@v2
+        with:
+           name: BIN
+           path: /__w/ardupilot/ardupilot/logs
+           retention-days: 7
