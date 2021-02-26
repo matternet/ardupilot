@@ -83,9 +83,44 @@ void Copter::read_rangefinder(void)
         if (rf_state.alt_healthy) {
             if (timed_out) {
                 // reset filter if we haven't used it within the last second
-                rf_state.alt_cm_filt.reset(rf_state.alt_cm);
+                rf_state.alt_cm_filt.reset();
             } else {
-                rf_state.alt_cm_filt.apply(rf_state.alt_cm, 0.05f);
+                /*
+                  Apply a complementary filter to the rangefinder data, using the
+                  inertial altitude for the high frequency component and the
+                  rangefinder data for the low frequency component.
+
+                  When we are loitering shift the time constant of the
+                  complementary filter towards a much lower frequency to filter
+                  out even quite long period noise from the rangefinder. When not
+                  loitering shift back to a shorter time period to handle changes
+                  in terrain
+                */
+                float target_filter_hz = RANGEFINDER_WPNAV_FILT_MAX_HZ;
+                if (control_mode == Mode::Number::AUTO &&
+                    mode_auto.mission.get_current_nav_cmd().id == MAV_CMD_NAV_WAYPOINT &&
+                    mode_auto.in_loiter()) {
+                    // we are holding position at a waypoint, slew the time constant
+                    target_filter_hz = RANGEFINDER_WPNAV_FILT_MIN_HZ;
+                }
+
+                if (!is_equal(rangefinder_state.filter_hz, target_filter_hz)) {
+                    rf_state.alt_cm_filt.set_cutoff_frequency(target_filter_hz);
+                    rf_state.alt_cm_filt.reset();
+                    rangefinder_state.filter_hz = target_filter_hz;
+                }
+
+                rf_state.alt_cm_filt.apply(rf_state.alt_cm, inertial_nav.get_altitude(), AP_HAL::micros());
+
+                // temporary debug log message to look at the
+                // performance of the complementary filter
+                AP::logger().Write("RF2", "TimeUS,LF,HF,Out,FHz", "Qffff",
+                                   AP_HAL::micros64(),
+                                   rf_state.alt_cm*0.01,
+                                   inertial_nav.get_altitude()*0.01,
+                                   rf_state.alt_cm_filt.get()*0.01,
+                                   rf_state.filter_hz);
+
             }
             rf_state.last_healthy_ms = now;
         }
