@@ -792,7 +792,8 @@ void AP_Logger_File::stop_logging(void)
 
 void AP_Logger_File::PrepForArming()
 {
-    if (logging_started()) {
+    if (logging_started() &&
+        _front._params.file_disarm_rot == 0) {
         return;
     }
     start_new_log();
