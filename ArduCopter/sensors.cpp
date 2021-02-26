@@ -53,7 +53,19 @@ void Copter::read_rangefinder(void)
     // Remove rangefinder body offset - converting NED to NEU
     rangefinder_alt_meas += (ahrs.get_rotation_body_to_ned()*rangefinder_pos_offset_cm).z;
 
-    float terrain_height_meas = inertial_nav.get_altitude() - rangefinder_alt_meas;
+    // apply complementary filter
+    rangefinder_state.alt_cm_filt.set_cutoff_frequency(RANGEFINDER_WPNAV_FILT_HZ);
+    float rangefinder_alt_flt = rangefinder_state.alt_cm_filt.apply(rangefinder_alt_meas, inertial_nav.get_altitude(), AP_HAL::micros());
+
+    // temporary debug log message to look at the
+    // performance of the complementary filter
+    DataFlash_Class::instance()->Log_Write("RF2", "TimeUS,LF,HF,Out", "Qfff",
+                                           AP_HAL::micros64(),
+                                           rangefinder_alt_meas*0.01,
+                                           inertial_nav.get_altitude()*0.01,
+                                           rangefinder_alt_flt*0.01);
+    
+    float terrain_height_meas = inertial_nav.get_altitude() - rangefinder_alt_flt;
 
     // filter rangefinder for use by AC_WPNav
     uint32_t tnow_ms = AP_HAL::millis();
