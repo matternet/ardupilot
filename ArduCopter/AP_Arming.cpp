@@ -528,7 +528,7 @@ bool AP_Arming_Copter::mandatory_gps_checks(bool display_failure)
     // ensure GPS is ok
     if (!copter.position_ok()) {
         const char *reason = ahrs.prearm_failure_reason();
-        if (reason == nullptr) {
+        if (reason == nullptr || strlen(reason) == 0) {
             if (!mode_requires_gps && fence_requires_gps) {
                 // clarify to user why they need GPS in non-GPS flight mode
                 reason = "Fence enabled, need 3D Fix";
