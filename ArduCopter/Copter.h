@@ -251,6 +251,7 @@ private:
         float terrain_height_filt_cm; // terrain height relative to origin, filtered
         int8_t glitch_count;
         ComplementaryFilter alt_cm_filt; // altitude filter
+        float filter_hz;
     } rangefinder_state = { false, false, 0};
 
 #if RPM_ENABLED == ENABLED
