@@ -179,6 +179,7 @@ public:
     AP_Int8  telem_baudlimit_enable; // enable baudrate limiting on links
     AP_Float flow_noise; // optical flow measurement noise (rad/sec)
     AP_Float mag_scaling; // scaling factor on first compasses
+    AP_Int8  event_command; // custom event command from sitl_control.py
 
     // wind control
     enum WindType {
@@ -268,6 +269,10 @@ public:
 
     Parachute parachute_sim;
     SIM_Precland precland_sim;
+
+    enum EventType {
+        EVENT_ALTERNATE_LANDING = 0,
+    };
 };
 
 } // namespace SITL
