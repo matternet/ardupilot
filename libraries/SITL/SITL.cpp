@@ -161,7 +161,7 @@ const AP_Param::GroupInfo SITL::var_info2[] = {
     AP_GROUPINFO("MAG_SCALING",    60, SITL,  mag_scaling, 1),
     AP_GROUPINFO("MAG_FAIL_MSK",  61, SITL,  mag_fail_mask, 0),
 
-    AP_GROUPINFO("EVENT_CMD",     62, SITL,  event_command, SITL::EVENT_ALTERNATE_LANDING),
+    AP_GROUPINFO("EVENT_CMD",     62, SITL,  event_command, SITL::EVENT_NONE),
     AP_GROUPEND
 };
     
