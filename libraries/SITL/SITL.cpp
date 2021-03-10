@@ -201,7 +201,7 @@ const AP_Param::GroupInfo SITL::var_info2[] = {
     AP_GROUPINFO("GPS_DRIFT_S", 62, SITL,  gps_drift_spd, 0),
 
     // hook for sitl control event
-    AP_GROUPINFO("EVENT_CMD",   62, SITL,  event_command, SITL::EVENT_NONE),
+    AP_GROUPINFO("EVENT_CMD",   63, SITL,  event_command, SITL::EVENT_NONE),
     AP_GROUPEND
 
 };
