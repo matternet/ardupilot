@@ -188,6 +188,7 @@ public:
     AP_Int32 loop_delay; // extra delay to add to every loop
     AP_Float mag_scaling; // scaling factor on first compasses
     AP_Int32 mag_devid[MAX_CONNECTED_MAGS]; // Mag devid
+    AP_Int8  event_command; // custom event command from sitl_control.py
 
     // wind control
     enum WindType {
@@ -323,6 +324,10 @@ public:
         uint8_t num_leds[16];
         uint32_t send_counter;
     } led;
+
+    enum EventType {
+        EVENT_ALTERNATE_LANDING = 0,
+    };
 };
 
 } // namespace SITL

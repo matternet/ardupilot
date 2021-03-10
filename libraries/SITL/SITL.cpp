@@ -96,6 +96,7 @@ const AP_Param::GroupInfo SITL::var_info[] = {
     AP_GROUPINFO("GPS2_TYPE",     61, SITL,  gps2_type,  SITL::GPS_TYPE_UBLOX),
     AP_SUBGROUPEXTENSION("",      62, SITL,  var_info3),
     AP_SUBGROUPEXTENSION("",      63, SITL,  var_info2),
+    AP_GROUPINFO("EVENT_CMD",     64, SITL,  event_command, SITL::EVENT_ALTERNATE_LANDING),
     AP_GROUPEND
 };
 
