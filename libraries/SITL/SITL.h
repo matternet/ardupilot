@@ -326,7 +326,8 @@ public:
     } led;
 
     enum EventType {
-        EVENT_ALTERNATE_LANDING = 0,
+        EVENT_NONE = 0,
+        EVENT_ALTERNATE_LANDING = 1,
     };
 };
 

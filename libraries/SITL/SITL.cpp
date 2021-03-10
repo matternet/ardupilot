@@ -195,12 +195,13 @@ const AP_Param::GroupInfo SITL::var_info2[] = {
     // @Path: ./SIM_ToneAlarm.cpp
     AP_SUBGROUPINFO(tonealarm_sim, "TA_", 57, SITL, ToneAlarm),
 
-    AP_GROUPINFO("MAG_SCALING",    60, SITL,  mag_scaling, 1),
+    AP_GROUPINFO("MAG_SCALING", 60, SITL,  mag_scaling, 1),
     AP_GROUPINFO("PLAND_OFS",   61, SITL,  precland_offset, 0),
 
     AP_GROUPINFO("GPS_DRIFT_S", 62, SITL,  gps_drift_spd, 0),
 
-    AP_GROUPINFO("EVENT_CMD",     62, SITL,  event_command, SITL::EVENT_ALTERNATE_LANDING),
+    // hook for sitl control event
+    AP_GROUPINFO("EVENT_CMD",   62, SITL,  event_command, SITL::EVENT_NONE),
     AP_GROUPEND
 
 };
