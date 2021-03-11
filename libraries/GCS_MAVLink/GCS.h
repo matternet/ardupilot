@@ -205,6 +205,7 @@ public:
     void send_vibration() const;
     void send_mount_status() const;
     void send_named_float(const char *name, float value) const;
+    void send_named_int(const char *name, int32_t value) const;
     void send_gimbal_report() const;
     void send_home_position() const;
     void send_gps_global_origin() const;
@@ -823,6 +824,7 @@ public:
     void send_message(enum ap_message id);
     void send_mission_item_reached_message(uint16_t mission_index);
     void send_named_float(const char *name, float value) const;
+    void send_named_int(const char *name, int32_t value) const;
 
     void send_parameter_value(const char *param_name,
                               ap_var_type param_type,

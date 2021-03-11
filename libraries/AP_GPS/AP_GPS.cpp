@@ -834,6 +834,13 @@ void AP_GPS::update(void)
 
     update_primary();
 
+    uint32_t now = AP_HAL::millis();
+    if (now - last_gps_primary_ms > 1000) {
+        // tell the GCS which GPS is primary
+        last_gps_primary_ms = now;
+        gcs().send_named_int("GPSPRIMARY", primary_instance);
+    }
+
 #ifndef HAL_BUILD_AP_PERIPH
     // update notify with gps status. We always base this on the primary_instance
     AP_Notify::flags.gps_status = state[primary_instance].status;
