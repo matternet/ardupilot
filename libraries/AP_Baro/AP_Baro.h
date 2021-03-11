@@ -247,7 +247,7 @@ private:
     float                               _guessed_ground_temperature; // currently ground temperature estimate using our best abailable source
 
     // when did we last notify the GCS of new pressure reference?
-    uint32_t                            _last_notify_ms;
+    uint32_t                            _last_notify_ms[BARO_MAX_INSTANCES];
 
     bool _add_backend(AP_Baro_Backend *backend);
     void _probe_i2c_barometers(void);
