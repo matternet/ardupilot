@@ -439,6 +439,7 @@ private:
 #endif
     void do_payload_place(const AP_Mission::Mission_Command& cmd);
     void do_RTL(void);
+    bool do_failsafe_jump(const AP_Mission::Mission_Command& cmd);
 
     bool verify_takeoff();
     bool verify_land();
