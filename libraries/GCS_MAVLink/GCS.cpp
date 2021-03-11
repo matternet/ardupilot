@@ -82,6 +82,17 @@ void GCS::send_named_float(const char *name, float value) const
                                   (const char *)&packet);
 }
 
+void GCS::send_named_int(const char *name, int32_t value) const
+{
+    mavlink_named_value_int_t packet {};
+    packet.time_boot_ms = AP_HAL::millis();
+    packet.value = value;
+    memcpy(packet.name, name, MIN(strlen(name), (uint8_t)MAVLINK_MSG_NAMED_VALUE_INT_FIELD_NAME_LEN));
+
+    gcs().send_to_active_channels(MAVLINK_MSG_ID_NAMED_VALUE_INT,
+                                  (const char *)&packet);
+}
+
 /*
   install an alternative protocol handler. This allows another
   protocol to take over the link if MAVLink goes idle. It is used to
