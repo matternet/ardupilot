@@ -1,0 +1,50 @@
+# model of M2 quad
+
+{
+    # total vehicle mass
+    "mass" : 13.2,
+
+    # vehicle diameter
+    "diagonal_size" : 1.13,
+
+    # the ref parameters should be taken from a test
+    # with the copter flying at constant speed in zero wind. This is used
+    # to estimate the drag coefficient
+    "refSpd" : 18.0,
+    "refAngle" : 26,
+    "refVoltage" : 46.0,
+    "refCurrent" : 34.0,
+    "refAlt" : 185,
+    "refTempC" : 25,
+    "refBatRes" : 0.06,
+
+    # full battery voltage
+    "maxVoltage" : 50.4,
+
+    # full battery capacity, Ah
+    "battCapacityAh" : 13.0,
+
+    # MOT_THST_EXPO
+    "propExpo" : 0.8,
+
+    # approximage maximum yaw rate in deg/sec
+    "refRotRate" : 120,
+
+    # hover throttle from 0 to 1
+    "hoverThrOut" : 0.16,
+
+    # MOT_PWM_MIN
+    "pwmMin" : 1060,
+
+    # MOT_PWM_MAX
+    "pwmMax" : 1940,
+
+    # MOT_SPIN_MIN
+    "spin_min" : 0.15,
+
+    # MOT_SPIN_MAX
+    "spin_max" : 1.0,
+
+    # maximum motor slew rate, or zero to disable
+    "slew_max" : 150
+}

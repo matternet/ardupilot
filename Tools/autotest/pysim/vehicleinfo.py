@@ -8,7 +8,7 @@ class VehicleInfo(object):
         """
         self.options = {
     "ArduCopter": {
-        "default_frame": "quad",
+        "default_frame": "X",
         "frames": {
             # COPTER
             "+": {
@@ -22,7 +22,8 @@ class VehicleInfo(object):
             },
             "X": {
                 "waf_target": "bin/arducopter",
-                "default_params_filename": "default_params/copter.parm",
+                "default_params_filename": [ "default_params/copter.parm",
+                                             "default_params/M2.parm" ],
                 # this param set FRAME doesn't actually work because mavproxy
                 # won't set a parameter unless it knows of it, and the
                 # param fetch happens asynchronously
