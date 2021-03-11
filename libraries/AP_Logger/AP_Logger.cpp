@@ -9,6 +9,7 @@
 
 #include <AP_InternalError/AP_InternalError.h>
 #include <GCS_MAVLink/GCS.h>
+#include <AP_Notify/AP_Notify.h>
 
 AP_Logger *AP_Logger::_singleton;
 
@@ -1169,6 +1170,11 @@ bool AP_Logger::log_while_disarmed(void) const
         return true;
     }
     if (_params.log_disarmed != 0) {
+        return true;
+    }
+
+    // Keep logging if compass calibration is running even if it fails
+    if (AP_Notify::flags.compass_cal_running) {
         return true;
     }
 
