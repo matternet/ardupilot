@@ -980,6 +980,11 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.content.winch.release_rate = packet.param4; // release rate in meters/second
         break;
 
+    case MAV_CMD_USER_1 ... MAV_CMD_USER_5:
+        cmd.content.user_command.param1 = packet.param1;
+        cmd.content.user_command.param2 = packet.param2;
+        break;
+        
     default:
         // unrecognised command
         return MAV_MISSION_UNSUPPORTED;
@@ -1410,6 +1415,11 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         packet.param2 = cmd.content.winch.action;           // action (0 = relax, 1 = length control, 2 = rate control).  See WINCH_ACTION enum
         packet.param3 = cmd.content.winch.release_length;   // cable distance to unwind in meters, negative numbers to wind in cable
         packet.param4 = cmd.content.winch.release_rate;     // release rate in meters/second
+        break;
+
+    case MAV_CMD_USER_1 ... MAV_CMD_USER_5:
+        packet.param1 = cmd.content.user_command.param1;
+        packet.param2 = cmd.content.user_command.param2;
         break;
 
     default:
@@ -1952,6 +1962,8 @@ const char *AP_Mission::Mission_Command::type() const {
         return "PayloadPlace";
     case MAV_CMD_DO_PARACHUTE:
         return "Parachute";
+    case MAV_CMD_USER_1:
+        return "USER";
 
     default:
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
