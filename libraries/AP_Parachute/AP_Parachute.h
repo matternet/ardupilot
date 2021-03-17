@@ -107,4 +107,7 @@ private:
     void send_debug_message(uint32_t tnow_ms, uint8_t ind, float value);
     void mttr_fts_transmit(uint8_t msg_len, uint8_t* msg_buf);
     void mttr_fts_update();
+
+    // time of last GPS primary report
+    uint32_t last_gps_primary_ms;
 };
