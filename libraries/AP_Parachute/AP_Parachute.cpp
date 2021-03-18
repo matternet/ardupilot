@@ -140,13 +140,6 @@ void AP_Parachute::update()
     if (_release_type == AP_PARACHUTE_TRIGGER_TYPE_MATTERNET_FTS) {
         mttr_fts_update();
     }
-
-    uint32_t now = AP_HAL::millis();
-    if (now - last_parachute_state_ms > 1000) {
-        // tell the GCS which GPS is primary
-        last_parachute_state_ms = now;
-        gcs().send_named_int("PARACHUTE", _release_in_progress);
-    }
 }
 
 void AP_Parachute::mttr_fts_transmit(uint8_t msg_len, uint8_t* msg_buf)
