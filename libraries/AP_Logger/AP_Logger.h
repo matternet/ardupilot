@@ -488,6 +488,9 @@ private:
         SENDING, // actively sending log_sending packets
     } transfer_activity = IDLE;
 
+    // last time we handled a log-transfer-over-mavlink message:
+    uint32_t _last_mavlink_log_transfer_message_handled_ms;
+
     // next log list entry to send
     uint16_t _log_next_list_entry;
 
