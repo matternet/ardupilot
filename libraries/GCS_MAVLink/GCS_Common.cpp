@@ -50,7 +50,6 @@ uint32_t GCS_MAVLINK::last_radio_status_remrssi_ms;
 uint8_t GCS_MAVLINK::mavlink_active = 0;
 uint8_t GCS_MAVLINK::chan_is_streaming = 0;
 uint32_t GCS_MAVLINK::reserve_param_space_start_ms;
-std::string GCS_MAVLINK::flight_plan_load_tune = "MFT220 ML O3ef O4c";
 
 GCS *GCS::_singleton = nullptr;
 
@@ -779,12 +778,10 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
         // XXX ignores waypoint radius for individual waypoints, can
         // only set WP_RADIUS parameter
 
-        // Play tune to notify pilot that flight plan was received and loaded
-        // IFF disarmed to prevent tune from playing when partial waypoint
-        // update occurs while armed and in flight
-        if (!hal.util->get_soft_armed())  {
-            AP_ToneAlarm::play_string(flight_plan_load_tune.c_str());
-        }
+        // Play tune to notify pilot that flight plan was received and loaded.
+        // play_tone(), called by play_flight_plan_load_tune(),
+        // prevents playing if armed
+        AP_ToneAlarm::play_flight_plan_load_tune();
     } else {
         waypoint_timelast_request = AP_HAL::millis();
         // if we have enough space, then send the next WP immediately

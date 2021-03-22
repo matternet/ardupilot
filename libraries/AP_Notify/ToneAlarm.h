@@ -35,6 +35,8 @@ public:
     // handle a PLAY_TUNE message
     void handle_play_tune(mavlink_message_t *msg);
 
+    void play_flight_plan_load_tune();
+
 private:
     /// play_tune - play one of the pre-defined tunes
     void play_tone(const uint8_t tone_index);
