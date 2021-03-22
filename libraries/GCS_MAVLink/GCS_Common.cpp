@@ -23,7 +23,6 @@
 #include <AP_Gripper/AP_Gripper.h>
 #include <AP_BLHeli/AP_BLHeli.h>
 #include <AP_Parachute/AP_Parachute.h>
-#include <AP_Notify/ToneAlarm.h>
 
 #include "GCS.h"
 
