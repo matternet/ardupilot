@@ -362,6 +362,16 @@ void AP_Notify::handle_play_tune(mavlink_message_t *msg)
     }
 }
 
+// Have notify device play flight plan load tune
+void AP_Notify::play_flight_plan_load_tune()
+{
+    for (uint8_t i = 0; i < _num_devices; i++) {
+        if (_devices[i] != nullptr) {
+            _devices[i]->play_flight_plan_load_tune();
+        }
+    }
+}
+
 // set flight mode string
 void AP_Notify::set_flight_mode_str(const char *str)
 {
