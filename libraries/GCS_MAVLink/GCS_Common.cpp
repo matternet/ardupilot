@@ -24,6 +24,7 @@
 #include <AP_BLHeli/AP_BLHeli.h>
 #include <AP_Parachute/AP_Parachute.h>
 
+#include "ToneAlarm.h"
 #include "GCS.h"
 
 #include <stdio.h>
