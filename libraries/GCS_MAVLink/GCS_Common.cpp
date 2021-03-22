@@ -783,7 +783,7 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
         // IFF disarmed to prevent tune from playing when partial waypoint
         // update occurs while armed and in flight
         if (!hal.util->get_soft_armed())  {
-            play_string(flight_plan_load_tune.c_str());
+            AP_ToneAlarm::play_string(flight_plan_load_tune.c_str());
         }
     } else {
         waypoint_timelast_request = AP_HAL::millis();
