@@ -776,6 +776,9 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
         mission_is_complete = true;
         // XXX ignores waypoint radius for individual waypoints, can
         // only set WP_RADIUS parameter
+        // Play tune to notify pilot that flight plan was received and loaded
+        std::string tune = "MFT220 ML O3ef O4c";
+        play_string(tune.c_str());
     } else {
         waypoint_timelast_request = AP_HAL::millis();
         // if we have enough space, then send the next WP immediately
