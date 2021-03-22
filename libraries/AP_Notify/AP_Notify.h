@@ -139,6 +139,7 @@ public:
     // handle a PLAY_TUNE message
     static void handle_play_tune(mavlink_message_t* msg);
 
+    // play tune upon flight plan load
     static void play_flight_plan_load_tune();
 
     bool buzzer_enabled() const { return _buzzer_enable; }

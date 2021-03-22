@@ -164,11 +164,6 @@ void AP_ToneAlarm::_timer_task()
     }
 }
 
-void AP_ToneAlarm::play_flight_plan_load_tune()
-{
-    play_tone(AP_NOTIFY_TONE_FLIGHT_PLAN_LOAD);
-}
-
 void AP_ToneAlarm::play_string(const char *str)
 {
     if (_sem && _sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
@@ -438,4 +433,12 @@ void AP_ToneAlarm::handle_play_tune(mavlink_message_t *msg)
         _mml_player.play(_tone_buf);
         _sem->give();
     }
+}
+
+/*
+ * Play pre-defined AP_NOTIFY_TONE_FLIGHT_PLAN_LOAD tone from _tones
+ */
+void AP_ToneAlarm::play_flight_plan_load_tune()
+{
+    play_tone(AP_NOTIFY_TONE_FLIGHT_PLAN_LOAD);
 }
