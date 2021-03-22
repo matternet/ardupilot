@@ -781,7 +781,10 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
         // Play tune to notify pilot that flight plan was received and loaded.
         // play_tone(), called by play_flight_plan_load_tune(),
         // prevents playing if armed
-        AP_ToneAlarm::play_flight_plan_load_tune();
+        AP_Notify *notify = AP_Notify::instance();
+        if (notify) {
+            notify->play_flight_plan_load_tune(text);
+        }
     } else {
         waypoint_timelast_request = AP_HAL::millis();
         // if we have enough space, then send the next WP immediately
