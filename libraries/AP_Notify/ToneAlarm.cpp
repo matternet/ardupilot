@@ -95,7 +95,6 @@ const AP_ToneAlarm::Tone AP_ToneAlarm::_tones[] {
     { "MNBGG", false },
 #define AP_NOTIFY_TONE_FLIGHT_PLAN_LOAD 31
     { "MFT220 ML O3ef O4c", true },
-"}
 };
 
 bool AP_ToneAlarm::init()
