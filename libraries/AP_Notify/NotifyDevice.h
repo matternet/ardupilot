@@ -19,6 +19,9 @@ public:
 
     // handle a PLAY_TUNE message, by default device ignore message
     virtual void handle_play_tune(mavlink_message_t *msg) {}
+
+    // play tune upon flight plan load
+    virtual void play_flight_plan_load_tune() {} 
     
     // this pointer is used to read the parameters relative to devices
     const AP_Notify *pNotify;

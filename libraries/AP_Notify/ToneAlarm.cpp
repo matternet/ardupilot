@@ -93,6 +93,8 @@ const AP_ToneAlarm::Tone AP_ToneAlarm::_tones[] {
     { "MFMST200L64O4ceceP32ceceP8df#df#P32df#df#P8L16gf#g>c", false },
 #define AP_NOTIFY_TONE_NO_SDCARD 30
     { "MNBGG", false },
+#define AP_NOTIFY_TONE_FLIGHT_PLAN_LOAD 31
+    { "MFT220 ML O3ef O4c", false },
 };
 
 bool AP_ToneAlarm::init()
@@ -431,4 +433,12 @@ void AP_ToneAlarm::handle_play_tune(mavlink_message_t *msg)
         _mml_player.play(_tone_buf);
         _sem->give();
     }
+}
+
+/*
+ * Play pre-defined AP_NOTIFY_TONE_FLIGHT_PLAN_LOAD tone from _tones
+ */
+void AP_ToneAlarm::play_flight_plan_load_tune()
+{
+    play_tone(AP_NOTIFY_TONE_FLIGHT_PLAN_LOAD);
 }
