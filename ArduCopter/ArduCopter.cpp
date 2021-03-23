@@ -459,6 +459,10 @@ void Copter::one_hz_loop()
     // indicates that the sensor or subsystem is present but not
     // functioning correctly
     update_sensor_status_flags();
+
+    if (copter.g2.dev_options.get() & DevOption_ParachuteMsg) {
+        gcs().send_named_int("PARACHUTE", int(parachute.released()));
+    }
 }
 
 // called at 50hz
