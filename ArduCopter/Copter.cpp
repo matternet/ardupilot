@@ -471,6 +471,10 @@ void Copter::one_hz_loop()
 #endif
 
     AP_Notify::flags.flying = !ap.land_complete;
+
+    if (copter.g2.dev_options.get() & DevOption_ParachuteMsg) {
+        gcs().send_named_int("PARACHUTE", int(parachute.released()));
+    }
 }
 
 // called at 50hz
