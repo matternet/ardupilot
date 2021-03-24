@@ -137,7 +137,10 @@ void AP_Compass_SITL::_timer()
             f *= _sitl->mag_scaling;
         }
         
-        accumulate_sample(f, _compass_instance[i], 10);
+
+        if (((1U<<i) & unsigned(_sitl->mag_failmask.get())) == 0) {
+            accumulate_sample(f, _compass_instance[i], 10);
+        }
     }
 }
 
