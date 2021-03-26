@@ -215,6 +215,7 @@ const AP_Param::GroupInfo SITL::var_info3[] = {
     AP_GROUPINFO("MAG6_DEVID",    8, SITL,  mag_devid[5], 98051),
     AP_GROUPINFO("MAG7_DEVID",    9, SITL,  mag_devid[6], 0),
     AP_GROUPINFO("MAG8_DEVID",    10, SITL, mag_devid[7], 0),
+    AP_GROUPINFO("MAG_FAILMASK",  11, SITL, mag_failmask, 0),
     AP_GROUPEND
 
 };

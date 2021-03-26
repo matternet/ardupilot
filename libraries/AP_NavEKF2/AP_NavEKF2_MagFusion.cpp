@@ -148,6 +148,7 @@ void NavEKF2_core::controlMagYawReset()
                 // send in-flight yaw alignment status to console
                 if (finalResetRequest) {
                     gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u in-flight yaw alignment complete",(unsigned)imu_index);
+                    pending_z_mag_correction = true;
                 } else if (interimResetRequest) {
                     gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u ground mag anomaly, yaw re-aligned",(unsigned)imu_index);
                 }
@@ -236,8 +237,17 @@ void NavEKF2_core::SelectMagFusion()
     // used for load levelling
     magFusePerformed = false;
 
-    // check for and read new magnetometer measurements
-    readMagData();
+    // Handle case where we are not using a yaw sensor of any type and and attempt to reset the yaw in
+    // flight using the output from the GSF yaw estimator.
+    if (!use_compass() && tiltAlignComplete) {
+        if ((onGround || !assume_zero_sideslip()) && (imuSampleTime_ms - lastYawTime_ms > 140)) {
+            fuseEulerYaw();
+        }
+        if (yawAlignComplete) {
+            return;
+        }
+        return;
+    }
 
     // If we are using the compass and the magnetometer has been unhealthy for too long we declare a timeout
     if (magHealth) {
@@ -246,6 +256,9 @@ void NavEKF2_core::SelectMagFusion()
     } else if ((imuSampleTime_ms - lastHealthyMagTime_ms) > frontend->magFailTimeLimit_ms && use_compass()) {
         magTimeout = true;
     }
+
+    // check for and read new magnetometer measurements
+    readMagData();
 
     // check for availability of magnetometer data to fuse
     magDataToFuse = storedMag.recall(magDataDelayed,imuDataDelayed.time_ms);
@@ -387,6 +400,17 @@ void NavEKF2_core::FuseMagnetometer()
         MagPred[0] = DCM[0][0]*magN + DCM[0][1]*magE  + DCM[0][2]*magD + magXbias;
         MagPred[1] = DCM[1][0]*magN + DCM[1][1]*magE  + DCM[1][2]*magD + magYbias;
         MagPred[2] = DCM[2][0]*magN + DCM[2][1]*magE  + DCM[2][2]*magD + magZbias;
+
+        if (pending_z_mag_correction && frontend->_mag_learn_limit > 0) {
+            pending_z_mag_correction = false;
+            float correction = magDataDelayed.mag[2] - MagPred[2];
+            const float correction_limit_ga = frontend->_mag_learn_limit*0.001*3;
+            correction = constrain_float(correction,
+                                         -correction_limit_ga, correction_limit_ga);
+            stateStruct.body_magfield[2] += correction;
+            gcs().send_text(MAV_SEVERITY_INFO, "EKF2 IMU%u magZ correction %.0f",(unsigned)imu_index, correction*1000);
+            MagPred[2] += correction;
+        }
 
         // calculate the measurement innovation for each axis
         for (uint8_t i = 0; i<=2; i++) {

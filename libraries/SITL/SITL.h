@@ -149,6 +149,7 @@ public:
     AP_Vector3f mag_diag;  // diagonal corrections
     AP_Vector3f mag_offdiag;  // off-diagonal corrections
     AP_Int8 mag_orient;   // external compass orientation
+    AP_Int8 mag_failmask; // mask of failed compasses
     AP_Float servo_speed; // servo speed in seconds
 
     AP_Float sonar_glitch;// probablility between 0-1 that any given sonar sample will read as max distance
