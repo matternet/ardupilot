@@ -774,6 +774,12 @@ bool GCS_MAVLINK::handle_mission_item(mavlink_message_t *msg, AP_Mission &missio
         send_text(MAV_SEVERITY_INFO,"Flight plan received");
         waypoint_receiving = false;
         mission_is_complete = true;
+
+        if (!hal.util->get_soft_armed()) {
+            // play a tune to signify completion of wp upload
+            AP::notify().play_tune("MFT220 ML O3ef O4c");
+        }
+
         // XXX ignores waypoint radius for individual waypoints, can
         // only set WP_RADIUS parameter
     } else {
