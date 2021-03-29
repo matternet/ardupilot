@@ -274,7 +274,7 @@ void Copter::failsafe_terrain_on_event()
         gcs().send_text(MAV_SEVERITY_CRITICAL,"Failsafe: Terrain data missing. Restarting RTL without terrain");
 #endif
     } else {
-        set_mode_land_with_pause(MODE_REASON_TERRAIN_FAILSAFE);
+        set_mode_land_with_pause(ModeReason::TERRAIN_FAILSAFE);
         gcs().send_text(MAV_SEVERITY_CRITICAL,"Failsafe: Terrain data missing. Setting flight mode to LAND");
     }
 }
