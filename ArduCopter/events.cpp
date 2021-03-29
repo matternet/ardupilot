@@ -263,17 +263,19 @@ void Copter::failsafe_terrain_set_status(bool data_ok)
 void Copter::failsafe_terrain_on_event()
 {
     failsafe.terrain = true;
-    gcs().send_text(MAV_SEVERITY_CRITICAL,"Failsafe: Terrain data missing");
     AP::logger().Write_Error(LogErrorSubsystem::FAILSAFE_TERRAIN, LogErrorCode::FAILSAFE_OCCURRED);
 
     if (should_disarm_on_failsafe()) {
         arming.disarm();
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"Failsafe: Terrain data missing. Disarming motors");
 #if MODE_RTL_ENABLED == ENABLED
     } else if (control_mode == Mode::Number::RTL) {
         mode_rtl.restart_without_terrain();
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"Failsafe: Terrain data missing. Restarting RTL without terrain");
 #endif
     } else {
-        set_mode_RTL_or_land_with_pause(ModeReason::TERRAIN_FAILSAFE);
+        set_mode_land_with_pause(ModeReason::TERRAIN_FAILSAFE);
+        gcs().send_text(MAV_SEVERITY_CRITICAL,"Failsafe: Terrain data missing. Setting flight mode to LAND");
     }
 }
 
