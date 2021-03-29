@@ -23,6 +23,8 @@
 
 #include "GCS.h"
 
+extern const AP_HAL::HAL& hal;
+
 MAV_MISSION_RESULT MissionItemProtocol_Waypoints::append_item(const mavlink_mission_item_int_t &mission_item_int)
 {
     // sanity check for DO_JUMP command
@@ -54,6 +56,12 @@ MAV_MISSION_RESULT MissionItemProtocol_Waypoints::complete(const GCS_MAVLINK &_l
 {
     _link.send_text(MAV_SEVERITY_INFO, "Flight plan received");
     AP::logger().Write_EntireMission();
+
+    if (!hal.util->get_soft_armed()) {
+        // play a tune to signify completion of wp upload
+        AP::notify().play_tune("MFT220 ML O3ef O4c");
+    }
+
     return MAV_MISSION_ACCEPTED;
 }
 
