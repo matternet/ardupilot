@@ -756,7 +756,7 @@ void AP_GPS::update(void)
             } else {
                 // handle switch between real GPSs
                 for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
-                    if (i == primary_instance) {
+                    if (i == primary_instance || drivers[i] == nullptr) {
                         continue;
                     }
                     
@@ -779,7 +779,11 @@ void AP_GPS::update(void)
                     }
 
                     // Treat U-blox F9 as SBAS if it has more than or equal to 16 satellites, as it is dual band GPS and is more accurate than M8 with SBAS
-                    if (status_primary == GPS_OK_FIX_3D && state[primary_instance].num_sats >= 16 && strcmp(drivers[primary_instance]->name(), "u-blox") == 0 && drivers[primary_instance]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9) {
+                    if (status_primary == GPS_OK_FIX_3D &&
+                        drivers[primary_instance] != nullptr &&
+                        state[primary_instance].num_sats >= 16 &&
+                        strcmp(drivers[primary_instance]->name(), "u-blox") == 0 &&
+                        drivers[primary_instance]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9) {
                         status_primary = GPS_OK_FIX_3D_DGPS;
                     }
 
