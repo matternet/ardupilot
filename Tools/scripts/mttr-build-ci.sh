@@ -28,4 +28,6 @@ echo $PATH
 
 mv build/MttrCubeBlack/bin/arducopter.apj "/tmp/deploy_files/copter-MttrCubeBlack.apj"
 mv build/MttrCubeOrange/bin/arducopter.apj "/tmp/deploy_files/copter-MttrCubeOrange.apj"
+mv build/MttrCubeBlack/bin/arducopter "/tmp/deploy_files/copter-MttrCubeBlack.elf"
+mv build/MttrCubeOrange/bin/arducopter "/tmp/deploy_files/copter-MttrCubeOrange.elf"
 mv build/sitl/bin/arducopter "/tmp/deploy_files/sitl.elf"
