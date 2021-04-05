@@ -28,7 +28,7 @@ class ComplementaryFilter
 {
 public:
     void set_cutoff_frequency(float freq_hz);
-    void reset(float low_freq, float high_freq);
+    void reset();
     float apply(float low_freq, float high_freq, uint32_t time_us);
     float get(void);
 

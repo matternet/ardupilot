@@ -33,11 +33,10 @@ void ComplementaryFilter::set_cutoff_frequency(float freq_hz)
 /*
   reset the filter to initial values
  */
-void ComplementaryFilter::reset(float low_freq, float high_freq)
+void ComplementaryFilter::reset()
 {
-    lp.reset(low_freq, params);
-    hp.reset(high_freq, params);
-    out = low_freq;
+    lp.reset();
+    hp.reset();
 }
 
 /*
@@ -50,15 +49,15 @@ void ComplementaryFilter::reset(float low_freq, float high_freq)
 float ComplementaryFilter::apply(float low_freq, float high_freq, uint32_t time_us)
 {
     if (!is_positive(cutoff_freq)) {
-        reset(low_freq, high_freq);
-        return out;
+        reset();
+        return low_freq;
     }
     const uint32_t dt_us = time_us - last_sample_us;
 
     if (dt_us > 1e6) {
         // if we have not updated for 1s then assume we've had a
         // sensor outage and reset
-        reset(low_freq, high_freq);
+        reset();
     }
     last_sample_us = time_us;
 
