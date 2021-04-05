@@ -76,6 +76,13 @@ void Copter::read_rangefinder(void)
     const float alt_filter_slew_alpha = 0.98;
     rangefinder_state.filter_hz = rangefinder_state.filter_hz * alt_filter_slew_alpha + target_filter_hz * (1-alt_filter_slew_alpha);
 
+    if (target_filter_hz > rangefinder_state.filter_hz) {
+        // when raising target freq we use a reset to prevent a numerical error in the complementary filter
+        rangefinder_state.filter_hz = target_filter_hz;
+        rangefinder_state.alt_cm_filt.set_cutoff_frequency(rangefinder_state.filter_hz);
+        rangefinder_state.alt_cm_filt.reset();
+    }
+
     // apply complementary filter
     rangefinder_state.alt_cm_filt.set_cutoff_frequency(rangefinder_state.filter_hz);
     float rangefinder_alt_flt = rangefinder_state.alt_cm_filt.apply(rangefinder_alt_meas, inertial_nav.get_altitude(), AP_HAL::micros());
