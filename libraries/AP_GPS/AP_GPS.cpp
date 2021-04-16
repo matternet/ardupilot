@@ -942,6 +942,7 @@ void AP_GPS::update_primary(void)
                 ((state[i].status == state[primary_instance].status) && (state[i].num_sats > state[primary_instance].num_sats))) {
                 primary_instance = i;
                 _last_instance_swap_ms = now;
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched from Blended to %u", primary_instance+1);
             }
         }
         return;
@@ -953,13 +954,14 @@ void AP_GPS::update_primary(void)
             continue;
         }
 
-        // if primary is not a F9 and altternative is a F9 with 3D fix then use the F9
+        // if primary is not a F9 and alternative is a F9 with 3D fix then use the F9
         if (state[i].status >= GPS_OK_FIX_3D &&
             strcmp(drivers[i]->name(), "u-blox") == 0 && drivers[i]->hardware_generation() == AP_GPS_UBLOX::UBLOX_F9 &&
             drivers[primary_instance] != nullptr &&
             strcmp(drivers[primary_instance]->name(), "u-blox") == 0 && drivers[primary_instance]->hardware_generation() != AP_GPS_UBLOX::UBLOX_F9) {
             primary_instance = i;
             _last_instance_swap_ms = now;
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
             continue;
         }
 
@@ -977,6 +979,7 @@ void AP_GPS::update_primary(void)
             // we have a higher status lock, or primary is set to the blended GPS, change GPS
             primary_instance = i;
             _last_instance_swap_ms = now;
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
             continue;
         }
 
@@ -995,6 +998,7 @@ void AP_GPS::update_primary(void)
                 // position shift to the controllers.
                 primary_instance = i;
                 _last_instance_swap_ms = now;
+                gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
             }
         }
     }
