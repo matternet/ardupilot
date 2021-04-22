@@ -3455,13 +3455,32 @@ MAV_RESULT GCS_MAVLINK::_handle_command_preflight_calibration(const mavlink_comm
     }
 
     if (is_equal(packet.param5,1.0f)) {
+        auto &ins = AP::ins();
+
+#if HAL_HAVE_IMU_HEATER
+        /*
+          don't allow accelcal if temperature is more than 5C below target
+         */
+        const float margin_C = 5.0;
+        const float imu_temp = ins.get_temperature(0);
+        auto *boardConfig = AP::boardConfig();
+        if (boardConfig != nullptr) {
+            const float target_temp = boardConfig->get_imu_target_temp();
+            if (imu_temp < target_temp - margin_C) {
+                gcs().send_text(MAV_SEVERITY_ERROR, "Too cold for IMU cal %.1f degC", imu_temp);
+                return MAV_RESULT_FAILED;
+            }
+        }
+#endif
+
         // start with gyro calibration
         if (!calibrate_gyros()) {
             return MAV_RESULT_FAILED;
         }
+
         // start accel cal
-        AP::ins().acal_init();
-        AP::ins().get_acal()->start(this);
+        ins.acal_init();
+        ins.get_acal()->start(this);
         return MAV_RESULT_ACCEPTED;
     }
 
