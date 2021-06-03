@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <utility>
 #include <AP_HAL/I2CDevice.h>
+#include <AP_Logger/AP_Logger.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -150,6 +151,16 @@ void AP_IRLock_I2C::read_frames(void)
                (corner2_pos_x-corner1_pos_x), (corner2_pos_y-corner1_pos_y));
     }
 #endif
+
+    // log raw frame to PLXY log message
+    AP::logger().Write("PLXY", "TimeUS,Sig,PX,PY,PSx,PSy", "Qhhhhh",
+                       AP_HAL::micros64(),
+                       irframe.signature,
+                       irframe.pixel_x,
+                       irframe.pixel_y,
+                       irframe.pixel_size_x,
+                       irframe.pixel_size_y);
+
 }
 
 // retrieve latest sensor data - returns true if new data is available
