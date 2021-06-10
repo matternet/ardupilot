@@ -17,6 +17,11 @@ T DigitalBiquadFilter<T>::apply(const T &sample, const struct biquad_params &par
         return sample;
     }
 
+    if (!initialised) {
+        reset(sample, params);
+        initialised = true;
+    }
+
     T delay_element_0 = sample - _delay_element_1 * params.a1 - _delay_element_2 * params.a2;
     T output = delay_element_0 * params.b0 + _delay_element_1 * params.b1 + _delay_element_2 * params.b2;
 
@@ -29,6 +34,13 @@ T DigitalBiquadFilter<T>::apply(const T &sample, const struct biquad_params &par
 template <class T>
 void DigitalBiquadFilter<T>::reset() { 
     _delay_element_1 = _delay_element_2 = T();
+    initialised = false;
+}
+
+template <class T>
+void DigitalBiquadFilter<T>::reset(const T &value, const struct biquad_params &params) {
+    _delay_element_1 = _delay_element_2 = value * (1.0 / (1 + params.a1 + params.a2));
+    initialised = true;
 }
 
 template <class T>
@@ -99,6 +111,11 @@ void LowPassFilter2p<T>::reset(void) {
     return _filter.reset();
 }
 
+template <class T>
+void LowPassFilter2p<T>::reset(const T &value) {
+    return _filter.reset(value, _params);
+}
+
 /* 
  * Make an instances
  * Otherwise we have to move the constructor implementations to the header file :P
@@ -108,3 +125,4 @@ template class LowPassFilter2p<long>;
 template class LowPassFilter2p<float>;
 template class LowPassFilter2p<Vector2f>;
 template class LowPassFilter2p<Vector3f>;
+template class DigitalBiquadFilter<float>;

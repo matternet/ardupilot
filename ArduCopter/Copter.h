@@ -49,6 +49,7 @@
 #include <AP_Motors/AP_Motors.h>          // AP Motors library
 #include <AP_Stats/AP_Stats.h>     // statistics library
 #include <Filter/Filter.h>             // Filter library
+#include <Filter/ComplementaryFilter.h>
 #include <AP_Airspeed/AP_Airspeed.h>        // needed for AHRS build
 #include <AP_Vehicle/AP_Vehicle.h>         // needed for AHRS build
 #include <AP_InertialNav/AP_InertialNav.h>     // ArduPilot Mega inertial navigation library
@@ -281,7 +282,8 @@ private:
         int16_t alt_cm;     // tilt compensated altitude (in cm) from rangefinder
         float inertial_alt_cm; // inertial alt at time of last rangefinder sample
         uint32_t last_healthy_ms;
-        LowPassFilterFloat alt_cm_filt; // altitude filter
+        ComplementaryFilter alt_cm_filt; // altitude filter
+        float filter_hz;
         int16_t alt_cm_glitch_protected;    // last glitch protected altitude
         int8_t glitch_count;    // non-zero number indicates rangefinder is glitching
         uint32_t glitch_cleared_ms; // system time glitch cleared
