@@ -658,6 +658,15 @@ AP_RangeFinder_Backend *RangeFinder::find_instance(enum Rotation orientation) co
     return nullptr;
 }
 
+uint16_t RangeFinder::snr(enum Rotation orientation) const
+{
+    AP_RangeFinder_Backend *backend = find_instance(orientation);
+    if (backend == nullptr) {
+        return 0;
+    }
+    return backend->snr();
+}
+
 uint16_t RangeFinder::distance_cm_orient(enum Rotation orientation) const
 {
     AP_RangeFinder_Backend *backend = find_instance(orientation);
@@ -762,6 +771,7 @@ void RangeFinder::Log_RFND()
                 time_us      : AP_HAL::micros64(),
                 instance     : i,
                 dist         : s->distance_cm(),
+                snr          : s->snr(),
                 status       : (uint8_t)s->status(),
                 orient       : s->orientation(),
         };

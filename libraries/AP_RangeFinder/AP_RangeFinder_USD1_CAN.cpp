@@ -21,6 +21,7 @@ void AP_RangeFinder_USD1_CAN::update(void)
         set_status(RangeFinder::Status::NoData);
     } else if (new_data) {
         state.distance_cm = _distance_cm;
+        state.snr = _snr;
         state.last_reading_ms = _last_reading_ms;
         update_status();
         new_data = false;
@@ -32,6 +33,7 @@ void AP_RangeFinder_USD1_CAN::handle_frame(AP_HAL::CANFrame &frame)
 {
     WITH_SEMAPHORE(_sem);
     _distance_cm = (frame.data[0]<<8) | frame.data[1];
+    _snr = (frame.data[2]<<8) | frame.data[3];
     _last_reading_ms = AP_HAL::millis();
     new_data = true;
 }
