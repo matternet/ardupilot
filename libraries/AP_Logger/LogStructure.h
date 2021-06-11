@@ -828,6 +828,7 @@ struct PACKED log_RFND {
     uint64_t time_us;
     uint8_t instance;
     uint16_t dist;
+    uint16_t snr;
     uint8_t status;
     uint8_t orient;
 };

@@ -149,6 +149,7 @@ bool AP_RangeFinder_uLanding::get_reading(uint16_t &reading_cm)
 
     // read any available lines from the uLanding
     float sum = 0;
+    uint16_t sum2 = 0;
     uint16_t count = 0;
     bool hdr_found = false;
 
@@ -182,6 +183,7 @@ bool AP_RangeFinder_uLanding::get_reading(uint16_t &reading_cm)
                     if (((_linebuf[1] + _linebuf[2] + _linebuf[3] + _linebuf[4]) & 0xFF) == _linebuf[5]) {
                         // if checksum passed, parse data for Firmware Version #1
                         sum += _linebuf[3]*256 + _linebuf[2];
+                        sum2 += _linebuf[4];
                         count++;
                     }
                 }
@@ -197,6 +199,7 @@ bool AP_RangeFinder_uLanding::get_reading(uint16_t &reading_cm)
     }
 
     reading_cm = sum / count;
+    this->snr(sum2/count);
 
     if (_version == 0 && _header != ULANDING_HDR) {
         reading_cm *= 2.5f;
