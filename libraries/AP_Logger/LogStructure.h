@@ -1710,6 +1710,7 @@ struct PACKED log_PSC {
 // @Field: TimeUS: Time since system startup
 // @Field: Instance: rangefinder instance number this data is from
 // @Field: Dist: Reported distance from sensor
+// @Field: Snr: Signal-to-noise ratio
 // @Field: Stat: Sensor state
 // @Field: Orient: Sensor orientation
 
@@ -1944,7 +1945,7 @@ struct PACKED log_PSC {
     { LOG_MODE_MSG, sizeof(log_Mode), \
       "MODE", "QMBB",         "TimeUS,Mode,ModeNum,Rsn", "s---", "F---" }, \
     { LOG_RFND_MSG, sizeof(log_RFND), \
-      "RFND", "QBCBB", "TimeUS,Instance,Dist,Stat,Orient", "s#m--", "F-B--" }, \
+      "RFND", "QBCBB", "TimeUS,Instance,Dist,Snr,Stat,Orient", "s#m--", "F-B--" }, \
     { LOG_MAV_STATS, sizeof(log_MAV_Stats), \
       "DMS", "QIIIIBBBBBBBBB",         "TimeUS,N,Dp,RT,RS,Fa,Fmn,Fmx,Pa,Pmn,Pmx,Sa,Smn,Smx", "s-------------", "F-------------" }, \
     { LOG_BEACON_MSG, sizeof(log_Beacon), \
