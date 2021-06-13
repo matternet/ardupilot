@@ -1885,6 +1885,13 @@ void AP_Periph_FW::can_rangefinder_update(void)
     pkt.range = dist_cm * 0.01;
     fix_float16(pkt.range);
 
+    // "field of view" is currently not used.  So for US-D1 radar, we will
+    // overload this field with SNR
+    if (rangefinder.get_type(0) == RangeFinder::Type::ULANDING) {
+        pkt.field_of_view = (float) rangefinder.snr(ROTATION_NONE);
+        fix_float16(pkt.field_of_view);
+    }
+
     uint8_t buffer[UAVCAN_EQUIPMENT_RANGE_SENSOR_MEASUREMENT_MAX_SIZE] {};
     uint16_t total_size = uavcan_equipment_range_sensor_Measurement_encode(&pkt, buffer);
 
