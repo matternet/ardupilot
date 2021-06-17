@@ -109,11 +109,14 @@ void AP_RangeFinder_UAVCAN::update()
     } else if (_status == RangeFinder::RangeFinder_Good && new_data) {
         //copy over states
         state.distance_cm = _distance_cm;
+        state.snr = _snr;
         state.last_reading_ms = _last_reading_ms;
         update_status();
         new_data = false;
     } else if (_status != RangeFinder::RangeFinder_Good) {
         //handle additional states received by measurement handler
+        state.snr = _snr;
+        update_status();
         set_status(_status);
     }
 }
@@ -132,6 +135,7 @@ void AP_RangeFinder_UAVCAN::handle_measurement(AP_UAVCAN* ap_uavcan, uint8_t nod
         {
             //update the states in backend instance
             driver->_distance_cm = cb.msg->range*100.0f;
+            driver->_snr = cb.msg->field_of_view;
             driver->_last_reading_ms = AP_HAL::millis();
             driver->_status = RangeFinder::RangeFinder_Good;
             driver->new_data = true;
@@ -141,12 +145,14 @@ void AP_RangeFinder_UAVCAN::handle_measurement(AP_UAVCAN* ap_uavcan, uint8_t nod
         case uavcan::equipment::range_sensor::Measurement::READING_TYPE_TOO_CLOSE:
         {
             driver->_last_reading_ms = AP_HAL::millis();
+            driver->_snr = cb.msg->field_of_view;
             driver->_status = RangeFinder::RangeFinder_OutOfRangeLow;
             break;
         }
         case uavcan::equipment::range_sensor::Measurement::READING_TYPE_TOO_FAR:
         {
             driver->_last_reading_ms = AP_HAL::millis();
+            driver->_snr = cb.msg->field_of_view;
             driver->_status = RangeFinder::RangeFinder_OutOfRangeHigh;
             break;
         }

@@ -106,7 +106,7 @@ const struct MultiplierStructure log_Multipliers[] = {
   unfortunately these need to be macros because of a limitation of
   named member structure initialisation in g++
  */
-#define LOG_PACKET_HEADER	       uint8_t head1, head2, msgid;
+#define LOG_PACKET_HEADER           uint8_t head1, head2, msgid;
 #define LOG_PACKET_HEADER_INIT(id) head1 : HEAD_BYTE1, head2 : HEAD_BYTE2, msgid : id
 #define LOG_PACKET_HEADER_LEN 3 // bytes required for LOG_PACKET_HEADER
 
@@ -828,6 +828,7 @@ struct PACKED log_RFND {
     uint64_t time_us;
     uint8_t instance;
     uint16_t dist;
+    uint16_t snr;
     uint8_t status;
     uint8_t orient;
 };
@@ -914,26 +915,26 @@ struct PACKED log_GPS_RAWS {
     uint8_t trkStat;
 };
 
-struct PACKED log_GPS_SBF_EVENT {  
-	LOG_PACKET_HEADER; 
-	uint64_t time_us;
-	uint32_t TOW;
-	uint16_t WNc;
-	uint8_t Mode;
-	uint8_t Error;
-	double Latitude;
-	double Longitude;
-	double Height;
-	float Undulation;
-	float Vn;
-	float Ve;
-	float Vu;
-	float COG;
+struct PACKED log_GPS_SBF_EVENT {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint32_t TOW;
+    uint16_t WNc;
+    uint8_t Mode;
+    uint8_t Error;
+    double Latitude;
+    double Longitude;
+    double Height;
+    float Undulation;
+    float Vn;
+    float Ve;
+    float Vu;
+    float COG;
 };
 
 struct PACKED log_Esc {
     LOG_PACKET_HEADER;
-    uint64_t time_us;     
+    uint64_t time_us;
     int32_t rpm;
     uint16_t voltage;
     uint16_t current;
@@ -943,7 +944,7 @@ struct PACKED log_Esc {
 
 struct PACKED log_CSRV {
     LOG_PACKET_HEADER;
-    uint64_t time_us;     
+    uint64_t time_us;
     uint8_t id;
     float position;
     float force;
@@ -953,7 +954,7 @@ struct PACKED log_CSRV {
 
 struct PACKED log_CESC {
     LOG_PACKET_HEADER;
-    uint64_t time_us;     
+    uint64_t time_us;
     uint8_t id;
     uint32_t error_count;
     float voltage;
@@ -1398,14 +1399,14 @@ struct PACKED log_Arm_Disarm {
       "BCL8", CURR_CELL_FMT, CURR_CELL_LABELS, CURR_CELL_UNITS, CURR_CELL_MULTS }, \
     { LOG_CURRENT_CELLS9_MSG, sizeof(log_Current_Cells), \
       "BCL9", CURR_CELL_FMT, CURR_CELL_LABELS, CURR_CELL_UNITS, CURR_CELL_MULTS }, \
-	{ LOG_ATTITUDE_MSG, sizeof(log_Attitude),\
+    { LOG_ATTITUDE_MSG, sizeof(log_Attitude),\
       "ATT", "QccccCCCC", "TimeUS,DesRoll,Roll,DesPitch,Pitch,DesYaw,Yaw,ErrRP,ErrYaw", "sddddhhdh", "FBBBBBBBB" }, \
     { LOG_COMPASS_MSG, sizeof(log_Compass), \
       "MAG", MAG_FMT,    MAG_LABELS, MAG_UNITS, MAG_MULTS }, \
     { LOG_MODE_MSG, sizeof(log_Mode), \
       "MODE", "QMBB",         "TimeUS,Mode,ModeNum,Rsn", "s---", "F---" }, \
     { LOG_RFND_MSG, sizeof(log_RFND), \
-      "RFND", "QBCBB", "TimeUS,Instance,Dist,Stat,Orient", "s#m--", "F-B--" }, \
+      "RFND", "QBCCBB", "TimeUS,Instance,Dist,Snr,Stat,Orient", "s#m---", "F-B---" }, \
     { LOG_MAV_STATS, sizeof(log_MAV_Stats), \
       "DMS", "IIIIIBBBBBBBBB",         "TimeMS,N,Dp,RT,RS,Fa,Fmn,Fmx,Pa,Pmn,Pmx,Sa,Smn,Smx", "s-------------", "C-------------" }, \
     { LOG_BEACON_MSG, sizeof(log_Beacon), \
@@ -1736,7 +1737,7 @@ enum LogMessages : uint8_t {
     LOG_GPS_RAW_MSG,
     LOG_GPS_RAWH_MSG,
     LOG_GPS_RAWS_MSG,
-	LOG_GPS_SBF_EVENT_MSG,
+    LOG_GPS_SBF_EVENT_MSG,
     LOG_ACC1_MSG,
     LOG_ACC2_MSG,
     LOG_ACC3_MSG,

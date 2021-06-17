@@ -97,6 +97,7 @@ public:
     struct RangeFinder_State {
         uint16_t distance_cm;           // distance: in cm
         uint16_t voltage_mv;            // voltage in millivolts, if applicable, otherwise 0
+        uint16_t snr;                   // snr, if applicable, otherwise 0
         enum RangeFinder_Status status; // sensor status
         uint8_t  range_valid_count;     // number of consecutive valid readings (maxes out at 10)
         uint32_t last_reading_ms;       // system time of last successful update from sensor
@@ -153,6 +154,8 @@ public:
 
     // indicate which bit in LOG_BITMASK indicates RFND should be logged
     void set_rfnd_bit(uint32_t log_rfnd_bit) { _log_rfnd_bit = log_rfnd_bit; }
+    
+    uint16_t snr(enum Rotation orientation) const;
 
     /*
       set an externally estimated terrain height. Used to enable power
