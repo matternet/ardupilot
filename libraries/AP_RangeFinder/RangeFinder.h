@@ -97,7 +97,7 @@ public:
     struct RangeFinder_State {
         uint16_t distance_cm;           // distance: in cm
         uint16_t voltage_mv;            // voltage in millivolts, if applicable, otherwise 0
-        uint16_t snr; // snr, if applicable, otherwise 0
+        uint16_t snr;                   // snr, if applicable, otherwise 0
         enum RangeFinder_Status status; // sensor status
         uint8_t  range_valid_count;     // number of consecutive valid readings (maxes out at 10)
         uint32_t last_reading_ms;       // system time of last successful update from sensor
