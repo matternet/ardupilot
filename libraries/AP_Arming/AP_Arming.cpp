@@ -440,13 +440,18 @@ bool AP_Arming::gps_checks(bool report)
             return false;
         }
 
+        if (gps.status() <= AP_GPS::GPS_OK_FIX_3D) {
+            check_failed(ARMING_CHECK_GPS, report, "Waiting for enhanced GPS fix");
+            return false;
+        }
+
         //GPS update rate acceptable
         if (!gps.is_healthy()) {
             check_failed(ARMING_CHECK_GPS, report, "GPS is not healthy");
             return false;
         }
 
-        // check GPSs are within 50m of each other and that blending is healthy
+        // check GPSs are within a configured max displacement of each other and that blending is healthy
         float distance_m;
         if (!gps.all_consistent(distance_m)) {
             check_failed(ARMING_CHECK_GPS, report, "GPS positions differ by %4.1fm",

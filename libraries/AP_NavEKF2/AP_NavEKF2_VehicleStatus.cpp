@@ -198,12 +198,12 @@ void NavEKF2_core::calcGpsGoodToAlign(void)
     }
 
     // fail if not enough sats
-    bool numSatsFail = (gps.num_sats() < 6) && (frontend->_gpsCheck & MASK_GPS_NSATS);
+    bool numSatsFail = (gps.num_sats() < gps.num_sats_arm_min()) && (frontend->_gpsCheck & MASK_GPS_NSATS);
 
     // Report check result as a text string and bitmask
     if (numSatsFail) {
         hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
-                           "GPS numsats %u (needs 6)", gps.num_sats());
+                           "GPS numsats %u (needs %u)", gps.num_sats()), gps.num_sats_arm_min();
         gpsCheckStatus.bad_sats = true;
     } else {
         gpsCheckStatus.bad_sats = false;
