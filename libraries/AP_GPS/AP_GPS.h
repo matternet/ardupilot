@@ -627,7 +627,7 @@ private:
       track change in position and height since arming. Used for
       pre-takeoff check
      */
-    Location _arm_loc[GPS_MAX_RECEIVERS];
+    Location _arm_loc[GPS_MAX_INSTANCES];
 
     // calculate the blend weight.  Returns true if blend could be calculated, false if not
     bool calc_blend_weights(void);
