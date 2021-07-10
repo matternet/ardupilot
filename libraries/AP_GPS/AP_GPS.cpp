@@ -314,7 +314,7 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     // @Range: 6.0 20.0
     // @User: Advanced
     // @RebootRequired: True
-    AP_GROUPINFO("NUM_SATS_ARM_MIN", 63, AP_GPS, _num_sats_arm_min, 16),
+    AP_GROUPINFO("NUM_SATS_MIN", 63, AP_GPS, _num_sats_arm_min, 16),
 
     AP_GROUPEND
 };
