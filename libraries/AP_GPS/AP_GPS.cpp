@@ -305,7 +305,7 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     // @Range: 1.0 50.0
     // @User: Advanced
     // @RebootRequired: True
-    AP_GROUPINFO("MAX_POS_DIFF", 23, AP_GPS, _max_pos_diff, 5.0f),
+    AP_GROUPINFO("MAX_POS_DIFF", 62, AP_GPS, _max_pos_diff, 5.0f),
 
     // @Param: NUM_SATS_ARM_MIN
     // @DisplayName: Minimum Count Of Locked Satellites For Arming
@@ -314,7 +314,7 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     // @Range: 6.0 20.0
     // @User: Advanced
     // @RebootRequired: True
-    AP_GROUPINFO("NUM_SATS_ARM_MIN", 24, AP_GPS, _num_sats_arm_min, 16),
+    AP_GROUPINFO("NUM_SATS_ARM_MIN", 63, AP_GPS, _num_sats_arm_min, 16),
 
     AP_GROUPEND
 };
