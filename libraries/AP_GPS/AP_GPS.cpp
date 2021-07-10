@@ -1789,6 +1789,8 @@ void AP_GPS::calc_blended_state(void)
     }
     timing[GPS_BLENDED_INSTANCE].last_fix_time_ms = (uint32_t)temp_time_1;
     timing[GPS_BLENDED_INSTANCE].last_message_time_ms = (uint32_t)temp_time_2;
+
+    update_position_change(GPS_BLENDED_INSTANCE);
 }
 #endif // GPS_BLENDED_INSTANCE
 
