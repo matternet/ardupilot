@@ -509,7 +509,7 @@ protected:
     AP_Int8 _blend_mask;
     AP_Float _blend_tc;
     AP_Int16 _driver_options;
-    AP_Float _max_pos_diff;
+    AP_Float _pos_diff_max;
     AP_Int8 _num_sats_arm_min;
 
     // GPS_DRV_OPTIONS bits

@@ -298,14 +298,14 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("DRV_OPTIONS", 22, AP_GPS, _driver_options, 0),
 
-    // @Param: MAX_POS_DIFF
+    // @Param: POS_DIFF_MAX
     // @DisplayName: Maximum Position Difference Between GPSs Accepted
     // @Description: Sets the maximum allowed difference in meters allowed in GPS positions before takeoff.
     // @Units: m
     // @Range: 1.0 50.0
     // @User: Advanced
     // @RebootRequired: True
-    AP_GROUPINFO("MAX_POS_DIFF", 62, AP_GPS, _max_pos_diff, 5.0f),
+    AP_GROUPINFO("POS_DIFF_MAX", 62, AP_GPS, _pos_diff_max, 5.0f),
 
     // @Param: NUM_SATS_ARM_MIN
     // @DisplayName: Minimum Count Of Locked Satellites For Arming
@@ -1276,7 +1276,7 @@ bool AP_GPS::all_consistent(float &distance) const
     // calculate distance
     distance = state[0].location.get_distance_NED(state[1].location).length();
     // success if distance is within configured max position difference
-    return (distance < _max_pos_diff);
+    return (distance < _pos_diff_max);
 }
 
 // pre-arm check of GPS blending.  True means healthy or that blending is not being used
