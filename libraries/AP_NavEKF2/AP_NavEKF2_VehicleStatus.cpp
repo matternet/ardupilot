@@ -203,7 +203,7 @@ void NavEKF2_core::calcGpsGoodToAlign(void)
     // Report check result as a text string and bitmask
     if (numSatsFail) {
         hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
-                           "GPS numsats %u (needs %u)", gps.num_sats()), gps.num_sats_arm_min();
+                           "GPS numsats %u (needs %u)", gps.num_sats(), gps.num_sats_arm_min());
         gpsCheckStatus.bad_sats = true;
     } else {
         gpsCheckStatus.bad_sats = false;
