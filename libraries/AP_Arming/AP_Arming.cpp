@@ -49,8 +49,8 @@
 #include <AP_Logger/AP_Logger.h>
 
 #define AP_ARMING_COMPASS_MAGFIELD_EXPECTED 530
-#define AP_ARMING_COMPASS_MAGFIELD_MIN  185     // 0.35 * 530 milligauss
-#define AP_ARMING_COMPASS_MAGFIELD_MAX  875     // 1.65 * 530 milligauss
+#define AP_ARMING_COMPASS_MAGFIELD_MIN  200     // 0.35 * 530 milligauss, limited further for mttr ops
+#define AP_ARMING_COMPASS_MAGFIELD_MAX  700     // 1.65 * 530 milligauss, limited further for mttr ops
 #define AP_ARMING_BOARD_VOLTAGE_MAX     5.8f
 #define AP_ARMING_ACCEL_ERROR_THRESHOLD 0.75f
 #define AP_ARMING_AHRS_GPS_ERROR_MAX    10      // accept up to 10m difference between AHRS and GPS
