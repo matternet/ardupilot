@@ -1140,7 +1140,7 @@ const AP_Param::GroupInfo ParametersMTTR::var_info[] = {
     // @Range: 100 600
     // @Increment: 1
     // @User: Advanced
-    AP_GROUPINFO("TAKEOFF_ACCEL", 8, ParametersMTTR, tkoff_accel, 50.0),
+    AP_GROUPINFO("TOFF_ACCEL", 8, ParametersMTTR, tkoff_accel, 50.0),
     
     AP_GROUPEND
 };
