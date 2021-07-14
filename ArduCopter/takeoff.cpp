@@ -88,18 +88,16 @@ void Mode::_TakeOff::get_climb_rates(float& pilot_climb_rate,
         return;
     }
 
-    // acceleration of 50cm/s/s
-    static constexpr float TAKEOFF_ACCEL = 50.0f;
     const float takeoff_minspeed = MIN(50.0f, max_speed);
     const float time_elapsed = (millis() - start_ms) * 1.0e-3f;
-    const float speed = MIN(time_elapsed * TAKEOFF_ACCEL + takeoff_minspeed, max_speed);
+    const float speed = MIN(time_elapsed * copter.matternet.tkoff_accel + takeoff_minspeed, max_speed);
 
-    const float time_to_max_speed = (max_speed - takeoff_minspeed) / TAKEOFF_ACCEL;
+    const float time_to_max_speed = (max_speed - takeoff_minspeed) / copter.matternet.tkoff_accel;
     float height_gained;
     if (time_elapsed <= time_to_max_speed) {
-        height_gained = 0.5f * TAKEOFF_ACCEL * sq(time_elapsed) + takeoff_minspeed * time_elapsed;
+        height_gained = 0.5f * copter.matternet.tkoff_accel * sq(time_elapsed) + takeoff_minspeed * time_elapsed;
     } else {
-        height_gained = 0.5f * TAKEOFF_ACCEL * sq(time_to_max_speed) + takeoff_minspeed * time_to_max_speed +
+        height_gained = 0.5f * copter.matternet.tkoff_accel * sq(time_to_max_speed) + takeoff_minspeed * time_to_max_speed +
                         (time_elapsed - time_to_max_speed) * max_speed;
     }
 
