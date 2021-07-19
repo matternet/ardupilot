@@ -630,6 +630,7 @@ size_t UARTDriver::write(uint8_t c)
         write_pending_bytes();
     }
     _write_mutex.give();
+    update_rts_line();
     return ret;
 }
 
@@ -658,6 +659,7 @@ size_t UARTDriver::write(const uint8_t *buffer, size_t size)
     if (unbuffered_writes) {
         write_pending_bytes();
     }
+    update_rts_line();
     return ret;
 }
 
@@ -1088,9 +1090,6 @@ void UARTDriver::set_flow_control(enum flow_control flowcontrol)
 
     case FLOW_CONTROL_DISABLE:
         // force RTS active when flow disabled
-        palSetLineMode(sdef.rts_line, 1);
-        palClearLine(sdef.rts_line);
-        _rts_is_active = true;
         // disable hardware CTS support
         chSysLock();
         if ((sd->usart->CR3 & (USART_CR3_CTSE | USART_CR3_RTSE)) != 0) {
@@ -1110,9 +1109,11 @@ void UARTDriver::set_flow_control(enum flow_control flowcontrol)
     case FLOW_CONTROL_ENABLE:
         // we do RTS in software as STM32 hardware RTS support toggles
         // the pin for every byte which loses a lot of bandwidth
-        palSetLineMode(sdef.rts_line, 1);
-        palClearLine(sdef.rts_line);
-        _rts_is_active = true;
+        if (_total_written == 0) {
+            palSetLineMode(sdef.rts_line, 1);
+            palSetLine(sdef.rts_line);
+            _rts_is_active = false;
+        }
         // enable hardware CTS support, disable RTS support as we do that in software
         chSysLock();
         if ((sd->usart->CR3 & (USART_CR3_CTSE | USART_CR3_RTSE)) != USART_CR3_CTSE) {
@@ -1134,10 +1135,17 @@ void UARTDriver::set_flow_control(enum flow_control flowcontrol)
  */
 void UARTDriver::update_rts_line(void)
 {
-    if (sdef.rts_line == 0 || _flow_control == FLOW_CONTROL_DISABLE) {
+    if (sdef.rts_line == 0) {
         return;
     }
-    uint16_t space = _readbuf.space();
+    if (_flow_control == FLOW_CONTROL_DISABLE) {
+        if (_total_written != 0 && !_rts_is_active) {
+            _rts_is_active = true;
+            palClearLine(sdef.rts_line);
+        }
+        return;
+    }
+    uint16_t space = _total_written==0?0:_readbuf.space();
     if (_rts_is_active && space < 16) {
         _rts_is_active = false;
         palSetLine(sdef.rts_line);
