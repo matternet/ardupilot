@@ -103,6 +103,7 @@ bool GCS_MAVLINK::init(uint8_t instance)
         return false;
     }
 
+#if 0
     /*
       Now try to cope with SiK radios that may be stuck in bootloader
       mode because CTS was held while powering on. This tells the
@@ -123,6 +124,7 @@ bool GCS_MAVLINK::init(uint8_t instance)
     hal.scheduler->delay(1);
     
     _port->set_flow_control(old_flow_control);
+#endif
 
     // now change back to desired baudrate
     _port->begin(serial_manager.find_baudrate(protocol, instance));
