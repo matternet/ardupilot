@@ -49,7 +49,7 @@ public:
     }
 
     // Gets the lane number which is used as primary
-    uint8_t currentPrimary(void) const {
+    uint8_t currentPrimaryLane(void) const {
         return primary;
     }
 
