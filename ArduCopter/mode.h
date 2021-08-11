@@ -374,6 +374,9 @@ public:
         FUNCTOR_BIND_MEMBER(&ModeAuto::verify_command, bool, const AP_Mission::Mission_Command &),
         FUNCTOR_BIND_MEMBER(&ModeAuto::exit_mission, void)};
 
+    // update handling of altitude overrides
+    void set_commanded_alt(int32_t alt_cm);
+
 protected:
 
     const char *name() const override { return "AUTO"; }
@@ -494,6 +497,14 @@ private:
         float descend_start_altitude;
         float descend_max; // centimetres
     } nav_payload_place;
+
+    void update_commanded_alt(void);
+
+    struct {
+        // relative EKF origin alt
+        float commanded_alt_cm;
+        uint32_t start_time_ms;
+    } changealt_state;
 };
 
 #if AUTOTUNE_ENABLED == ENABLED

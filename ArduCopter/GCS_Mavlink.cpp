@@ -494,11 +494,11 @@ bool GCS_MAVLINK_Copter::handle_guided_request(AP_Mission::Mission_Command &cmd)
 void GCS_MAVLINK_Copter::handle_change_alt_request(AP_Mission::Mission_Command &cmd)
 {
     // add home alt if needed
-    if (cmd.content.location.relative_alt) {
-        cmd.content.location.alt += copter.ahrs.get_home().alt;
+    if (!cmd.content.location.change_alt_frame(Location::AltFrame::ABSOLUTE)) {
+        return;
     }
 
-    // To-Do: update target altitude for loiter or waypoint controller depending upon nav mode
+    copter.mode_auto.set_commanded_alt(cmd.content.location.alt);
 }
 
 void GCS_MAVLINK_Copter::packetReceived(const mavlink_status_t &status,
