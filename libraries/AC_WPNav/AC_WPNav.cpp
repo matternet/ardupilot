@@ -352,6 +352,10 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     // calculate the distance vector from the vehicle to the closest point on the segment from origin to destination
     track_error = curr_delta - track_covered_pos;
 
+    if (_commanded_alt_enabled) {
+        track_error.z = curr_pos.z - commanded_alt_target();
+    }
+
     // calculate the horizontal error
     _track_error_xy = norm(track_error.x, track_error.y);
 
@@ -451,6 +455,9 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     Vector3f final_target = _origin + _pos_delta_unit * _track_desired;
     // convert final_target.z to altitude above the ekf origin
     final_target.z += terr_offset;
+    if (_commanded_alt_enabled) {
+        final_target.z = commanded_alt_target();
+    }
     _pos_control.set_pos_target(final_target);
 
     // check if we've reached the waypoint
@@ -1086,4 +1093,31 @@ void AC_WPNav::wp_speed_update(float dt)
     
     // flag that wp leash must be recalculated
     _flags.recalc_wp_leash = true;
+}
+
+// enable a commanded alt, relative to EKF origin
+void AC_WPNav::set_commanded_alt(bool enable, float commanded_alt_cm)
+{
+    if (enable != _commanded_alt_enabled ||
+        !is_equal(commanded_alt_cm,_commanded_alt_cm)) {
+        _commanded_alt_enabled = enable;
+        _commanded_alt_cm = commanded_alt_cm;
+        _commanded_alt_start_ms = AP_HAL::millis();
+        _commanded_alt_start_cm = _inav.get_altitude();
+    }
+}
+
+/*
+  get current commanded altitude target. Slews at the WPNAV Z speed
+*/
+float AC_WPNav::commanded_alt_target(void) const
+{
+    float posz = _inav.get_altitude();
+    float dt = (AP_HAL::millis() - _commanded_alt_start_ms) * 0.001;
+    if (_commanded_alt_cm > posz) {
+        float velz = _wp_speed_up_cms;
+        return constrain_float(_commanded_alt_start_cm + velz * dt, posz, _commanded_alt_cm);
+    }
+    float velz = -_wp_speed_down_cms;
+    return constrain_float(_commanded_alt_start_cm + velz * dt, _commanded_alt_cm, posz);
 }

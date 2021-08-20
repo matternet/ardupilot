@@ -223,6 +223,9 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
 
+    // enable a commanded alt, relative to EKF origin
+    void set_commanded_alt(bool enable, float commanded_alt_cm);
+
 protected:
 
     // segment types, either straight or spine
@@ -321,4 +324,12 @@ protected:
     bool        _rangefinder_healthy;
     float       _rangefinder_alt_cm;
     AP_Float    _crosstrack_max;
+
+    // get commanded alt target slewed by Z speed
+    float commanded_alt_target() const;
+
+    bool _commanded_alt_enabled;
+    float _commanded_alt_cm;
+    uint32_t _commanded_alt_start_ms;
+    float _commanded_alt_start_cm;
 };
