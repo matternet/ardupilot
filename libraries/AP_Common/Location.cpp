@@ -102,7 +102,7 @@ Location::AltFrame Location::get_alt_frame() const
 /// get altitude in desired frame
 bool Location::get_alt_cm(AltFrame desired_frame, int32_t &ret_alt_cm) const
 {
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#if 0
     if (!initialised()) {
         AP_HAL::panic("Should not be called on invalid location");
     }
