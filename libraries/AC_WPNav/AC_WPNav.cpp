@@ -139,6 +139,10 @@ void AC_WPNav::wp_and_spline_init()
 
     // initialise yaw heading to current heading target
     _flags.wp_yaw_set = false;
+
+    // reset commanded altitude offset to zero
+    _commanded_alt_offset_cm = 0.0;
+    _commanded_alt_enabled = false;
 }
 
 /// set_speed_xy - allows main code to pass target horizontal velocity for wp navigation
@@ -210,7 +214,9 @@ bool AC_WPNav::set_wp_destination(const Vector3f& destination, bool terrain_alt)
     }
 
     // convert origin to alt-above-terrain
-    if (terrain_alt) {
+    if (_commanded_alt_enabled || !is_zero(_commanded_alt_offset_cm)) {
+        origin.z -= _commanded_alt_offset_cm;
+    } else if (terrain_alt) {
         float origin_terr_offset;
         if (!get_terrain_offset(origin_terr_offset)) {
             return false;
@@ -258,7 +264,9 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
 
     // get origin's alt-above-terrain
     float origin_terr_offset = 0.0f;
-    if (terrain_alt) {
+    if (_commanded_alt_enabled || !is_zero(_commanded_alt_offset_cm)) {
+        origin_terr_offset = _commanded_alt_offset_cm;
+    } else if (terrain_alt) {
         if (!get_terrain_offset(origin_terr_offset)) {
             return false;
         }
@@ -336,7 +344,10 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
 
     // calculate terrain adjustments
     float terr_offset = 0.0f;
-    if (_terrain_alt && !get_terrain_offset(terr_offset)) {
+
+    if (_commanded_alt_enabled || !is_zero(_commanded_alt_offset_cm)) {
+        terr_offset = commanded_alt_target_offset(dt);
+    } else if (_terrain_alt && !get_terrain_offset(terr_offset)) {
         return false;
     }
 
@@ -351,10 +362,6 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
 
     // calculate the distance vector from the vehicle to the closest point on the segment from origin to destination
     track_error = curr_delta - track_covered_pos;
-
-    if (_commanded_alt_enabled) {
-        track_error.z = curr_pos.z - commanded_alt_target();
-    }
 
     // calculate the horizontal error
     _track_error_xy = norm(track_error.x, track_error.y);
@@ -455,9 +462,6 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     Vector3f final_target = _origin + _pos_delta_unit * _track_desired;
     // convert final_target.z to altitude above the ekf origin
     final_target.z += terr_offset;
-    if (_commanded_alt_enabled) {
-        final_target.z = commanded_alt_target();
-    }
     _pos_control.set_pos_target(final_target);
 
     // check if we've reached the waypoint
@@ -672,7 +676,9 @@ bool AC_WPNav::set_spline_destination(const Vector3f& destination, bool terrain_
     }
 
     // convert origin to alt-above-terrain
-    if (terrain_alt) {
+    if (_commanded_alt_enabled || !is_zero(_commanded_alt_offset_cm)) {
+        origin.z -= _commanded_alt_offset_cm;
+    } else if (terrain_alt) {
         float terr_offset;
         if (!get_terrain_offset(terr_offset)) {
             return false;
@@ -781,7 +787,9 @@ bool AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
 
     // get alt-above-terrain
     float terr_offset = 0.0f;
-    if (terrain_alt) {
+    if (_commanded_alt_enabled || !is_zero(_commanded_alt_offset_cm)) {
+        terr_offset = _commanded_alt_offset_cm;
+    } else if (terrain_alt) {
         if (!get_terrain_offset(terr_offset)) {
             return false;
         }
@@ -871,7 +879,9 @@ bool AC_WPNav::advance_spline_target_along_track(float dt)
 
         // get terrain altitude offset for origin and current position (i.e. change in terrain altitude from a position vs ekf origin)
         float terr_offset = 0.0f;
-        if (_terrain_alt && !get_terrain_offset(terr_offset)) {
+        if (_commanded_alt_enabled || !is_zero(_commanded_alt_offset_cm)) {
+            terr_offset = commanded_alt_target_offset(dt);
+        } else if (_terrain_alt && !get_terrain_offset(terr_offset)) {
             return false;
         }
 
@@ -1098,26 +1108,24 @@ void AC_WPNav::wp_speed_update(float dt)
 // enable a commanded alt, relative to EKF origin
 void AC_WPNav::set_commanded_alt(bool enable, float commanded_alt_cm)
 {
-    if (enable != _commanded_alt_enabled ||
-        !is_equal(commanded_alt_cm,_commanded_alt_cm)) {
-        _commanded_alt_enabled = enable;
-        _commanded_alt_cm = commanded_alt_cm;
-        _commanded_alt_start_ms = AP_HAL::millis();
-        _commanded_alt_start_cm = _inav.get_altitude();
-    }
+    _commanded_alt_enabled = enable;
+    _commanded_alt_cm = commanded_alt_cm;
+    _commanded_alt_last_update_ms = AP_HAL::millis();
 }
 
 /*
-  get current commanded altitude target. Slews at the WPNAV Z speed
+  get current commanded altitude offset. Slews at the WPNAV Z speed
 */
-float AC_WPNav::commanded_alt_target(void) const
+float AC_WPNav::commanded_alt_target_offset(float dt)
 {
-    float posz = _inav.get_altitude();
-    float dt = (AP_HAL::millis() - _commanded_alt_start_ms) * 0.001;
-    if (_commanded_alt_cm > posz) {
-        float velz = _wp_speed_up_cms;
-        return constrain_float(_commanded_alt_start_cm + velz * dt, posz, _commanded_alt_cm);
+    if (_commanded_alt_enabled) {
+        _commanded_alt_offset_cm = constrain_float(_commanded_alt_offset_cm + _commanded_alt_cm - _pos_control.get_alt_target(), _commanded_alt_offset_cm - dt * _wp_speed_down_cms, _commanded_alt_offset_cm + dt * _wp_speed_up_cms);
+        if (AP_HAL::millis() - _commanded_alt_last_update_ms > WPNAV_COMMANDED_ALT_TIMEOUT_MS ) {
+            _commanded_alt_enabled = false;
+        }
+    } else {
+        _commanded_alt_offset_cm = constrain_float(0.0, _commanded_alt_offset_cm - dt * _wp_speed_down_cms, _commanded_alt_offset_cm + dt * _wp_speed_up_cms);
     }
-    float velz = -_wp_speed_down_cms;
-    return constrain_float(_commanded_alt_start_cm + velz * dt, _commanded_alt_cm, posz);
+
+    return _commanded_alt_offset_cm;
 }
