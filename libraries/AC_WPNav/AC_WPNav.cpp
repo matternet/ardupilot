@@ -361,7 +361,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     Vector3f track_covered_pos = _pos_delta_unit * track_covered;
 
     // calculate the distance vector from the vehicle to the closest point on the segment from origin to destination
-    track_error = curr_delta - track_covered_pos;
+    track_error = track_covered_pos - curr_delta;
 
     // calculate the horizontal error
     _track_error_xy = norm(track_error.x, track_error.y);
@@ -886,8 +886,8 @@ bool AC_WPNav::advance_spline_target_along_track(float dt)
         }
 
         // calculate position error
-        Vector3f track_error = curr_pos - target_pos;
-        track_error.z -= terr_offset;
+        Vector3f track_error = target_pos - curr_pos;
+        track_error.z += terr_offset;
 
         // calculate the horizontal error
         _track_error_xy = norm(track_error.x, track_error.y);
