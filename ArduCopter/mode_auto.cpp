@@ -1,5 +1,5 @@
 #include "Copter.h"
-
+#include <stdio.h>
 #if MODE_AUTO_ENABLED == ENABLED
 
 /*

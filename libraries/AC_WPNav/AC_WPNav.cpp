@@ -1,5 +1,6 @@
 #include <AP_HAL/AP_HAL.h>
 #include "AC_WPNav.h"
+#include <stdio.h>
 
 extern const AP_HAL::HAL& hal;
 

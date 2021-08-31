@@ -1,7 +1,7 @@
 #include "Copter.h"
 
 #include "GCS_Mavlink.h"
-
+#include <stdio.h>
 /*
  *  !!NOTE!!
  *
