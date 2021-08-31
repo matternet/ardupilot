@@ -242,6 +242,12 @@ void AP_Parachute::mttr_fts_update()
                 struct fts_msg_status_s* msg = (struct fts_msg_status_s*)msg_buf;
                 AP::logger().Write("FTSS", "TimeUS,State,Rsn,BSoC,BC1mV,BC2mV,BC3mV,BTINT,BTTS1", "QBBBHHHcc", AP_HAL::micros64(), msg->state, msg->state_reason, msg->batt_SoC, msg->batt_cell_mV[0], msg->batt_cell_mV[1], msg->batt_cell_mV[2], msg->batt_temp_INT, msg->batt_temp_TS1);
 
+                gcs().send_named_float("FTSS_SOC", (float) msg->batt_SoC);
+                gcs().send_text(MAV_SEVERITY_INFO, "FTSS SoC=%u temp[%.2f,%.2f]",
+                               msg->batt_SoC,
+                               msg->batt_temp_INT * 1e-2f,
+                               msg->batt_temp_TS1 * 1e-2f);
+
                 // update pre-arm state
                 _mttr_last_status_recv_ms = tnow_ms;
                 _mttr_status_pass = (msg->state == FTS_DISARMED_MASTER_PRESENT || msg->state == FTS_ARMED);
