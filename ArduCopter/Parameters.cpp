@@ -1134,12 +1134,12 @@ const AP_Param::GroupInfo ParametersMTTR::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("ARMED_PIN", 7, ParametersMTTR, arm_pin, -1),
 
-    // @Param: CHANGEALT_TMOUT
+    // @Param: CHNGALT_TMOUT_MS
     // @DisplayName: Timeout for change alt commands
     // @Description: Timeout in milliseconds for AUTO mode change alt commands. A value <= 0 means no timeout
     // @Units: ms
     // @User: Advanced
-    AP_GROUPINFO("CHANGEALT_TMOUT", 8, ParametersMTTR, changealt_timeout_ms, 3000),
+    AP_GROUPINFO("CHNGALT_TMOUT_MS", 8, ParametersMTTR, changealt_timeout_ms, 3000),
     
     AP_GROUPEND
 };
