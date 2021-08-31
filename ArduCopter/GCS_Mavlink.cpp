@@ -493,8 +493,10 @@ bool GCS_MAVLINK_Copter::handle_guided_request(AP_Mission::Mission_Command &cmd)
 
 void GCS_MAVLINK_Copter::handle_change_alt_request(AP_Mission::Mission_Command &cmd)
 {
+    printf("GOT CHANGEALT: %f", cmd.content.location.alt);
     // add home alt if needed
     if (!cmd.content.location.change_alt_frame(Location::AltFrame::ABSOLUTE)) {
+        printf("FAILED IN change_alt_frame");
         return;
     }
 

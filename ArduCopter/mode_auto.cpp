@@ -1952,9 +1952,11 @@ bool ModeAuto::do_failsafe_jump(const AP_Mission::Mission_Command& cmd)
  */
 void ModeAuto::set_commanded_alt(int32_t alt_cm)
 {
+    printf("IN set_commanded_alt");
     const auto &cmd = mission.get_current_nav_cmd();
 
     if (alt_cm <= -100000) {
+        printf("cancelling alt");
         // cancel command
         if (changealt_state.start_time_ms == 0) {
             // already cancelled
@@ -1963,10 +1965,13 @@ void ModeAuto::set_commanded_alt(int32_t alt_cm)
         changealt_state.start_time_ms = 0;
         wp_nav->set_commanded_alt(false, 0);
     } else {
+        printf("setting alt");
         Location origin;
         if (ahrs.get_origin(origin)) {
+            printf("got origin");
             origin.change_alt_frame(Location::AltFrame::ABSOLUTE);
             changealt_state.commanded_alt_cm = alt_cm - origin.alt;
+            printf("commanded_alt_cm: %f", changealt_state.commanded_alt_cm);
             changealt_state.start_time_ms = AP_HAL::millis();
             if (cmd.id == MAV_CMD_NAV_WAYPOINT) {
                 wp_nav->set_commanded_alt(true, changealt_state.commanded_alt_cm);
@@ -1980,18 +1985,22 @@ void ModeAuto::set_commanded_alt(int32_t alt_cm)
  */
 void ModeAuto::update_commanded_alt(void)
 {
+    printf("updating commanded alt");
     if (changealt_state.start_time_ms == 0) {
+        printf("start time is 0, returning");
         // no commanded alt
         return;
     }
     if (copter.matternet.changealt_timeout_ms > 0) {
         uint32_t now = AP_HAL::millis();
         if (now - changealt_state.start_time_ms >= uint32_t(copter.matternet.changealt_timeout_ms)) {
+            printf("timed out, setting alt to 0");
             // change alt has timed out
             wp_nav->set_commanded_alt(false, 0);
             changealt_state.start_time_ms = 0;
             return;
         }
+        printf("not timed out yet");
     }
     if (mission.get_current_nav_cmd().id != MAV_CMD_NAV_WAYPOINT) {
         // only apply to normal waypoints

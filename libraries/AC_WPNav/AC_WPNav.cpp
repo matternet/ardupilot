@@ -1108,6 +1108,7 @@ void AC_WPNav::wp_speed_update(float dt)
 // enable a commanded alt, relative to EKF origin
 void AC_WPNav::set_commanded_alt(bool enable, float commanded_alt_cm)
 {
+    printf("alt enable: %s, setting internal commanded alt to: %f", enable ? "true" : "false", commanded_alt_cm);
     _commanded_alt_enabled = enable;
     _commanded_alt_cm = commanded_alt_cm;
     _commanded_alt_last_update_ms = AP_HAL::millis();
@@ -1118,13 +1119,16 @@ void AC_WPNav::set_commanded_alt(bool enable, float commanded_alt_cm)
 */
 float AC_WPNav::commanded_alt_target_offset(float dt)
 {
+    printf("Setting alt target offset");
     if (_commanded_alt_enabled) {
         _commanded_alt_offset_cm = constrain_float(_commanded_alt_offset_cm + _commanded_alt_cm - _pos_control.get_alt_target(), _commanded_alt_offset_cm - dt * _wp_speed_down_cms, _commanded_alt_offset_cm + dt * _wp_speed_up_cms);
+        printf("enabled, _commanded_alt_offset_cm: %f", _commanded_alt_offset_cm);
         if (AP_HAL::millis() - _commanded_alt_last_update_ms > WPNAV_COMMANDED_ALT_TIMEOUT_MS ) {
             _commanded_alt_enabled = false;
         }
     } else {
         _commanded_alt_offset_cm = constrain_float(0.0, _commanded_alt_offset_cm - dt * _wp_speed_down_cms, _commanded_alt_offset_cm + dt * _wp_speed_up_cms);
+        printf("disabled, _commanded_alt_offset_cm: %f", _commanded_alt_offset_cm);
     }
 
     return _commanded_alt_offset_cm;

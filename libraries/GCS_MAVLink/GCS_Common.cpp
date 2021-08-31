@@ -669,6 +669,7 @@ void GCS_MAVLINK::handle_mission_item(const mavlink_message_t &msg)
     const MAV_MISSION_TYPE type = (MAV_MISSION_TYPE)packet.mission_type;
 
     if (type == MAV_MISSION_TYPE_MISSION && (current == 2 || current == 3)) {
+        printf("GOT COMMAND!");
         struct AP_Mission::Mission_Command cmd = {};
         MAV_MISSION_RESULT result = AP_Mission::mavlink_int_to_mission_cmd(packet, cmd);
         if (result != MAV_MISSION_ACCEPTED) {
@@ -683,6 +684,7 @@ void GCS_MAVLINK::handle_mission_item(const mavlink_message_t &msg)
             result = (handle_guided_request(cmd) ? MAV_MISSION_ACCEPTED
                       : MAV_MISSION_ERROR) ;
         } else if (current == 3) {
+            printf("AND IT'S AN ALT CHANGE!");
             //current = 3 is a flag to tell us this is a alt change only
             // add home alt if needed
             handle_change_alt_request(cmd);
