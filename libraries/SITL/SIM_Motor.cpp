@@ -166,10 +166,17 @@ void Motor::setup_params(uint16_t _pwm_min, uint16_t _pwm_max, float _spin_min, 
     power_factor = _power_factor;
     voltage_max = _voltage_max;
 
-    // assume 50% of mass on ring around center
-    moment_of_inertia.x = vehicle_mass * 0.25 * sq(diagonal_size*0.5);
+    // assume 75% of mass on narrow ring at radius, and 25% in sphere in the middle, at 30% radius
+    const float sphere_R = diagonal_size*0.5*0.3;
+    const float ring_R = diagonal_size*0.5;
+    const float sphere_mass = 0.25 * vehicle_mass;
+    const float ring_mass = 0.75 * vehicle_mass;
+    const float sphere_I = sphere_mass * 0.4 * sq(sphere_R);
+    const float ring_I_z = ring_mass * sq(ring_R);
+    const float ring_I_xy = ring_mass * 0.5 * sq(ring_R);
+    moment_of_inertia.x = sphere_I + ring_I_xy;
     moment_of_inertia.y = moment_of_inertia.x;
-    moment_of_inertia.z = vehicle_mass * 0.5 * sq(diagonal_size*0.5);
+    moment_of_inertia.z = sphere_I + ring_I_z;
 }
 
 /*
