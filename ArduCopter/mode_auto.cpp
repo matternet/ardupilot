@@ -102,6 +102,8 @@ void ModeAuto::run()
         payload_place_run();
         break;
     }
+
+    update_commanded_alt();
 }
 
 // auto_loiter_start - initialises loitering in auto mode
@@ -545,6 +547,7 @@ void ModeAuto::exit_mission()
         // if we've landed it's safe to disarm
         copter.arming.disarm();
     }
+    wp_nav->set_commanded_alt(false, changealt_state.commanded_alt_cm);
 }
 
 // do_guided - start guided mode
@@ -1942,6 +1945,60 @@ bool ModeAuto::do_failsafe_jump(const AP_Mission::Mission_Command& cmd)
     }
     gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: FAILED failsafe jump to %u", unsigned(jump_target));
     return false;
+}
+
+/*
+  update altitude override handling
+ */
+void ModeAuto::set_commanded_alt(int32_t alt_cm)
+{
+    const auto &cmd = mission.get_current_nav_cmd();
+
+    if (alt_cm <= -100000) {
+        // cancel command
+        if (changealt_state.start_time_ms == 0) {
+            // already cancelled
+            return;
+        }
+        changealt_state.start_time_ms = 0;
+        wp_nav->set_commanded_alt(false, 0);
+    } else {
+        Location origin;
+        if (ahrs.get_origin(origin)) {
+            origin.change_alt_frame(Location::AltFrame::ABSOLUTE);
+            changealt_state.commanded_alt_cm = alt_cm - origin.alt;
+            changealt_state.start_time_ms = AP_HAL::millis();
+            if (cmd.id == MAV_CMD_NAV_WAYPOINT) {
+                wp_nav->set_commanded_alt(true, changealt_state.commanded_alt_cm);
+            }
+        }
+    }
+}
+
+/*
+  update handling of commanded altitude
+ */
+void ModeAuto::update_commanded_alt(void)
+{
+    if (changealt_state.start_time_ms == 0) {
+        // no commanded alt
+        return;
+    }
+    if (copter.matternet.changealt_timeout_ms > 0) {
+        uint32_t now = AP_HAL::millis();
+        if (now - changealt_state.start_time_ms >= uint32_t(copter.matternet.changealt_timeout_ms)) {
+            // change alt has timed out
+            wp_nav->set_commanded_alt(false, 0);
+            changealt_state.start_time_ms = 0;
+            return;
+        }
+    }
+    if (mission.get_current_nav_cmd().id != MAV_CMD_NAV_WAYPOINT) {
+        // only apply to normal waypoints
+        wp_nav->set_commanded_alt(false, changealt_state.commanded_alt_cm);
+    } else {
+        wp_nav->set_commanded_alt(true, changealt_state.commanded_alt_cm);
+    }
 }
 
 #endif

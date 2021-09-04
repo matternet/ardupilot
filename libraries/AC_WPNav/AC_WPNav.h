@@ -34,6 +34,8 @@
 
 #define WPNAV_RANGEFINDER_FILT_Z         0.25f      // range finder distance filtered at 0.25hz
 
+#define WPNAV_COMMANDED_ALT_TIMEOUT_MS    5000      // Altitude override timeout in ms
+
 class AC_WPNav
 {
 public:
@@ -223,6 +225,9 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
 
+    // enable a commanded alt, relative to EKF origin
+    void set_commanded_alt(bool enable, float commanded_alt_cm);
+
 protected:
 
     // segment types, either straight or spine
@@ -321,4 +326,12 @@ protected:
     bool        _rangefinder_healthy;
     float       _rangefinder_alt_cm;
     AP_Float    _crosstrack_max;
+
+    // get commanded alt offset slewed by Z speed
+    float commanded_alt_target_offset(float dt);
+
+    bool _commanded_alt_enabled;
+    float _commanded_alt_cm;
+    float _commanded_alt_offset_cm;
+    uint32_t _commanded_alt_last_update_ms;
 };

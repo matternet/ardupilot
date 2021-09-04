@@ -643,6 +643,7 @@ public:
     AP_Float tkoff_baro_dip;
     AP_Int8 tkoff_hover_pct;
     AP_Int8 arm_pin;
+    AP_Int32 changealt_timeout_ms;
 };
 
 extern const AP_Param::Info        var_info[];
