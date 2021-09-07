@@ -132,7 +132,7 @@ void AC_WPNav::wp_and_spline_init()
     // initialise position controller speed and acceleration
     _pos_control.set_max_speed_xy(_wp_speed_cms);
     _pos_control.set_max_accel_xy(_wp_accel_cmss);
-    _pos_control.set_max_speed_z(-_wp_speed_down_cms, _wp_speed_up_cms);
+    _pos_control.set_max_speed_z(-fabsf(_wp_speed_down_cms), _wp_speed_up_cms);
     _pos_control.set_max_accel_z(_wp_accel_z_cmss);
     _pos_control.calc_leash_length_xy();
     _pos_control.calc_leash_length_z();
@@ -1119,12 +1119,12 @@ void AC_WPNav::set_commanded_alt(bool enable, float commanded_alt_cm)
 float AC_WPNav::commanded_alt_target_offset(float dt)
 {
     if (_commanded_alt_enabled) {
-        _commanded_alt_offset_cm = constrain_float(_commanded_alt_offset_cm + _commanded_alt_cm - _pos_control.get_alt_target(), _commanded_alt_offset_cm - dt * _wp_speed_down_cms, _commanded_alt_offset_cm + dt * _wp_speed_up_cms);
+        _commanded_alt_offset_cm = constrain_float(_commanded_alt_offset_cm + _commanded_alt_cm - _pos_control.get_alt_target(), _commanded_alt_offset_cm - dt * fabsf(_wp_speed_down_cms), _commanded_alt_offset_cm + dt * _wp_speed_up_cms);
         if (AP_HAL::millis() - _commanded_alt_last_update_ms > WPNAV_COMMANDED_ALT_TIMEOUT_MS ) {
             _commanded_alt_enabled = false;
         }
     } else {
-        _commanded_alt_offset_cm = constrain_float(0.0, _commanded_alt_offset_cm - dt * _wp_speed_down_cms, _commanded_alt_offset_cm + dt * _wp_speed_up_cms);
+        _commanded_alt_offset_cm = constrain_float(0.0, _commanded_alt_offset_cm - dt * fabsf(_wp_speed_down_cms), _commanded_alt_offset_cm + dt * _wp_speed_up_cms);
     }
 
     return _commanded_alt_offset_cm;
