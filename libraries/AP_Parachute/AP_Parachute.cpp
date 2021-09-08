@@ -12,7 +12,7 @@
 
 extern const AP_HAL::HAL& hal;
 
-constexpr float CELCIUS_TO_KELVIN_FACTOR = 273.15;
+constexpr float DECAKELVIN_TO_DECACELCIUS_FACTOR = 2731.5;
 
 const AP_Param::GroupInfo AP_Parachute::var_info[] = {
     // @Param: ENABLED
@@ -255,8 +255,8 @@ void AP_Parachute::mttr_fts_update()
                     msg->batt_cell_mV[0],
                     msg->batt_cell_mV[1],
                     msg->batt_cell_mV[2],
-                    msg->batt_temp_INT-CELCIUS_TO_KELVIN_FACTOR,
-                    msg->batt_temp_TS1-CELCIUS_TO_KELVIN_FACTOR);
+                    msg->batt_temp_INT-DECAKELVIN_TO_DECACELCIUS_FACTOR,
+                    msg->batt_temp_TS1-DECAKELVIN_TO_DECACELCIUS_FACTOR);
 
                 // update pre-arm state
                 _mttr_last_status_recv_ms = tnow_ms;
