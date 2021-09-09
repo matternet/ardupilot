@@ -499,6 +499,8 @@ bool AP_Arming_Copter::proximity_checks(bool display_failure) const
 // performs mandatory gps checks.  returns true if passed
 bool AP_Arming_Copter::mandatory_gps_checks(bool display_failure)
 {
+    const AP_GPS &gps = AP::gps();
+
     // always check if inertial nav has started and is ready
     const AP_AHRS_NavEKF &ahrs = AP::ahrs_navekf();
     if (!ahrs.prearm_healthy()) {
@@ -531,12 +533,11 @@ bool AP_Arming_Copter::mandatory_gps_checks(bool display_failure)
         if (reason == nullptr || strlen(reason) == 0) {
             if (!mode_requires_gps && fence_requires_gps) {
                 // clarify to user why they need GPS in non-GPS flight mode
-                reason = "Fence enabled, need 3D Fix";
+                check_failed(display_failure, "Fence enabled, need GPS Fix %u", gps.status_arm_min());
             } else {
-                reason = "Need 3D Fix";
+                check_failed(display_failure, "Needs GPS Fix %u", gps.status_arm_min());
             }
         }
-        check_failed(display_failure, "%s", reason);
         return false;
     }
 

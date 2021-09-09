@@ -505,7 +505,7 @@ void NavEKF2_core::readGpsData()
     // do not accept data at a faster rate than 14Hz to avoid overflowing the FIFO buffer
     const AP_GPS &gps = AP::gps();
     if (gps.last_message_time_ms() - lastTimeGpsReceived_ms > 70) {
-        if (gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
+        if (gps.status() >= gps.status_arm_min()) {
             // report GPS fix status
             gpsCheckStatus.bad_fix = false;
 
@@ -642,7 +642,7 @@ void NavEKF2_core::readGpsData()
         } else {
             // report GPS fix status
             gpsCheckStatus.bad_fix = true;
-            hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "Waiting for 3D fix");
+            hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "Waiting for GPS fix %u", gps.status_arm_min());
         }
     }
 }

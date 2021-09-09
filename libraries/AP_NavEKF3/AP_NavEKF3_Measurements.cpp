@@ -506,7 +506,7 @@ void NavEKF3_core::readGpsData()
     const AP_GPS &gps = AP::gps();
 
     if (gps.last_message_time_ms() - lastTimeGpsReceived_ms > frontend->sensorIntervalMin_ms) {
-        if (gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
+        if (gps.status() >= gps.status_arm_min()) {
             // report GPS fix status
             gpsCheckStatus.bad_fix = false;
 
@@ -654,7 +654,7 @@ void NavEKF3_core::readGpsData()
         } else {
             // report GPS fix status
             gpsCheckStatus.bad_fix = true;
-            hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "Waiting for 3D fix");
+            hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "Waiting for GPS fix %u", gps.status_arm_min());
         }
     }
 }
