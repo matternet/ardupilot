@@ -246,7 +246,7 @@ void AP_Parachute::mttr_fts_update()
                     "FTSS",
                     "TimeUS,State,Rsn,BSoC,BC1mV,BC2mV,BC3mV,BTINT,BTTS1",
                     "s--------",
-                    "----CCCAA",
+                    "-------AA",
                     "QBBBHHHhh",
                     AP_HAL::micros64(),
                     msg->state,
