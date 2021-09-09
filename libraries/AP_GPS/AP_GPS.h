@@ -316,6 +316,11 @@ public:
         return _num_sats_arm_min;
     }
 
+    // minimum fix type required for arming
+    uint8_t status_arm_min() const {
+        return _status_arm_min;
+    }
+
     // GPS time of week in milliseconds
     uint32_t time_week_ms(uint8_t instance) const {
         return state[instance].time_week_ms;
@@ -511,6 +516,7 @@ protected:
     AP_Int16 _driver_options;
     AP_Float _pos_diff_max;
     AP_Int8 _num_sats_arm_min;
+    AP_Int8 _status_arm_min;
 
     // GPS_DRV_OPTIONS bits
     enum class DRV_OPTIONS {
