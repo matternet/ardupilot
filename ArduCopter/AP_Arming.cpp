@@ -537,6 +537,8 @@ bool AP_Arming_Copter::mandatory_gps_checks(bool display_failure)
             } else {
                 check_failed(display_failure, "Needs GPS Fix %u", gps.status_arm_min());
             }
+        } else {
+            check_failed(display_failure, "%s", reason);
         }
         return false;
     }
