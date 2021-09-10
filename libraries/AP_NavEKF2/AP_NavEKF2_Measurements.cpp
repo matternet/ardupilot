@@ -505,7 +505,7 @@ void NavEKF2_core::readGpsData()
     // do not accept data at a faster rate than 14Hz to avoid overflowing the FIFO buffer
     const AP_GPS &gps = AP::gps();
     if (gps.last_message_time_ms() - lastTimeGpsReceived_ms > 70) {
-        if (gps.status() >= gps.status_arm_min()) {
+        if (gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
             // report GPS fix status
             gpsCheckStatus.bad_fix = false;
 

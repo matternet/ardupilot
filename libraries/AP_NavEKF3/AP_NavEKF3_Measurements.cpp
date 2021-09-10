@@ -506,7 +506,7 @@ void NavEKF3_core::readGpsData()
     const AP_GPS &gps = AP::gps();
 
     if (gps.last_message_time_ms() - lastTimeGpsReceived_ms > frontend->sensorIntervalMin_ms) {
-        if (gps.status() >= gps.status_arm_min()) {
+        if (gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
             // report GPS fix status
             gpsCheckStatus.bad_fix = false;
 
