@@ -303,7 +303,7 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     // @Values: 0:No GPS,1:NoFix,2:2DFix,3:3DFix,4:SBAS,5:RTKFloat,6:RTK
     // @User: Advanced
     // @RebootRequired: True
-    AP_GROUPINFO("STATUS_MIN", 61, AP_GPS, _status_arm_min, 3),
+    AP_GROUPINFO("STATUS_MIN", 61, AP_GPS, _status_arm_min, 4),
 
     // @Param: POS_DIFF_MAX
     // @DisplayName: Maximum Position Difference Between GPSs Accepted
