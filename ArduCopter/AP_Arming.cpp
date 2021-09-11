@@ -531,12 +531,13 @@ bool AP_Arming_Copter::mandatory_gps_checks(bool display_failure)
         if (reason == nullptr || strlen(reason) == 0) {
             if (!mode_requires_gps && fence_requires_gps) {
                 // clarify to user why they need GPS in non-GPS flight mode
-                reason = "Fence enabled, need 3D Fix";
+                check_failed(display_failure, "Fence enabled, need 3D Fix");
             } else {
-                reason = "Need 3D Fix";
+                check_failed(display_failure, "Need 3D Fix");
             }
+        } else {
+            check_failed(display_failure, "%s", reason);
         }
-        check_failed(display_failure, "%s", reason);
         return false;
     }
 

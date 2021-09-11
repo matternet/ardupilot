@@ -290,13 +290,20 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     AP_GROUPINFO("BLEND_TC", 21, AP_GPS, _blend_tc, 10.0f),
 #endif
 
-
     // @Param: DRV_OPTIONS
     // @DisplayName: driver options
     // @Description: Additional backend specific options
     // @Bitmask: 0:Use UART2 for moving baseline on ublox,1:Use SERIALn_BAUD instead of auto-bauding
     // @User: Advanced
     AP_GROUPINFO("DRV_OPTIONS", 22, AP_GPS, _driver_options, 0),
+
+    // @Param: STATUS_ARM_MIN
+    // @DisplayName: Minimum GNSS fix type required for Arming
+    // @Description: Sets the minimum GNSS fix type needed for arming.
+    // @Values: 0:No GPS,1:NoFix,2:2DFix,3:3DFix,4:SBAS,5:RTKFloat,6:RTK
+    // @User: Advanced
+    // @RebootRequired: True
+    AP_GROUPINFO("STATUS_MIN", 61, AP_GPS, _status_arm_min, 4),
 
     // @Param: POS_DIFF_MAX
     // @DisplayName: Maximum Position Difference Between GPSs Accepted

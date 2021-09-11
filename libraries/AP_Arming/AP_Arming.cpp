@@ -440,7 +440,7 @@ bool AP_Arming::gps_checks(bool report)
             return false;
         }
 
-        if (gps.status() <= AP_GPS::GPS_OK_FIX_3D) {
+        if (gps.status() < gps.status_arm_min()) {
             check_failed(ARMING_CHECK_GPS, report, "Waiting for enhanced GPS fix");
             return false;
         }
