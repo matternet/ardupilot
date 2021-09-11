@@ -137,7 +137,7 @@ void NavEKF2_core::calcGpsGoodToAlign(void)
         gpsCheckStatus.bad_horiz_vel = false;
     }
 
-    // fail if horiziontal position accuracy not sufficient
+    // fail if horizontal position accuracy not sufficient
     float hAcc = 0.0f;
     bool hAccFail;
     if (gps.horizontal_accuracy(hAcc)) {
