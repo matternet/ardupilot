@@ -197,13 +197,20 @@ void NavEKF2_core::calcGpsGoodToAlign(void)
         gpsCheckStatus.bad_hdop = false;
     }
 
-    // fail if not enough sats
-    bool numSatsFail = (gps.num_sats() < gps.num_sats_arm_min()) && (frontend->_gpsCheck & MASK_GPS_NSATS);
+    // fail if not enough sats for GPS1
+    bool numSatsGPS1Fail = (gps.num_sats(0) < gps.num_sats_arm_min()) && (frontend->_gpsCheck & MASK_GPS_NSATS);
+
+    // fail if GPS2 is enabled and not enough sats for secondary GPS2
+    bool numSatsGPS2Fail = (gps.get_type(1) == 1) && (gps.num_sats(1) < gps.num_sats_arm_min()) && (frontend->_gpsCheck & MASK_GPS_NSATS);
 
     // Report check result as a text string and bitmask
-    if (numSatsFail) {
+    if (numSatsGPS1Fail) {
         hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
-                           "GPS numsats %u (needs %u)", gps.num_sats(), gps.num_sats_arm_min());
+                           "GPS 1 numsats %u (needs %u)", gps.num_sats(0), gps.num_sats_arm_min());
+        gpsCheckStatus.bad_sats = true;
+    } else if(numSatsGPS2Fail) {
+        hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
+                           "GPS 2 numsats %u (needs %u)", gps.num_sats(1), gps.num_sats_arm_min());
         gpsCheckStatus.bad_sats = true;
     } else {
         gpsCheckStatus.bad_sats = false;
@@ -237,7 +244,7 @@ void NavEKF2_core::calcGpsGoodToAlign(void)
     }
 
     // record time of fail or pass
-    if (gpsSpdAccFail || numSatsFail || hdopFail || hAccFail || vAccFail ||  yawFail || gpsDriftFail || gpsVertVelFail || gpsHorizVelFail) {
+    if (gpsSpdAccFail || numSatsGPS1Fail || numSatsGPS2Fail || hdopFail || hAccFail || vAccFail ||  yawFail || gpsDriftFail || gpsVertVelFail || gpsHorizVelFail) {
         lastGpsVelFail_ms = imuSampleTime_ms;
     } else {
         lastGpsVelPass_ms = imuSampleTime_ms;
