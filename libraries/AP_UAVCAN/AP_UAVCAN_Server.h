@@ -83,6 +83,7 @@ class AP_UAVCAN_Server
     bool isValidNodeDataAvailable(uint8_t node_id);
 
     HAL_Semaphore_Recursive sem;
+    AP_UAVCAN *_ap_uavcan;
 
 public:
     AP_UAVCAN_Server(StorageAccess _storage) : storage(_storage) {}
