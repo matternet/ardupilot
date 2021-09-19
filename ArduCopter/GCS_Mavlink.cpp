@@ -705,10 +705,22 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
             } else if (packet.param1 > 1.9f) { // 2 = speed up
                 copter.wp_nav->set_speed_up(packet.param2 * 100.0f);
             } else {
+                if (copter.wp_nav->get_pause()) {
+                    copter.wp_nav->set_pause(false);
+                    gcs().send_text(MAV_SEVERITY_INFO, "Auto: Mission RESUMED");
+                }
                 copter.wp_nav->set_speed_xy(packet.param2 * 100.0f);
             }
             return MAV_RESULT_ACCEPTED;
+        } else if (is_zero(packet.param2) &&
+                   packet.param1 < 1.9 &&
+                   !copter.wp_nav->get_pause()) {
+            // pause mission
+            gcs().send_text(MAV_SEVERITY_INFO, "Auto: Mission PAUSED");
+            copter.wp_nav->set_pause(true);
+            return MAV_RESULT_ACCEPTED;
         }
+
         return MAV_RESULT_FAILED;
 
 #if MODE_AUTO_ENABLED == ENABLED
