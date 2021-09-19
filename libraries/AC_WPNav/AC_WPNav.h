@@ -75,6 +75,12 @@ public:
     void set_speed_up(float speed_up_cms);
     void set_speed_down(float speed_down_cms);
 
+    /// set mission pause state
+    void set_pause(bool paused);
+
+    /// get mission pause state
+    bool get_pause(void) const { return _mission_paused; }
+
     /// get default target horizontal velocity during wp navigation
     float get_default_speed_xy() const { return _wp_speed_cms; }
 
@@ -334,4 +340,5 @@ protected:
     float _commanded_alt_cm;
     float _commanded_alt_offset_cm;
     uint32_t _commanded_alt_last_update_ms;
+    bool _mission_paused;
 };

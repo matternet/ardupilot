@@ -396,6 +396,13 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
         reached_leash_limit = true;
     }
 
+    /*
+      if mission is paused then stop advancing leash
+     */
+    if (_mission_paused) {
+        reached_leash_limit = true;
+    }
+
     // get current velocity
     const Vector3f &curr_vel = _inav.get_velocity();
     // get speed along track
@@ -1128,4 +1135,10 @@ float AC_WPNav::commanded_alt_target_offset(float dt)
     }
 
     return _commanded_alt_offset_cm;
+}
+
+/// set mission pause state
+void AC_WPNav::set_pause(bool paused)
+{
+    _mission_paused = paused;
 }
