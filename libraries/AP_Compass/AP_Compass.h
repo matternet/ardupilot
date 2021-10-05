@@ -35,9 +35,9 @@
 
 // define default compass calibration fitness and consistency checks
 #define AP_COMPASS_CALIBRATION_FITNESS_DEFAULT 16.0f
-#define AP_COMPASS_MAX_XYZ_ANG_DIFF radians(90.0f)
-#define AP_COMPASS_MAX_XY_ANG_DIFF radians(60.0f)
-#define AP_COMPASS_MAX_XY_LENGTH_DIFF 200.0f
+#define AP_COMPASS_MAX_XYZ_ANG_DIFF radians(20.0f)
+#define AP_COMPASS_MAX_XY_ANG_DIFF radians(10.0f)
+#define AP_COMPASS_MAX_XY_LENGTH_DIFF 60.0f
 
 /**
    maximum number of compass instances available on this platform. If more
