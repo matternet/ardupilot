@@ -695,7 +695,7 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         return MAV_RESULT_FAILED;
 
     case MAV_CMD_DO_CHANGE_SPEED:
-        // param1 : unused
+        // param1 : speed type
         // param2 : new speed in m/s
         // param3 : unused
         // param4 : unused
