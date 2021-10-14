@@ -59,6 +59,7 @@ public:
         DEVTYPE_SITL  = 0x0F,
         DEVTYPE_IST8308 = 0x10,
         DEVTYPE_RM3100 = 0x11,
+        DEVTYPE_AK09918 = 0x14,
     };
 
 
