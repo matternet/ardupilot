@@ -208,11 +208,13 @@ void NavEKF2_core::calcGpsGoodToAlign(void)
         hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
                            "GPS 1 numsats %u (needs %u)", gps.num_sats(0), gps.num_sats_arm_min());
         gpsCheckStatus.bad_sats = true;
-    } else if(numSatsGPS2Fail) {
+    }
+    if (numSatsGPS2Fail) {
         hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
                            "GPS 2 numsats %u (needs %u)", gps.num_sats(1), gps.num_sats_arm_min());
         gpsCheckStatus.bad_sats = true;
-    } else {
+    } 
+    if (!numSatsGPS1Fail && !numSatsGPS2Fail) {
         gpsCheckStatus.bad_sats = false;
     }
 
