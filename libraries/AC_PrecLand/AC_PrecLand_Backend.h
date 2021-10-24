@@ -34,6 +34,9 @@ public:
     // returns distance to target in meters (0 means distance is not known)
     virtual float distance_to_target() { return 0.0f; };
 
+    // returns the number of blocks in the current frame
+    virtual size_t num_targets() const { return _state.healthy ? 1 : 0; }
+
     // parses a mavlink message from the companion computer
     virtual void handle_msg(const mavlink_message_t &msg) {};
 
