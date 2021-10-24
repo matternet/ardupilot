@@ -136,10 +136,11 @@ private:
     bool                        _estimator_initialized;
     bool                        _target_acquired;   // true if target has been seen recently
     uint32_t                    _last_backend_los_meas_ms;  // system time target was last seen
+    uint8_t                     _last_backend_max_block_cnt;  // last maximum number of blocks read
 
     PosVelEKF                   _ekf_x, _ekf_y;     // Kalman Filter for x and y axis
     uint32_t                    _outlier_reject_count;  // mini-EKF's outlier counter (3 consecutive outliers lead to EKF accepting updates)
-    
+
     Vector3f                    _target_pos_rel_meas_NED; // target's relative position as 3D vector
 
     Vector2f                    _target_pos_rel_est_NE; // target's position relative to the IMU, not compensated for lag

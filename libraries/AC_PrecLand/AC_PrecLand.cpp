@@ -114,6 +114,7 @@ const AP_Param::GroupInfo AC_PrecLand::var_info[] = {
 // their values.
 //
 AC_PrecLand::AC_PrecLand()
+    : _last_backend_max_block_cnt(0)
 {
     // set parameters to defaults
     AP_Param::setup_object_defaults(this, var_info);
@@ -204,6 +205,8 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
     // update estimator of target position
     if (_backend != nullptr && _enabled) {
         _backend->update();
+        uint8_t cnt = _backend->num_targets();
+        if (cnt > _last_backend_max_block_cnt) _last_backend_max_block_cnt = cnt;
         run_estimator(rangefinder_alt_cm*0.01f, rangefinder_alt_valid);
     }
 }
@@ -347,7 +350,7 @@ void AC_PrecLand::run_estimator(float rangefinder_alt_m, bool rangefinder_alt_va
                     _last_update_ms = AP_HAL::millis();
                     _estimator_initialized = true;
                     _estimator_init_ms = AP_HAL::millis();
-                    
+
                     _target_pos_rel_out_NE = Vector2f(_ekf_x.getPos(), _ekf_y.getPos());
                     _target_vel_rel_out_NE = Vector2f(_ekf_x.getVel(), _ekf_y.getVel());
                 } else {
@@ -403,7 +406,7 @@ bool AC_PrecLand::retrieve_los_meas(Vector3f& target_vec_unit_body)
         );
 
         target_vec_unit_body = Rz*target_vec_unit_body;
-        
+
         AP::logger().Write("LOSM", "TimeUS,LOSx,LOSy,LOSz", "Qfff", AP_HAL::micros64(), target_vec_unit_body.x, target_vec_unit_body.y, target_vec_unit_body.z);
         return true;
     } else {
@@ -482,15 +485,15 @@ void AC_PrecLand::run_output_prediction()
     Vector3f land_ofs_ned_m = _ahrs.get_rotation_body_to_ned() * Vector3f(_land_ofs_cm_x,_land_ofs_cm_y,0) * 0.01f;
     target_pos_rel_est_corrected_NE.x += land_ofs_ned_m.x;
     target_pos_rel_est_corrected_NE.y += land_ofs_ned_m.y;
-        
+
     const struct inertial_data_frame_s& latest_inertial_data = *(*_inertial_history)[_inertial_history->available()-1];
-    
+
     _target_pos_rel_out_NE += _target_vel_rel_est_NE * latest_inertial_data.dt;
     _target_vel_rel_out_NE += -Vector2f(latest_inertial_data.correctedVehicleDeltaVelocityNED.x, latest_inertial_data.correctedVehicleDeltaVelocityNED.y);
-    
+
     const float tc = 0.3f;
     float alpha = latest_inertial_data.dt/(latest_inertial_data.dt+tc);
-        
+
     _target_pos_rel_out_NE += (target_pos_rel_est_corrected_NE - _target_pos_rel_out_NE) * alpha;
     _target_vel_rel_out_NE += (target_vel_rel_est_corrected_NE - _target_vel_rel_out_NE) * alpha;
 }
@@ -503,6 +506,7 @@ void AC_PrecLand::send_landing_target(mavlink_channel_t chan)
                                     target_acquired(),
                                     MAV_FRAME_GLOBAL_TERRAIN_ALT,
                                     _ekf_x.getPos()*100.0f, _ekf_y.getPos()*100.0f,
-                                    0.0f, 0.0f, 0.0f, 0, 0, 0, nullptr, 0, 0);
+                                    0.0f, 0.0f, 0.0f, 0, 0, 0, nullptr, _last_backend_max_block_cnt, 0);
 
+    _last_backend_max_block_cnt = 0;
 }
