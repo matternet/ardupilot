@@ -645,6 +645,34 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @User: Advanced
     AP_GROUPINFO("CUS_YAW", 51, Compass, _custom_yaw, 0),
 #endif
+
+    // @Param: AD_MAX
+    // @DisplayName: Compass maximum Angle-difference (AD) in all axes (xyz plane)
+    // @Description: This sets the maximum allowed angle difference in all axes between the two compass' for calibration check and arming consistency checks
+    // @Range: -180 180
+    // @Units: deg
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("AD_MAX", 52, Compass, _ang_diff_xyz_max_deg, 20.0f),
+
+    // @Param: ADXY_MAX
+    // @DisplayName: Compass maximum Angle-difference (AD) in xy plane
+    // @Description: This sets the maximum allowed angle difference in XY axis between the two compass' for calibration check and arming consistency checks
+    // @Range: -180 180
+    // @Units: deg
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("ADXY_MAX", 53, Compass, _ang_diff_xy_max_deg, 10.0f),
+
+    // @Param: LDXY_MAX
+    // @DisplayName: Compass maximum Length-difference (LD) in xy plane
+    // @Description: This sets the maximum allowed length difference in XY axis between the two compass' for calibration check and arming consistency checks
+    // @Range: 0 200
+    // @Units: mGauss
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("LDXY_MAX", 54, Compass, _len_diff_xy_max_mG, 60.0f),
+
     AP_GROUPEND
 };
 
@@ -1906,17 +1934,17 @@ bool Compass::consistent() const
         const float xy_ang_diff  = acosf(constrain_float(mag_field_xy*primary_mag_field_xy_norm,-1.0f,1.0f));
 
         // check for gross misalignment on all axes
-        if (xyz_ang_diff > AP_COMPASS_MAX_XYZ_ANG_DIFF) {
+        if (xyz_ang_diff > radians(_ang_diff_xyz_max_deg)) {
             return false;
         }
 
         // check for an unacceptable angle difference on the xy plane
-        if (xy_ang_diff > AP_COMPASS_MAX_XY_ANG_DIFF) {
+        if (xy_ang_diff > radians(_ang_diff_xy_max_deg)) {
             return false;
         }
 
         // check for an unacceptable length difference on the xy plane
-        if (xy_len_diff > AP_COMPASS_MAX_XY_LENGTH_DIFF) {
+        if (xy_len_diff > _len_diff_xy_max_mG) {
             return false;
         }
     }

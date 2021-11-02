@@ -38,9 +38,6 @@
 
 // define default compass calibration fitness and consistency checks
 #define AP_COMPASS_CALIBRATION_FITNESS_DEFAULT 16.0f
-#define AP_COMPASS_MAX_XYZ_ANG_DIFF radians(20.0f)
-#define AP_COMPASS_MAX_XY_ANG_DIFF radians(10.0f)
-#define AP_COMPASS_MAX_XY_LENGTH_DIFF 60.0f
 
 /**
    maximum number of compass instances available on this platform. If more
@@ -545,6 +542,15 @@ private:
 #endif
 
     AP_Int16 _offset_max;
+
+    // Angle difference between compass' in xyz plane, in degrees
+    AP_Float _ang_diff_xyz_max_deg;
+
+    // Angle difference between compass' in xy plane, in degrees
+    AP_Float _ang_diff_xy_max_deg;
+
+    // Mag field Length difference between compass' in xy plane, in mG
+    AP_Float _len_diff_xy_max_mG;
 
     // bitmask of options
     enum class Option : uint16_t {
