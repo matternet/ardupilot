@@ -433,6 +433,9 @@ bool AP_Arming::gps_checks(bool report)
     const AP_GPS &gps = AP::gps();
     if ((checks_to_perform & ARMING_CHECK_ALL) || (checks_to_perform & ARMING_CHECK_GPS)) {
 
+        bool gps1_status_fail = false;
+        bool gps2_status_fail = false;
+
         //GPS OK?
         if (!AP::ahrs().home_is_set() ||
             gps.status() < AP_GPS::GPS_OK_FIX_3D) {
@@ -440,8 +443,17 @@ bool AP_Arming::gps_checks(bool report)
             return false;
         }
 
-        if (gps.status() < gps.status_arm_min()) {
-            check_failed(ARMING_CHECK_GPS, report, "Waiting for enhanced GPS fix");
+        if (gps.status(0) < gps.status_arm_min()) {
+            check_failed(ARMING_CHECK_GPS, report, "GPS 1 Fix %u (needs %u)", gps.status(0), gps.status_arm_min());
+            gps1_status_fail = true;
+        }
+
+        if (gps.status(1) < gps.status_arm_min()) {
+            check_failed(ARMING_CHECK_GPS, report, "GPS 2 Fix %u (needs %u)", gps.status(1), gps.status_arm_min());
+            gps2_status_fail = true;
+        }
+
+        if (gps1_status_fail || gps2_status_fail) {
             return false;
         }
 
