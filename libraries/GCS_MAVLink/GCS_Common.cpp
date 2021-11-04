@@ -3363,6 +3363,8 @@ void GCS_MAVLINK::send_banner()
     if (hal.rcout->get_output_mode_banner(banner_msg, sizeof(banner_msg))) {
         send_text(MAV_SEVERITY_INFO, "%s", banner_msg);
     }
+
+    AP::gps().broadcast_gps_version();
 }
 
 
