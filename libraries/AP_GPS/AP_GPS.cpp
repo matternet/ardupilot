@@ -1881,6 +1881,16 @@ bool AP_GPS::get_pre_arm_pos_change(uint8_t instance, float &pos_change, float &
     return true;
 }
 
+// announce GPS version on mavlink
+void AP_GPS::broadcast_gps_version(void)
+{
+    for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; i++) {
+        if (drivers[i]) {
+            drivers[i]->broadcast_gps_version();
+        }
+    }
+}
+
 namespace AP {
 
 AP_GPS &gps()
