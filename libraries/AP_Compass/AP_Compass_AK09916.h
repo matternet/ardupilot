@@ -77,12 +77,12 @@ private:
 
     AP_AK09916_BusDriver *_bus;
 
-    float _magnetometer_ASA[3] {0, 0, 0};
     bool _force_external;
     uint8_t _compass_instance;
     bool _initialized;
     enum Rotation _rotation;
     enum AP_Compass_Backend::DevTypes _devtype;
+    uint32_t _read_error_cnt;
 };
 
 
@@ -129,7 +129,7 @@ public:
     uint32_t get_bus_id(void) const override {
         return _dev->get_bus_id();
     }
-    
+
 private:
     AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev;
 };
@@ -146,7 +146,7 @@ public:
     bool register_write(uint8_t reg, uint8_t val) override;
 
     AP_HAL::Device::PeriodicHandle register_periodic_callback(uint32_t period_usec, AP_HAL::Device::PeriodicCb) override;
-    
+
     AP_HAL::Semaphore  *get_semaphore() override;
 
     bool configure() override;
@@ -157,7 +157,7 @@ public:
 
     // return 24 bit bus identifier
     uint32_t get_bus_id(void) const override;
-    
+
 private:
     AuxiliaryBus *_bus;
     AuxiliaryBusSlave *_slave;

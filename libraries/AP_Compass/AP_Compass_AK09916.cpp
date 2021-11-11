@@ -67,6 +67,7 @@ AP_Compass_AK09916::AP_Compass_AK09916(AP_AK09916_BusDriver *bus,
     : _bus(bus)
     , _force_external(force_external)
     , _rotation(rotation)
+    , _read_error_cnt(0)
 {
 }
 
@@ -127,7 +128,7 @@ AP_Compass_Backend *AP_Compass_AK09916::probe_ICM20948(AP_HAL::OwnPtr<AP_HAL::I2
             goto fail;
         }
         hal.scheduler->delay(10);
-        
+
         // see if ICM20948 is sleeping
         if (!dev_icm->read_registers(REG_ICM_PWR_MGMT_1, &rval, 1)) {
             goto fail;
@@ -136,7 +137,7 @@ AP_Compass_Backend *AP_Compass_AK09916::probe_ICM20948(AP_HAL::OwnPtr<AP_HAL::I2
             break;
         }
     } while (retries--);
-    
+
     if (rval & 0x40) {
         // it didn't come out of sleep
         goto fail;
@@ -234,7 +235,7 @@ bool AP_Compass_AK09916::init()
     }
 
     set_rotation(_compass_instance, _rotation);
-    
+
     bus_sem->give();
 
     _bus->register_periodic_callback(10000, FUNCTOR_BIND_MEMBER(&AP_Compass_AK09916::_update, void));
@@ -268,6 +269,21 @@ void AP_Compass_AK09916::_update()
     Vector3f raw_field;
 
     if (!_bus->block_read(REG_ST1, (uint8_t *) &regs, sizeof(regs))) {
+        // At this point the compass is not responding due to these reasons:
+        //  - bus corruption
+        //  - power loss
+        // Increment a counter to flag the error. The mode needs to be reset once
+        // communication link is re-established.
+        _read_error_cnt++;  // unsigned 32-bit value will take over a year to overflow
+        return;
+    }
+
+    // Check for read errors to reset compass mode.
+    // Only reset _read_error_cnt variable if the mode was set successfully.
+    if (_read_error_cnt) {
+        if (_setup_mode()) {
+            _read_error_cnt = 0;
+        }
         return;
     }
 
