@@ -57,4 +57,7 @@ private:
                            uint16_t &val);
     void data_log(uint16_t *val);
     AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev;
+
+    uint32_t read_errors_;
+    AP_HAL::Device::PeriodicHandle sf20_periodic_callback_handle_;
 };

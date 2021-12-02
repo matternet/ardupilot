@@ -67,7 +67,9 @@ AP_RangeFinder_LightWareI2C::AP_RangeFinder_LightWareI2C(RangeFinder::RangeFinde
         AP_RangeFinder_Params &_params,
         AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev)
     : AP_RangeFinder_Backend(_state, _params)
-    , _dev(std::move(dev)) {}
+    , _dev(std::move(dev)) 
+    , read_errors_(0)
+    , sf20_periodic_callback_handle_() {}
 
 /*
    Detects if a Lightware rangefinder is connected. We'll detect by
@@ -194,10 +196,8 @@ bool AP_RangeFinder_LightWareI2C::init()
 {
     if (sf20_init()) {
         hal.console->printf("Found SF20 native Lidar\n");
-        return true;
-    }
-    if (legacy_init()) {
-        hal.console->printf("Found SF20 legacy Lidar\n");
+        // Reset read errors in event of re-initialization
+        read_errors_ = 0;
         return true;
     }
     hal.console->printf("SF20 not found\n");
@@ -335,8 +335,12 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     write_bytes((uint8_t*)init_stream_id[0], strlen(init_stream_id[0]));
 
     // call timer() at 20Hz
-    _dev->register_periodic_callback(50000,
-                                     FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
+    // Create this periodic calback once only
+    // if (!sf20_periodic_callback_handle_) {
+        hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::init: create periodic callback");
+        sf20_periodic_callback_handle_ = _dev->register_periodic_callback(50000,
+                                         FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
+    // }
 
     return true;
 }
@@ -374,11 +378,15 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 
     /* Reads the LiDAR value requested during the last interrupt. */
     if (!_dev->read(stream, sizeof(stream))) {
+        ++read_errors_;
+        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_get_reading: timing read failure, read_errors_: %u\n", read_errors_);
         return false;
     }
     stream[lx20_max_expected_stream_reply_len_bytes] = 0;
 
     if (!sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_stream_val[i])) {
+        ++read_errors_;
+        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_get_reading: parse read failure, read_errors_: %u\n", read_errors_);
         return false;
     }
 
@@ -395,7 +403,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 
     // Request the next stream in the sequence from the SF20
     write_bytes((uint8_t*)init_stream_id[i], strlen(init_stream_id[i]));
-
+    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_get_reading: distance cm: %u\n", reading_cm);
     return true;
 }
 
@@ -482,6 +490,16 @@ void AP_RangeFinder_LightWareI2C::sf20_timer(void)
         update_status();
     } else {
         set_status(RangeFinder::RangeFinder_NoData);
+        // In the event of any read errors. Read errors may be a result of:
+        // - Bus corruption
+        // - Power Loss
+        // - Mistimed read.
+        // If so we must re-initialize the sensor, as the data may not be valid without proper setup.
+        if (read_errors_) {
+            hal.console->printf("AP_RangeFinder_LightWareI2C::sf20_timer: %u Read errors previously detected. Re-initializing..\n", read_errors_);
+            // init may succeed or fail. In event of success, will reset read_errors_, otherwise, re-init will attempt again on next read cycle.
+            init();
+        }
     }
 }
 
