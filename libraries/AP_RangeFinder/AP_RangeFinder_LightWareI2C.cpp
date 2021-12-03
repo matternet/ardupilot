@@ -198,10 +198,10 @@ bool AP_RangeFinder_LightWareI2C::init()
         hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::init: Found SF20 native Lidar\n");
         return true;
     }
-    // if (legacy_init()) {
-    //     hal.console->printf("[WARNING] AP_RangeFinder_LightWareI2C::init: Found SF20 legacy Lidar\n");
-    //     return true;
-    // }
+    if (legacy_init()) {
+        hal.console->printf("[WARNING] AP_RangeFinder_LightWareI2C::init: Found SF20 legacy Lidar\n");
+        return true;
+    }
     hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::init: SF20 Not Found.\n");
     return false;
 }
@@ -366,7 +366,7 @@ bool AP_RangeFinder_LightWareI2C::legacy_get_reading(uint16_t &reading_cm)
         hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::legacy_get_reading: distance cm: %u\n", reading_cm);
         return true;
     }
-    hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::legacy_get_reading: read failure, read_errors_: %u\n", read_errors_)
+    hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::legacy_get_reading: read failure, read_errors_: %u\n", read_errors_);
     return false;
 }
 
@@ -479,6 +479,7 @@ void AP_RangeFinder_LightWareI2C::update(void)
 
 void AP_RangeFinder_LightWareI2C::legacy_timer(void)
 {
+    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::legacy_timer\n");
     if (legacy_get_reading(state.distance_cm)) {
         // update range_valid state based on distance measured
         update_status();
@@ -489,6 +490,7 @@ void AP_RangeFinder_LightWareI2C::legacy_timer(void)
 
 void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 {
+    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_timer\n");
     // If no read errors, try to perform nominal readings
     if (!read_errors_) {
         if (sf20_get_reading(state.distance_cm)) {
