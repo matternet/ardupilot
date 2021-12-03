@@ -195,12 +195,14 @@ void AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const c
 bool AP_RangeFinder_LightWareI2C::init()
 {
     if (sf20_init()) {
-        hal.console->printf("Found SF20 native Lidar\n");
-        // Reset read errors in event of re-initialization
-        read_errors_ = 0;
+        hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::init: Found SF20 native Lidar\n");
         return true;
     }
-    hal.console->printf("SF20 not found\n");
+    // if (legacy_init()) {
+    //     hal.console->printf("[WARNING] AP_RangeFinder_LightWareI2C::init: Found SF20 legacy Lidar\n");
+    //     return true;
+    // }
+    hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::init: SF20 Not Found.\n");
     return false;
 }
 
@@ -336,11 +338,11 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
 
     // call timer() at 20Hz
     // Create this periodic calback once only
-    // if (!sf20_periodic_callback_handle_) {
+    if (!sf20_periodic_callback_handle_) {
         hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::init: create periodic callback");
         sf20_periodic_callback_handle_ = _dev->register_periodic_callback(50000,
                                          FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
-    // }
+    }
 
     return true;
 }
@@ -361,8 +363,10 @@ bool AP_RangeFinder_LightWareI2C::legacy_get_reading(uint16_t &reading_cm)
         } else {
             reading_cm = uint16_t(signed_val);
         }
+        hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::legacy_get_reading: distance cm: %u\n", reading_cm);
         return true;
     }
+    hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::legacy_get_reading: read failure, read_errors_: %u\n", read_errors_)
     return false;
 }
 
@@ -485,20 +489,18 @@ void AP_RangeFinder_LightWareI2C::legacy_timer(void)
 
 void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 {
-    if (sf20_get_reading(state.distance_cm)) {
-        // update range_valid state based on distance measured
-        update_status();
+    // If no read errors, try to perform nominal readings
+    if (!read_errors_) {
+        if (sf20_get_reading(state.distance_cm)) {
+            // Update range_valid state based on distance measured
+            update_status();
+        } else {
+            set_status(RangeFinder::RangeFinder_NoData);
+        }
     } else {
-        set_status(RangeFinder::RangeFinder_NoData);
-        // In the event of any read errors. Read errors may be a result of:
-        // - Bus corruption
-        // - Power Loss
-        // - Mistimed read.
-        // If so we must re-initialize the sensor, as the data may not be valid without proper setup.
-        if (read_errors_) {
-            hal.console->printf("AP_RangeFinder_LightWareI2C::sf20_timer: %u Read errors previously detected. Re-initializing..\n", read_errors_);
-            // init may succeed or fail. In event of success, will reset read_errors_, otherwise, re-init will attempt again on next read cycle.
-            init();
+        // Otherwise try to init again.
+        if (init()) {
+            read_errors_ = 0;
         }
     }
 }
