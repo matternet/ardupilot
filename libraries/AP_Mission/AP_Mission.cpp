@@ -980,7 +980,7 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.content.winch.release_rate = packet.param4; // release rate in meters/second
         break;
 
-    case MAV_CMD_USER_1 ... MAV_CMD_USER_5:
+    case MAV_CMD_USER_2 ... MAV_CMD_USER_5:
         cmd.content.user_command.param1 = packet.param1;
         cmd.content.user_command.param2 = packet.param2;
         break;
@@ -1417,7 +1417,7 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         packet.param4 = cmd.content.winch.release_rate;     // release rate in meters/second
         break;
 
-    case MAV_CMD_USER_1 ... MAV_CMD_USER_5:
+    case MAV_CMD_USER_2 ... MAV_CMD_USER_5:
         packet.param1 = cmd.content.user_command.param1;
         packet.param2 = cmd.content.user_command.param2;
         break;
@@ -1962,7 +1962,7 @@ const char *AP_Mission::Mission_Command::type() const {
         return "PayloadPlace";
     case MAV_CMD_DO_PARACHUTE:
         return "Parachute";
-    case MAV_CMD_USER_1:
+    case MAV_CMD_USER_2:
         return "USER";
 
     default:
