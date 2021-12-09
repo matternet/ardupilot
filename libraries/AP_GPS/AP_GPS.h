@@ -160,6 +160,9 @@ public:
         int32_t  rtk_baseline_z_mm;        ///< Current baseline in ECEF z or NED down component in mm
         uint32_t rtk_accuracy;             ///< Current estimate of 3D baseline accuracy (receiver dependent, typical 0 to 9999)
         int32_t  rtk_iar_num_hypotheses;   ///< Current number of integer ambiguity hypotheses
+
+        // disabled by user switch
+        bool disabled;
     };
 
     /// Startup initialisation.
@@ -425,6 +428,10 @@ public:
 
     // handle possibly fragmented RTCM injection data
     void handle_gps_rtcm_fragment(uint8_t flags, const uint8_t *data, uint8_t len);
+
+    void set_kill(uint8_t instance, bool set) {
+        state[instance].disabled = set;
+    }
 
 protected:
 
