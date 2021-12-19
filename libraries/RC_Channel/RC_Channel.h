@@ -181,6 +181,22 @@ public:
         // if you add something here, make sure to update the documentation of the parameter in RC_Channel.cpp!
         // also, if you add an option >255, you will need to fix duplicate_options_exist
 
+        // custom sensor disable options
+        GPS_DISABLE1      =        150,
+        GPS_DISABLE2      =        151,
+        GPS_DISABLE_BOTH  =        152,
+
+        MAG_DISABLE1      =        153,
+        MAG_DISABLE2      =        154,
+        MAG_DISABLE_BOTH  =        155,
+
+        RFND_DISABLE1      =       156,
+        RFND_DISABLE2      =       157,
+        RFND_DISABLE_BOTH  =       158,
+        PIXY_DISABLE       =       159,
+        PLAND_DISABLE      =       160,
+        I2C_DISABLE        =       161,
+
         // inputs eventually used to replace RCMAP
         MAINSAIL =           207, // mainsail input
     };
