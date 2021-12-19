@@ -143,6 +143,9 @@ public:
       get mask of bus numbers for all configured internal I2C buses
      */
     uint32_t get_bus_mask_internal(void) const override;
+
+    // disable i2c devices for testing
+    void i2c_disable(bool disable) override;
 };
 }
 
