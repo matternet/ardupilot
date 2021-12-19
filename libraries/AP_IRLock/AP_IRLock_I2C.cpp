@@ -162,6 +162,10 @@ void AP_IRLock_I2C::read_frames(void)
         return;
     }
 
+    if (_disabled) {
+        return;
+    }
+
     // The objects in each frame are sorted by size, with the largest objects sent first.
     struct frame *irframe = &blocks[0];
     int16_t corner1_pix_x = irframe->pixel_x - irframe->pixel_size_x/2;

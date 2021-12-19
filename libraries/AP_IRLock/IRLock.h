@@ -26,6 +26,10 @@
 class IRLock
 {
 public:
+    IRLock(void) {
+        singleton = this;
+    }
+
     // init - initialize sensor library
     // library won't be useable unless this is first called
     virtual void init(int8_t bus) = 0;
@@ -45,7 +49,14 @@ public:
     // retrieve body frame unit vector in direction of target
     // returns true if data is available
     bool get_unit_vector_body(Vector3f& ret) const;
-    
+
+    void set_disable(bool disable) {
+        _disabled = disable;
+    }
+
+    static IRLock *get_singleton(void) {
+        return singleton;
+    }
 
 protected:
     struct AP_IRLock_Flags {
@@ -64,4 +75,12 @@ protected:
     } irlock_target_info;
 
     irlock_target_info _target_info;
+
+    bool _disabled;
+
+    static IRLock *singleton;
+};
+
+namespace AP {
+    IRLock *irlock();
 };
