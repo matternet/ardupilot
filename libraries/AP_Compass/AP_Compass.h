@@ -341,6 +341,11 @@ public:
     MAV_RESULT mag_cal_fixed_yaw(float yaw_deg, uint8_t compass_mask,
                                  float lat_deg, float lon_deg);
 
+    // set a mask to disable sensor for failure testing
+    void set_disable_mask(uint8_t mask) {
+        _disable_mask = mask;
+    }
+
 private:
     static Compass *_singleton;
 
@@ -593,6 +598,9 @@ private:
     ///
     void try_set_initial_location();
     bool _initial_location_set;
+
+    // mask of disabled sensors
+    uint8_t _disable_mask;
 };
 
 namespace AP {
