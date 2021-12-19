@@ -150,6 +150,9 @@ AP_GPS_UAVCAN* AP_GPS_UAVCAN::get_uavcan_backend(AP_UAVCAN* ap_uavcan, uint8_t n
 
 void AP_GPS_UAVCAN::handle_fix_msg(const FixCb &cb)
 {
+    if (is_disabled()) {
+        return;
+    }
     if (seen_fix2) {
         // use Fix2 instead
         return;
@@ -265,6 +268,9 @@ void AP_GPS_UAVCAN::handle_fix_msg(const FixCb &cb)
 
 void AP_GPS_UAVCAN::handle_fix2_msg(const Fix2Cb &cb)
 {
+    if (is_disabled()) {
+        return;
+    }
     bool process = false;
     seen_fix2 = true;
 
@@ -377,6 +383,9 @@ void AP_GPS_UAVCAN::handle_fix2_msg(const Fix2Cb &cb)
 
 void AP_GPS_UAVCAN::handle_aux_msg(const AuxCb &cb)
 {
+    if (is_disabled()) {
+        return;
+    }
     WITH_SEMAPHORE(sem);
 
     if (!uavcan::isNaN(cb.msg->hdop)) {
