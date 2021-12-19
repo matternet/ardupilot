@@ -120,6 +120,11 @@ void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
 void AP_Compass_Backend::accumulate_sample(Vector3f &field, uint8_t instance,
                                            uint32_t max_samples)
 {
+    if (_compass._disable_mask & (1U<<instance)) {
+        // compass is disabled, discard data
+        return;
+    }
+
     /* rotate raw_field from sensor frame to body frame */
     rotate_field(field, instance);
 
