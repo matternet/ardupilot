@@ -289,3 +289,10 @@ void AP_GPS_Backend::check_new_itow(uint32_t itow, uint32_t msg_length)
         state.uart_timestamp_ms = local_us / 1000U;
     }
 }
+
+// check if an instance is disabled
+bool AP_GPS_Backend::is_disabled(void) const
+{
+    const uint8_t instance = &state - &gps.state[0];
+    return ((1U<<instance) & gps._force_disable_mask) != 0;
+}
