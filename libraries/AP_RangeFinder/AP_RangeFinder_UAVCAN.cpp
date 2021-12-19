@@ -129,6 +129,9 @@ void AP_RangeFinder_UAVCAN::handle_measurement(AP_UAVCAN* ap_uavcan, uint8_t nod
     if (driver == nullptr) {
         return;
     }
+    if (driver->state.disabled) {
+        return;
+    }
     WITH_SEMAPHORE(driver->_sem);
     switch (cb.msg->reading_type) {
         case uavcan::equipment::range_sensor::Measurement::READING_TYPE_VALID_RANGE:
