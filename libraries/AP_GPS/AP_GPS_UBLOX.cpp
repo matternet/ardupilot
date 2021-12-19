@@ -567,8 +567,16 @@ AP_GPS_UBLOX::read(void)
     }
 
     numc = port->available();
-    for (int16_t i = 0; i < numc; i++) {        // Process bytes received
 
+    if (is_disabled()) {
+        // drain data
+        for (int16_t i = 0; i < numc; i++) {
+            data = port->read();
+        }
+        return false;
+    }
+
+    for (int16_t i = 0; i < numc; i++) {        // Process bytes received
         // read the next byte
         data = port->read();
 
