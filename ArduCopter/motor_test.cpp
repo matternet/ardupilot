@@ -9,13 +9,29 @@
 #define MOTOR_TEST_PWM_MIN              800     // min pwm value accepted by the test
 #define MOTOR_TEST_PWM_MAX              2200    // max pwm value accepted by the test
 #define MOTOR_TEST_TIMEOUT_SEC          600     // max timeout is 10 minutes (600 seconds)
+#define MOTOR_SEQUENCE_DELAY_MS         3000    // Delay between each motor test
 
-static uint32_t motor_test_start_ms;        // system time the motor test began
-static uint32_t motor_test_timeout_ms;      // test will timeout this many milliseconds after the motor_test_start_ms
-static uint8_t motor_test_seq;              // motor sequence number of motor being tested
-static uint8_t motor_test_count;            // number of motors to test
-static uint8_t motor_test_throttle_type;    // motor throttle type (0=throttle percentage, 1=PWM, 2=pilot throttle channel pass-through)
-static uint16_t motor_test_throttle_value;  // throttle to be sent to motor, value depends upon it's type
+static uint32_t motor_test_start_ms;         // system time the motor test began
+static uint32_t motor_test_step_timeout_ms;  // step will timeout this many milliseconds after the motor_test_start_ms
+static uint8_t  motor_test_seq;              // motor sequence number of motor being tested
+static uint16_t motor_test_max_throttle;     // max throttle to be sent to motor, value depends upon it's type
+static uint16_t motor_test_step_throttle;    // throttle step
+static uint16_t motor_test_throttle_value;   // current throttle
+static uint8_t  motor_test_num_steps;        // number of ramp steps
+static uint8_t  motor_test_step;             // current step
+static uint32_t motor_test_step_time_ms;     // step delay in milliseconds
+static uint8_t  motor_test_throttle_type;    // motor throttle type (0=throttle percentage, 1=PWM, 2=pilot throttle channel pass-through)
+
+static void print_battery_status() {
+    const AP_BattMonitor &battery = AP::battery();
+    float battery_current = 0;
+    if (battery.current_amps(battery_current)) {
+        battery_current *= 1000;
+    }
+
+    // voltage in mV units;  current in 10mA units
+    gcs().send_text(MAV_SEVERITY_INFO, "motor test status: %d %d %d", motor_test_throttle_value, (int)(battery.voltage() * 1000), (int)(battery_current));
+}
 
 // motor_test_output - checks for timeout and sends updates to motors objects
 void Copter::motor_test_output()
@@ -29,26 +45,19 @@ void Copter::motor_test_output()
 
     // check for test timeout
     uint32_t now = AP_HAL::millis();
-    if ((now - motor_test_start_ms) >= motor_test_timeout_ms) {
-        if (motor_test_count > 1) {
-            if (now - motor_test_start_ms < motor_test_timeout_ms*1.5) {
-                // output zero for 50% of the test time
-                motors->output_min();
-            } else {
-                // move onto next motor
-                motor_test_seq++;
-                motor_test_count--;
-                motor_test_start_ms = now;
-                if (!motors->armed()) {
-                    motors->armed(true);
-                    update_armed_pin();
-                    hal.util->set_soft_armed(true);
-                }
-            }
-            return;
+    if (now >= motor_test_step_timeout_ms) {
+        // move on to next ramp step
+        if (motor_test_step < motor_test_num_steps) {
+            print_battery_status();
+            motor_test_step++;
+            motor_test_throttle_value += motor_test_step_throttle;
+            motor_test_start_ms = AP_HAL::millis();
+            motor_test_step_timeout_ms = motor_test_start_ms + motor_test_step_time_ms;
         }
-        // stop motor test
-        motor_test_stop();
+        else {
+            print_battery_status();
+            motor_test_stop();
+        }
     } else {
         int16_t pwm = 0;   // pwm that will be output to the motors
 
@@ -129,10 +138,10 @@ bool Copter::mavlink_motor_test_check(const GCS_MAVLINK &gcs_chan, bool check_rc
 // mavlink_motor_test_start - start motor test - spin a single motor at a specified pwm
 //  returns MAV_RESULT_ACCEPTED on success, MAV_RESULT_FAILED on failure
 MAV_RESULT Copter::mavlink_motor_test_start(const GCS_MAVLINK &gcs_chan, uint8_t motor_seq, uint8_t throttle_type, uint16_t throttle_value,
-                                         float timeout_sec, uint8_t motor_count)
+                                         float timeout_sec, uint8_t step_count, uint16_t start_throttle)
 {
-    if (motor_count == 0) {
-        motor_count = 1;
+    if (step_count == 0) {
+        step_count = 1;
     }
     // if test has not started try to start it
     if (!ap.motor_test) {
@@ -168,19 +177,22 @@ MAV_RESULT Copter::mavlink_motor_test_start(const GCS_MAVLINK &gcs_chan, uint8_t
         }
     }
 
-    // set timeout
-    motor_test_start_ms = AP_HAL::millis();
-    motor_test_timeout_ms = MIN(timeout_sec, MOTOR_TEST_TIMEOUT_SEC) * 1000;
-
     // store required output
     motor_test_seq = motor_seq;
-    motor_test_count = motor_count;
     motor_test_throttle_type = throttle_type;
-    motor_test_throttle_value = throttle_value;
+    motor_test_max_throttle = throttle_value;
+    motor_test_num_steps = step_count;
+    motor_test_step_time_ms = MIN(timeout_sec, MOTOR_TEST_TIMEOUT_SEC) * 1000;
 
     if (motor_test_throttle_type == MOTOR_TEST_COMPASS_CAL) {
         compass.per_motor_calibration_start();
-    }            
+    }
+
+    motor_test_step_throttle = (motor_test_max_throttle - start_throttle) / motor_test_num_steps;
+    motor_test_throttle_value = start_throttle + motor_test_step_throttle;
+    motor_test_step = 1;
+    motor_test_start_ms = AP_HAL::millis();
+    motor_test_step_timeout_ms = motor_test_start_ms + motor_test_step_time_ms;
 
     // return success
     return MAV_RESULT_ACCEPTED;
@@ -194,7 +206,7 @@ void Copter::motor_test_stop()
         return;
     }
 
-    gcs().send_text(MAV_SEVERITY_INFO, "finished motor test");    
+    gcs().send_text(MAV_SEVERITY_INFO, "finished motor test");
 
     // flag test is complete
     ap.motor_test = false;
@@ -206,7 +218,7 @@ void Copter::motor_test_stop()
 
     // reset timeout
     motor_test_start_ms = 0;
-    motor_test_timeout_ms = 0;
+    motor_test_step_timeout_ms = 0;
 
     // re-enable failsafes
     g.failsafe_throttle.load();

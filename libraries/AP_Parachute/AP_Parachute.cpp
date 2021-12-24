@@ -86,6 +86,12 @@ void AP_Parachute::enabled(bool on_off)
     // clear release_time
     _release_time = 0;
 
+    // Matternet manufacturing test: Arm FTS on parachute enable
+    if (on_off) {
+        hal.util->set_soft_armed(true);
+        gcs().send_text(MAV_SEVERITY_INFO,"Parachute: Enabled");
+    }
+
     AP::logger().Write_Event(_enabled ? DATA_PARACHUTE_ENABLED : DATA_PARACHUTE_DISABLED);
 }
 
@@ -200,6 +206,12 @@ void AP_Parachute::mttr_fts_update()
     }
 
     uint32_t tnow_ms = AP_HAL::millis();
+
+    if (_poweroff) {
+        struct fts_msg_power_off_s pwroff_msg;
+        pwroff_msg.msgid = FTS_MSGID_POWER_OFF;
+        mttr_fts_transmit(sizeof(pwroff_msg), (uint8_t*)&pwroff_msg);
+    }
 
     // 20Hz
     if (tnow_ms - _mttr_last_loop_ms > 50) {
