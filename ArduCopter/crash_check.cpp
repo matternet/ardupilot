@@ -264,6 +264,7 @@ void Copter::parachute_manual_release()
         return;
     }
 
+#if 0  // Matternet manufacturing test: Allow parachute release when landed
     // do not release if vehicle is landed
     // do not release if we are landed or below the minimum altitude above home
     if (ap.land_complete) {
@@ -272,6 +273,7 @@ void Copter::parachute_manual_release()
         AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_LANDED);
         return;
     }
+#endif
 
     // do not release if we are landed or below the minimum altitude above home
 #if 0
