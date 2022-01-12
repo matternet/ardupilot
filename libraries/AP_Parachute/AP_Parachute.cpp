@@ -86,6 +86,12 @@ void AP_Parachute::enabled(bool on_off)
     // clear release_time
     _release_time = 0;
 
+    // Matternet manufacturing test: Arm FTS on parachute enable
+    if (on_off) {
+        hal.util->set_soft_armed(true);
+        gcs().send_text(MAV_SEVERITY_INFO,"Parachute: Enabled");
+    }
+
     AP::logger().Write_Event(_enabled ? DATA_PARACHUTE_ENABLED : DATA_PARACHUTE_DISABLED);
 }
 
