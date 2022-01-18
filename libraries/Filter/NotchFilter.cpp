@@ -118,7 +118,7 @@ void NotchFilterVector3fParam::init(float _sample_freq_hz)
  */
 Vector3f NotchFilterVector3fParam::apply(const Vector3f &sample)
 {
-    if (!enable) {
+    if (!enable || rc_disabled) {
         // when not enabled it is a simple pass-through
         return sample;
     }
@@ -133,6 +133,17 @@ Vector3f NotchFilterVector3fParam::apply(const Vector3f &sample)
     }
     
     return filter.apply(sample);
+}
+
+void NotchFilterVector3fParam::force_enable(bool _enable)
+{
+    if (!enable) {
+        return;
+    }
+    if (rc_disabled && _enable) {
+        init(sample_freq_hz);
+    }
+    rc_disabled = !_enable;
 }
 
 /* 

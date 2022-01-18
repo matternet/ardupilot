@@ -49,7 +49,9 @@ public:
     Vector3f apply(const Vector3f &sample);
 
     static const struct AP_Param::GroupInfo var_info[];
-    
+
+    void force_enable(bool enable);
+
 private:
     AP_Int8 enable;
     AP_Float center_freq_hz;
@@ -61,6 +63,7 @@ private:
     float last_center_freq;
     float last_bandwidth;
     float last_attenuation;
+    bool rc_disabled;
     
     NotchFilter<Vector3f> filter;
 };

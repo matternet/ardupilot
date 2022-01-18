@@ -235,6 +235,7 @@ void Copter::init_aux_switch_function(int8_t ch_option, uint8_t ch_flag)
         case AUXSW_INVERTED:
         case AUXSW_WINCH_ENABLE:
         case AUXSW_RC_OVERRIDE_ENABLE:
+        case AUXSW_NOTCH_ENABLE:
             do_aux_switch_function(ch_option, ch_flag);
             break;
     }
@@ -757,6 +758,22 @@ void Copter::do_aux_switch_function(int8_t ch_function, uint8_t ch_flag)
                 }
                 case AUX_SWITCH_LOW: {
                     ap.rc_override_enable = false;
+                    break;
+                }
+            }
+            break;
+
+        case AUXSW_NOTCH_ENABLE:
+            // Allow or disallow notch filter
+            switch (ch_flag) {
+                case AUX_SWITCH_HIGH: {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Notch enabled");
+                    ins.notch_enable(true);
+                    break;
+                }
+                case AUX_SWITCH_LOW: {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Notch disabled");
+                    ins.notch_enable(false);
                     break;
                 }
             }
