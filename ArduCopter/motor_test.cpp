@@ -26,7 +26,7 @@ static void print_battery_status() {
     const AP_BattMonitor &battery = AP::battery();
     float battery_current = 0;
     if (battery.current_amps(battery_current)) {
-        battery_current *= 100;
+        battery_current *= 1000;
     }
 
     // voltage in mV units;  current in 10mA units
@@ -138,7 +138,7 @@ bool Copter::mavlink_motor_test_check(const GCS_MAVLINK &gcs_chan, bool check_rc
 // mavlink_motor_test_start - start motor test - spin a single motor at a specified pwm
 //  returns MAV_RESULT_ACCEPTED on success, MAV_RESULT_FAILED on failure
 MAV_RESULT Copter::mavlink_motor_test_start(const GCS_MAVLINK &gcs_chan, uint8_t motor_seq, uint8_t throttle_type, uint16_t throttle_value,
-                                         float timeout_sec, uint8_t step_count)
+                                         float timeout_sec, uint8_t step_count, uint16_t start_throttle)
 {
     if (step_count == 0) {
         step_count = 1;
@@ -188,8 +188,8 @@ MAV_RESULT Copter::mavlink_motor_test_start(const GCS_MAVLINK &gcs_chan, uint8_t
         compass.per_motor_calibration_start();
     }
 
-    motor_test_step_throttle = motor_test_max_throttle / motor_test_num_steps;
-    motor_test_throttle_value = motor_test_step_throttle;
+    motor_test_step_throttle = (motor_test_max_throttle - start_throttle) / motor_test_num_steps;
+    motor_test_throttle_value = start_throttle + motor_test_step_throttle;
     motor_test_step = 1;
     motor_test_start_ms = AP_HAL::millis();
     motor_test_step_timeout_ms = motor_test_start_ms + motor_test_step_time_ms;

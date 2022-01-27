@@ -771,14 +771,15 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
         // param2 : throttle type (0=throttle percentage, 1=PWM, 2=pilot throttle channel pass-through. See MOTOR_TEST_THROTTLE_TYPE enum)
         // param3 : throttle (range depends upon param2)
         // param4 : timeout (in seconds)
-        // param5 : num_motors (in sequence)
-        // param6 : compass learning (0: disabled, 1: enabled)
+        // param5 : step_count
+        // param6 : start throttle (range depends upon param2)
         return copter.mavlink_motor_test_start(*this,
                                                (uint8_t)packet.param1,
                                                (uint8_t)packet.param2,
                                                (uint16_t)packet.param3,
                                                packet.param4,
-                                               (uint8_t)packet.param5);
+                                               (uint8_t)packet.param5,
+                                               (uint16_t)packet.param6);
 
 #if WINCH_ENABLED == ENABLED
     case MAV_CMD_DO_WINCH:
