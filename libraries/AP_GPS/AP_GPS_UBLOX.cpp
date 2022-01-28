@@ -257,7 +257,7 @@ AP_GPS_UBLOX::_request_next_config(void)
         }
         break;
     case STEP_POLL_SBAS:
-        if (gps._sbas_mode != 2) {
+        if (gps._sbas_mode != get_desired_sbas_mode()) {
             _send_message(CLASS_CFG, MSG_CFG_SBAS, nullptr, 0);
         } else {
             _unconfigured_messages &= ~CONFIG_SBAS;
@@ -1020,21 +1020,23 @@ AP_GPS_UBLOX::_parse_gps(void)
             return false;
 #endif
 
-        case MSG_CFG_SBAS:
-            if (gps._sbas_mode != 2) {
+        case MSG_CFG_SBAS: {
+            uint8_t desired_sbas_mode = get_desired_sbas_mode();
+            if (gps._sbas_mode != desired_sbas_mode) {
 	        Debug("Got SBAS settings %u %u %u 0x%x 0x%x\n", 
                       (unsigned)_buffer.sbas.mode,
                       (unsigned)_buffer.sbas.usage,
                       (unsigned)_buffer.sbas.maxSBAS,
                       (unsigned)_buffer.sbas.scanmode2,
                       (unsigned)_buffer.sbas.scanmode1);
-                if (_buffer.sbas.mode != gps._sbas_mode) {
-                    _buffer.sbas.mode = gps._sbas_mode;
+                if (_buffer.sbas.mode != desired_sbas_mode) {
+                    _buffer.sbas.mode = desired_sbas_mode;
                     _send_message(CLASS_CFG, MSG_CFG_SBAS,
                                   &_buffer.sbas,
                                   sizeof(_buffer.sbas));
                     _unconfigured_messages |= CONFIG_SBAS;
                     _cfg_needs_save = true;
+                    gcs().send_text(MAV_SEVERITY_INFO, "UBLOX setting sbas mode(%d)", desired_sbas_mode);
                 } else {
                     _unconfigured_messages &= ~CONFIG_SBAS;
                 }
@@ -1042,6 +1044,7 @@ AP_GPS_UBLOX::_parse_gps(void)
                     _unconfigured_messages &= ~CONFIG_SBAS;
             }
             return false;
+        }
         case MSG_CFG_MSG:
             if(_payload_length == sizeof(ubx_cfg_msg_rate_6)) {
                 // can't verify the setting without knowing the port
@@ -1993,4 +1996,23 @@ void AP_GPS_UBLOX::broadcast_gps_version() const
                       _version.hwVersion,
                       _version.swVersion);
     }
+}
+
+/*
+  return desired SBAS mode of operation. Values are defined by GPS_SBAS_MODE (mavlink)
+    0 = disabled
+    1 = enabled
+    2 = no change
+
+  NOTE: this is for test purposes only.  So we only need to report when we're disabled.
+        It is assumed that we can power cycle to get back to the original state.
+ */
+uint8_t AP_GPS_UBLOX::get_desired_sbas_mode(void) {
+    uint8_t retval = 2; 
+
+    if (is_sbas_disabled()) {
+        return 0;
+    }
+
+    return retval;
 }

@@ -197,6 +197,10 @@ public:
         PLAND_DISABLE      =       160,
         I2C_DISABLE        =       161,
 
+        GPS_SBAS_DISABLE1      =   162,
+        GPS_SBAS_DISABLE2      =   163,
+        GPS_SBAS_DISABLE_BOTH  =   164,
+
         // inputs eventually used to replace RCMAP
         MAINSAIL =           207, // mainsail input
     };

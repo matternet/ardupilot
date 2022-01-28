@@ -296,3 +296,10 @@ bool AP_GPS_Backend::is_disabled(void) const
     const uint8_t instance = &state - &gps.state[0];
     return ((1U<<instance) & gps._force_disable_mask) != 0;
 }
+
+// check if an instance has SBAS in disabled
+bool AP_GPS_Backend::is_sbas_disabled(void) const
+{
+    const uint8_t instance = &state - &gps.state[0];
+    return ((1U<<instance) & gps._sbas_disable_mask) != 0;
+}

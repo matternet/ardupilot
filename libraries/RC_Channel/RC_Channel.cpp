@@ -489,6 +489,9 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const aux_switch_
     case AUX_FUNC::PIXY_DISABLE:
     case AUX_FUNC::I2C_DISABLE:
     case AUX_FUNC::PLAND_DISABLE:
+    case AUX_FUNC::GPS_SBAS_DISABLE1:
+    case AUX_FUNC::GPS_SBAS_DISABLE2:
+    case AUX_FUNC::GPS_SBAS_DISABLE_BOTH:
         do_aux_function(ch_option, ch_flag);
         break;
     default:
@@ -787,6 +790,16 @@ void RC_Channel::do_aux_function(const aux_func_t ch_option, const aux_switch_po
         break;
     case AUX_FUNC::GPS_DISABLE_BOTH:
         AP::gps().force_disable(ch_flag == HIGH?3:0);
+        break;
+
+    case AUX_FUNC::GPS_SBAS_DISABLE1:
+        AP::gps().sbas_disable(ch_flag == HIGH?1:0);
+        break;
+    case AUX_FUNC::GPS_SBAS_DISABLE2:
+        AP::gps().sbas_disable(ch_flag == HIGH?2:0);
+        break;
+    case AUX_FUNC::GPS_SBAS_DISABLE_BOTH:
+        AP::gps().sbas_disable(ch_flag == HIGH?3:0);
         break;
 
     case AUX_FUNC::MAG_DISABLE1:
