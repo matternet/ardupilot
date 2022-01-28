@@ -1030,7 +1030,8 @@ AP_GPS_UBLOX::_parse_gps(void)
                       (unsigned)_buffer.sbas.scanmode2,
                       (unsigned)_buffer.sbas.scanmode1);
                 if (_buffer.sbas.mode != desired_sbas_mode) {
-                    gcs().send_text(MAV_SEVERITY_ALERT, "UBLOX setting sbas mode(%d)", desired_sbas_mode);
+                    gcs().send_text(MAV_SEVERITY_ALERT, "UBLOX sbas mode (current/desired) = (%d/%d)",
+                        _buffer.sbas.mode, desired_sbas_mode);
                     _buffer.sbas.mode = desired_sbas_mode;
                     _send_message(CLASS_CFG, MSG_CFG_SBAS,
                                   &_buffer.sbas,
