@@ -968,8 +968,8 @@ void AP_GPS::update_primary(void)
                 primary_instance = i;
                 _last_instance_swap_ms = now;
                 gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched from Blended to %u", primary_instance+1);
-                gcs().send_text(MAV_SEVERITY_DEBUG, "i: %u, state[i].status: %u, state[primary_instance].status: %u, state[i].num_sats: %u,
-                    state[primary_instance].num_sats: %u, primary_instance: %u",
+                gcs().send_text(MAV_SEVERITY_DEBUG, "i: %u state[i].status: %u state[primary_instance].status: %u state[i].num_sats: %u
+                    state[primary_instance].num_sats: %u primary_instance: %u",
                     i, state[i].status, state[primary_instance].status, state[i].num_sats, state[primary_instance].num_sats, primary_instance);
             }
         }
@@ -1031,7 +1031,7 @@ void AP_GPS::update_primary(void)
                 primary_instance = i;
                 _last_instance_swap_ms = now;
                 gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
-                gcs().send_text(MAV_SEVERITY_DEBUG, "another_gps_has_1_or_more_sats? %s, another_gps_has_2_or_more_sats? %s",
+                gcs().send_text(MAV_SEVERITY_DEBUG, "another_gps_has_1_or_more_sats? %s another_gps_has_2_or_more_sats? %s",
                     (another_gps_has_1_or_more_sats ? "true" : "false"), (another_gps_has_2_or_more_sats ? "true" : "false"));
             }
         }
