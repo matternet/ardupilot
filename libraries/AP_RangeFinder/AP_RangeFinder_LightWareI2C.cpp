@@ -363,10 +363,11 @@ bool AP_RangeFinder_LightWareI2C::legacy_get_reading(uint16_t &reading_cm)
         } else {
             reading_cm = uint16_t(signed_val);
         }
-        hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::legacy_get_reading: distance cm: %u\n", reading_cm);
+        hal.console->printf("[WARNING] AP_RangeFinder_LightWareI2C::legacy_get_reading: distance cm: %u\n", reading_cm);
         return true;
     }
-    hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::legacy_get_reading: read failure, read_errors_: %u\n", read_errors_);
+    ++read_errors_;
+    hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::legacy_get_reading: read failure, read_errors_: %lu\n", read_errors_);
     return false;
 }
 
@@ -383,14 +384,14 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
     /* Reads the LiDAR value requested during the last interrupt. */
     if (!_dev->read(stream, sizeof(stream))) {
         ++read_errors_;
-        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_get_reading: timing read failure, read_errors_: %u\n", read_errors_);
+        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_get_reading: timing read failure, read_errors_: %lu\n", read_errors_);
         return false;
     }
     stream[lx20_max_expected_stream_reply_len_bytes] = 0;
 
     if (!sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_stream_val[i])) {
         ++read_errors_;
-        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_get_reading: parse read failure, read_errors_: %u\n", read_errors_);
+        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_get_reading: parse read failure, read_errors_: %lu\n", read_errors_);
         return false;
     }
 
