@@ -968,7 +968,7 @@ void AP_GPS::update_primary(void)
                 primary_instance = i;
                 _last_instance_swap_ms = now;
                 gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched from Blended to %u", primary_instance+1);
-                gcs().send_text(MAV_SEVERITY_DEBUG, "i: %u state[i].status: %u state[primary_instance].status: %u state[i].num_sats: %u state[primary_instance].num_sats: %u primary_instance: %u", i, state[i].status, state[primary_instance].status, state[i].num_sats, state[primary_instance].num_sats, primary_instance);
+                gcs().send_text(MAV_SEVERITY_INFO, "i: %u state[i].status: %u state[primary_instance].status: %u state[i].num_sats: %u state[primary_instance].num_sats: %u primary_instance: %u", i, state[i].status, state[primary_instance].status, state[i].num_sats, state[primary_instance].num_sats, primary_instance);
             }
         }
         return;
@@ -1006,7 +1006,7 @@ void AP_GPS::update_primary(void)
             primary_instance = i;
             _last_instance_swap_ms = now;
             gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
-            gcs().send_text(MAV_SEVERITY_DEBUG, "state[i].status: %u > state[primary_instance].status: %u. primary_instance: %u", state[i].status, state[primary_instance].status, primary_instance);
+            gcs().send_text(MAV_SEVERITY_INFO, "state[i].status: %u > state[primary_instance].status: %u. primary_instance: %u", state[i].status, state[primary_instance].status, primary_instance);
             continue;
         }
 
@@ -1014,7 +1014,7 @@ void AP_GPS::update_primary(void)
 
         if (state[i].status == state[primary_instance].status && another_gps_has_1_or_more_sats) {
 
-            gcs().send_text(MAV_SEVERITY_DEBUG, "state[i].status: %u == state[primary_instance].status: %u && another_gps_has_1_or_more_sats",
+            gcs().send_text(MAV_SEVERITY_INFO, "state[i].status: %u == state[primary_instance].status: %u && another_gps_has_1_or_more_sats",
                 state[i].status, state[primary_instance]);
             bool another_gps_has_2_or_more_sats = (state[i].num_sats >= state[primary_instance].num_sats + 2);
 
@@ -1028,7 +1028,7 @@ void AP_GPS::update_primary(void)
                 primary_instance = i;
                 _last_instance_swap_ms = now;
                 gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched to %u", primary_instance+1);
-                gcs().send_text(MAV_SEVERITY_DEBUG, "another_gps_has_1_or_more_sats? %s another_gps_has_2_or_more_sats? %s", (another_gps_has_1_or_more_sats ? "true" : "false"), (another_gps_has_2_or_more_sats ? "true" : "false"));
+                gcs().send_text(MAV_SEVERITY_INFO, "another_gps_has_1_or_more_sats? %s another_gps_has_2_or_more_sats? %s", (another_gps_has_1_or_more_sats ? "true" : "false"), (another_gps_has_2_or_more_sats ? "true" : "false"));
             }
         }
     }
@@ -1470,7 +1470,7 @@ bool AP_GPS::calc_blend_weights(void)
 
     // exit immediately if not enough receivers to do blending
     if (state[0].status <= NO_FIX || state[1].status <= NO_FIX) {
-        gcs().send_text(MAV_SEVERITY_DEBUG, "Not enough receivers to do blending");
+        gcs().send_text(MAV_SEVERITY_INFO, "Not enough receivers to do blending");
         return false;
     }
 
@@ -1492,7 +1492,7 @@ bool AP_GPS::calc_blend_weights(void)
         if (isinf(state[i].speed_accuracy) ||
             isinf(state[i].horizontal_accuracy) ||
             isinf(state[i].vertical_accuracy)) {
-            gcs().send_text(MAV_SEVERITY_DEBUG, "speed, horiz, or vert accuracy is inf");
+            gcs().send_text(MAV_SEVERITY_INFO, "speed, horiz, or vert accuracy is inf");
             return false;
         }
     }
@@ -1501,7 +1501,7 @@ bool AP_GPS::calc_blend_weights(void)
         state[GPS_BLENDED_INSTANCE].last_gps_time_ms = min_ms;
     } else {
         // receiver data has timed out so fail out of blending
-        gcs().send_text(MAV_SEVERITY_DEBUG, "Receiver data timed out, fail out of blending");
+        gcs().send_text(MAV_SEVERITY_INFO, "Receiver data timed out, fail out of blending");
         return false;
     }
 
@@ -1557,8 +1557,8 @@ bool AP_GPS::calc_blend_weights(void)
 
     // if we can't do blending using reported accuracy, return false and hard switch logic will be used instead
     if (!can_do_blending) {
-        gcs().send_text(MAV_SEVERITY_DEBUG, "!can_do_blending, hard switch logic will be used.");
-        gcs().send_text(MAV_SEVERITY_DEBUG, "horizontal_accuracy_sum_sq: %f, vertical_accuracy_sum_sq: %f, speed_accuracy_sum_sq: %f");
+        gcs().send_text(MAV_SEVERITY_INFO, "!can_do_blending, hard switch logic will be used.");
+        gcs().send_text(MAV_SEVERITY_INFO, "horizontal_accuracy_sum_sq: %f, vertical_accuracy_sum_sq: %f, speed_accuracy_sum_sq: %f");
         return false;
     }
 
@@ -1625,7 +1625,7 @@ bool AP_GPS::calc_blend_weights(void)
     }
 
     if (!is_positive(sum_of_all_weights)) {
-        gcs().send_text(MAV_SEVERITY_DEBUG, "sum of all weights is not positive, i.e. not >= FLT_EPSILON");
+        gcs().send_text(MAV_SEVERITY_INFO, "sum of all weights is not positive, i.e. not >= FLT_EPSILON");
         return false;
     }
 
