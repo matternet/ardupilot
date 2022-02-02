@@ -58,6 +58,9 @@ static const uint8_t streamSequence[] = { 0 }; // List of 0 based stream Ids tha
 
 static const uint8_t numStreamSequenceIndexes = sizeof(streamSequence)/sizeof(streamSequence[0]);
 
+// version strings for reporting
+static char version[15] {};
+
 /*
    The constructor also initializes the rangefinder. Note that this
    constructor is not called until detect() returns true, so we
@@ -241,9 +244,6 @@ bool AP_RangeFinder_LightWareI2C::legacy_init()
  */
 bool AP_RangeFinder_LightWareI2C::sf20_init()
 {
-    // version strings for reporting
-    char version[15] {};
-
     sf20_get_version("?P\r\n", "p:", version);
 
     if (version[0]) {
@@ -467,21 +467,45 @@ void AP_RangeFinder_LightWareI2C::update(void)
 
 void AP_RangeFinder_LightWareI2C::legacy_timer(void)
 {
+    static const uint32_t TIMER_FREQ = 20;
+    static uint32_t count = 0;
+    count++;
+
     if (legacy_get_reading(state.distance_cm)) {
         // update range_valid state based on distance measured
         update_status();
+
+        if (count % TIMER_FREQ == 0) {
+            gcs().send_named_int("LIDAR_DIST", int(state.distance_cm));
+        }
     } else {
         set_status(RangeFinder::RangeFinder_NoData);
+        if (count % TIMER_FREQ == 0) {
+            gcs().send_named_int("LIDAR_DIST", -1);
+        }
     }
 }
 
 void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 {
+    static const uint32_t TIMER_FREQ = 20;
+    static uint32_t count = 0;
+    count++;
+
     if (sf20_get_reading(state.distance_cm)) {
         // update range_valid state based on distance measured
         update_status();
+
+        // Manufacturing test debug message
+        if (count % TIMER_FREQ == 0) {
+            gcs().send_text(MAV_SEVERITY_INFO, "SF20 version: %s", version);
+            gcs().send_named_int("LIDAR_DIST", int(state.distance_cm));
+        }
     } else {
         set_status(RangeFinder::RangeFinder_NoData);
+        if (count % TIMER_FREQ == 0) {
+            gcs().send_named_int("LIDAR_DIST", -1);
+        }
     }
 }
 

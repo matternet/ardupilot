@@ -283,6 +283,8 @@ void AP_Parachute::mttr_fts_update()
                 memset(_mttr_fts_version, 0, sizeof(_mttr_fts_version));
                 memcpy(_mttr_fts_version, msg->git_hash, sizeof(msg->git_hash));
                 AP::logger().Write("FTSV", "TimeUS,Hash", "QN", AP_HAL::micros64(), _mttr_fts_version);
+                // Manufacturing test debug message
+                gcs().send_text(MAV_SEVERITY_INFO, "FTS version: %s", _mttr_fts_version);
             } else if (msg_id == FTS_MSGID_STATUS2) {
                 struct fts_msg_status2_s* msg = (struct fts_msg_status2_s*)msg_buf;
 
