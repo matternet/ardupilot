@@ -194,14 +194,16 @@ void AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const c
  */
 bool AP_RangeFinder_LightWareI2C::init()
 {
+    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::init: lidat init DELAY\n");
+    //hal.scheduler->delay(5000);
     if (sf20_init()) {
         hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::init: Found SF20 native Lidar\n");
         return true;
     }
-    if (legacy_init()) {
-        hal.console->printf("[WARNING] AP_RangeFinder_LightWareI2C::init: Found SF20 legacy Lidar\n");
-        return true;
-    }
+    //if (legacy_init()) {
+    //    hal.console->printf("[WARNING] AP_RangeFinder_LightWareI2C::init: Found SF20 legacy Lidar\n");
+    //     return true;
+    // }
     hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::init: SF20 Not Found.\n");
     return false;
 }
@@ -246,6 +248,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     // version strings for reporting
     char version[15] {};
 
+    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_init.\n");
     sf20_get_version("?P\r\n", "p:", version);
 
     if (version[0]) {
@@ -255,8 +258,10 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     // Makes sure that "address tagging" is turned off.
     // Address tagging starts every response with "0x66".
     // Turns off Address Tagging just in case it was previously left on in the non-volatile configuration.
+    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_init: attempt addresss tagging\n");
     sf20_disable_address_tagging();
     // Disconnect the servo (if applicable)
+    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_init: attempt SC cmd\n");
     sf20_send_and_expect("#SC,0\r\n", "sc:0");
 
     // Change the power consumption:
@@ -267,6 +272,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
 
     // Changes the number of lost signal confirmations: 1 [1..250].
     if (!sf20_send_and_expect("#LC,20\r\n", "lc:20")) {
+        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: lost confirmations failure\n");
         return false;
     }
 
@@ -297,6 +303,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
 
     // Sets datum offset [-10.00 ... 10.00].
     if (!sf20_send_and_expect("#LO,0.00\r\n", "lo:0.00")) {
+        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: datum offset failure\n");
         return false;
     }
 
@@ -310,12 +317,14 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     //    7 = 55 readings per second
     //    8 = 48 readings per second
     if (!sf20_send_and_expect("#LM,7\r\n", "lm:7")) {
+        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: measure mode failure\n");
         return false;
     }
 
     // Changes the gain boost value:
     //     Adjustment range = -20.00 ... 5.00
     if (!sf20_send_and_expect("#LB,0.00\r\n", "lb:0.00")) {
+        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: gain boost value failure\n");
         return false;
     }
 
@@ -323,6 +332,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     // 0 = off
     // 1 = on
     if (!sf20_send_and_expect("#SU,1\r\n", "su:1")) {
+        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: distance stream failure\n");
         return false;
     }
 
@@ -330,6 +340,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     //    0 = laser is off
     //    1 = laser is running
     if (!sf20_send_and_expect("#LF,1\r\n", "lf:1")) {
+        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: laser state failure\n");
         return false;
     }
 
