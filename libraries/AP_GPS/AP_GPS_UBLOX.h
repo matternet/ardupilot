@@ -795,6 +795,4 @@ private:
     uint32_t hardware_generation() override {
         return _hardware_generation;
     }
-
-    uint8_t get_desired_sbas_mode(void);
 };

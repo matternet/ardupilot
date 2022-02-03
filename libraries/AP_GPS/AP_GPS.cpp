@@ -338,6 +338,8 @@ AP_GPS::AP_GPS()
         AP_HAL::panic("AP_GPS must be singleton");
     }
     _singleton = this;
+
+//    _sbas_disable_mask = 3;
 }
 
 // return true if a specific type of GPS uses a UART

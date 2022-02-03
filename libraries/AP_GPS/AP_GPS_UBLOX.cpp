@@ -257,7 +257,7 @@ AP_GPS_UBLOX::_request_next_config(void)
         }
         break;
     case STEP_POLL_SBAS:
-        if (gps._sbas_mode != get_desired_sbas_mode()) {
+        if (gps._sbas_mode != 2) {
             _send_message(CLASS_CFG, MSG_CFG_SBAS, nullptr, 0);
         } else {
             _unconfigured_messages &= ~CONFIG_SBAS;
@@ -969,20 +969,20 @@ AP_GPS_UBLOX::_parse_gps(void)
             if (gps._gnss_mode[state.instance] != 0) {
                 struct ubx_cfg_gnss start_gnss = _buffer.gnss;
                 uint8_t gnssCount = 0;
-                Debug("Got GNSS Settings %u %u %u %u:\n",
+                GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "Got GNSS Settings %u %u %u %u:\n",
                     (unsigned)_buffer.gnss.msgVer,
                     (unsigned)_buffer.gnss.numTrkChHw,
                     (unsigned)_buffer.gnss.numTrkChUse,
                     (unsigned)_buffer.gnss.numConfigBlocks);
-#if UBLOX_DEBUGGING
+//#if UBLOX_DEBUGGING
                 for(int i = 0; i < _buffer.gnss.numConfigBlocks; i++) {
-                    Debug("  %u %u %u 0x%08x\n",
+                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "  %u %u %u 0x%08x\n",
                     (unsigned)_buffer.gnss.configBlock[i].gnssId,
                     (unsigned)_buffer.gnss.configBlock[i].resTrkCh,
                     (unsigned)_buffer.gnss.configBlock[i].maxTrkCh,
                     (unsigned)_buffer.gnss.configBlock[i].flags);
                 }
-#endif
+//#endif
 
                 for(int i = 0; i < UBLOX_MAX_GNSS_CONFIG_BLOCKS; i++) {
                     if((gps._gnss_mode[state.instance] & (1 << i)) && i != GNSS_SBAS) {
@@ -996,11 +996,21 @@ AP_GPS_UBLOX::_parse_gps(void)
                         if(GNSS_SBAS !=_buffer.gnss.configBlock[i].gnssId) {
                             _buffer.gnss.configBlock[i].resTrkCh = (_buffer.gnss.numTrkChHw - 3) / (gnssCount * 2);
                             _buffer.gnss.configBlock[i].maxTrkCh = _buffer.gnss.numTrkChHw;
+                            _buffer.gnss.configBlock[i].flags = _buffer.gnss.configBlock[i].flags | 0x00000001;
                         } else {
-                            _buffer.gnss.configBlock[i].resTrkCh = 1;
-                            _buffer.gnss.configBlock[i].maxTrkCh = 3;
+                            // SBAS configuration
+                            _buffer.gnss.configBlock[i].flags &= 0xFF000000; // this will disable SBAS
+                            if (is_sbas_disabled()) {
+                                GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Disabled\n");
+                            }
+                            else {
+                                GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Enabled\n");
+                                // bit  0, 1 = enable
+                                // bit 16, 1 = SBAS L1 C/A
+                                _buffer.gnss.configBlock[i].flags |= (1U<<16);
+                                _buffer.gnss.configBlock[i].flags |= 0x00000001;
+                            }
                         }
-                        _buffer.gnss.configBlock[i].flags = _buffer.gnss.configBlock[i].flags | 0x00000001;
                     } else {
                         _buffer.gnss.configBlock[i].resTrkCh = 0;
                         _buffer.gnss.configBlock[i].maxTrkCh = 0;
@@ -1008,6 +1018,12 @@ AP_GPS_UBLOX::_parse_gps(void)
                     }
                 }
                 if (memcmp(&start_gnss, &_buffer.gnss, sizeof(start_gnss))) {
+                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "send CFG_GNSS\n");
+                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "  %u %u %u 0x%08x\n",
+                    (unsigned)_buffer.gnss.configBlock[1].gnssId,
+                    (unsigned)_buffer.gnss.configBlock[1].resTrkCh,
+                    (unsigned)_buffer.gnss.configBlock[1].maxTrkCh,
+                    (unsigned)_buffer.gnss.configBlock[1].flags);
                     _send_message(CLASS_CFG, MSG_CFG_GNSS, &_buffer.gnss, 4 + (8 * _buffer.gnss.numConfigBlocks));
                     _unconfigured_messages |= CONFIG_GNSS;
                     _cfg_needs_save = true;
@@ -1020,19 +1036,16 @@ AP_GPS_UBLOX::_parse_gps(void)
             return false;
 #endif
 
-        case MSG_CFG_SBAS: {
-            uint8_t desired_sbas_mode = get_desired_sbas_mode();
-            if (gps._sbas_mode != desired_sbas_mode) {
+        case MSG_CFG_SBAS:
+            if (gps._sbas_mode != 2) {
 	        Debug("Got SBAS settings %u %u %u 0x%x 0x%x\n", 
                       (unsigned)_buffer.sbas.mode,
                       (unsigned)_buffer.sbas.usage,
                       (unsigned)_buffer.sbas.maxSBAS,
                       (unsigned)_buffer.sbas.scanmode2,
                       (unsigned)_buffer.sbas.scanmode1);
-                if (_buffer.sbas.mode != desired_sbas_mode) {
-                    gcs().send_text(MAV_SEVERITY_ALERT, "UBLOX sbas mode (current/desired) = (%d/%d)",
-                        _buffer.sbas.mode, desired_sbas_mode);
-                    _buffer.sbas.mode = desired_sbas_mode;
+                if (_buffer.sbas.mode != gps._sbas_mode) {
+                    _buffer.sbas.mode = gps._sbas_mode;
                     _send_message(CLASS_CFG, MSG_CFG_SBAS,
                                   &_buffer.sbas,
                                   sizeof(_buffer.sbas));
@@ -1045,7 +1058,6 @@ AP_GPS_UBLOX::_parse_gps(void)
                     _unconfigured_messages &= ~CONFIG_SBAS;
             }
             return false;
-        }
         case MSG_CFG_MSG:
             if(_payload_length == sizeof(ubx_cfg_msg_rate_6)) {
                 // can't verify the setting without knowing the port
@@ -1997,23 +2009,4 @@ void AP_GPS_UBLOX::broadcast_gps_version() const
                       _version.hwVersion,
                       _version.swVersion);
     }
-}
-
-/*
-  return desired SBAS mode of operation. Values are defined by GPS_SBAS_MODE (mavlink)
-    0 = disabled
-    1 = enabled
-    2 = no change
-
-  NOTE: this is for test purposes only.  So we only need to report when we're disabled.
-        It is assumed that we can power cycle to get back to the original state.
- */
-uint8_t AP_GPS_UBLOX::get_desired_sbas_mode(void) {
-    uint8_t retval = 2; 
-
-    if (is_sbas_disabled()) {
-        return 0;
-    }
-
-    return retval;
 }
