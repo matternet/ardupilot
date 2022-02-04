@@ -4169,7 +4169,7 @@ void GCS_MAVLINK::send_sys_status()
         errors4); // errors4
 
     const Compass &compass = AP::compass();
-    hal.console->printf("compass enabled: %d, control_sensors_health: %d control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG: %d\n",
+    hal.console->printf("compass enabled: %d, control_sensors_health: %lu control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG: %lu\n",
         compass.enabled(), control_sensors_health, control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG);
 
     if (compass.enabled() && ((control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG) == 0)) {
