@@ -969,20 +969,20 @@ AP_GPS_UBLOX::_parse_gps(void)
             if (gps._gnss_mode[state.instance] != 0) {
                 struct ubx_cfg_gnss start_gnss = _buffer.gnss;
                 uint8_t gnssCount = 0;
-                GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "Got GNSS Settings %u %u %u %u:\n",
+                Debug("Got GNSS Settings %u %u %u %u:\n",
                     (unsigned)_buffer.gnss.msgVer,
                     (unsigned)_buffer.gnss.numTrkChHw,
                     (unsigned)_buffer.gnss.numTrkChUse,
                     (unsigned)_buffer.gnss.numConfigBlocks);
-//#if UBLOX_DEBUGGING
+#if UBLOX_DEBUGGING
                 for(int i = 0; i < _buffer.gnss.numConfigBlocks; i++) {
-                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "  %u %u %u 0x%08x\n",
+                    Debug("  %u %u %u 0x%08x\n",
                     (unsigned)_buffer.gnss.configBlock[i].gnssId,
                     (unsigned)_buffer.gnss.configBlock[i].resTrkCh,
                     (unsigned)_buffer.gnss.configBlock[i].maxTrkCh,
                     (unsigned)_buffer.gnss.configBlock[i].flags);
                 }
-//#endif
+#endif
 
                 for(int i = 0; i < UBLOX_MAX_GNSS_CONFIG_BLOCKS; i++) {
                     if((gps._gnss_mode[state.instance] & (1 << i)) && i != GNSS_SBAS) {
@@ -1018,12 +1018,6 @@ AP_GPS_UBLOX::_parse_gps(void)
                     }
                 }
                 if (memcmp(&start_gnss, &_buffer.gnss, sizeof(start_gnss))) {
-                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "send CFG_GNSS\n");
-                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "  %u %u %u 0x%08x\n",
-                    (unsigned)_buffer.gnss.configBlock[1].gnssId,
-                    (unsigned)_buffer.gnss.configBlock[1].resTrkCh,
-                    (unsigned)_buffer.gnss.configBlock[1].maxTrkCh,
-                    (unsigned)_buffer.gnss.configBlock[1].flags);
                     _send_message(CLASS_CFG, MSG_CFG_GNSS, &_buffer.gnss, 4 + (8 * _buffer.gnss.numConfigBlocks));
                     _unconfigured_messages |= CONFIG_GNSS;
                     _cfg_needs_save = true;
