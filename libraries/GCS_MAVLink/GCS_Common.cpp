@@ -4173,7 +4173,7 @@ void GCS_MAVLINK::send_sys_status()
     //     compass.enabled(), control_sensors_health, control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG);
 
     gcs().send_named_int("COMPASS_ENABLED", int(compass.enabled()));
-    gcs().send_named_int("COMPASS_HEALTHY_MAG", control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG);
+    gcs().send_named_int("COMPASS_HEALTHY_MAG", int((control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG) == 0));
 
     if (compass.enabled() && ((control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG) == 0)) {
         gcs().send_named_int("COMPHEALTH", int(compass.get_healthy_mask()));
