@@ -4168,10 +4168,10 @@ void GCS_MAVLINK::send_sys_status()
         0,  // errors3
         errors4); // errors4
 
-    const Compass &compass = AP::compass();
-    if (compass.enabled() && ((control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG) == 0)) {
+    const Compass &compass = AP::compass();              // 0x04
+    // if (compass.enabled() && ((control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG) == 0)) {
         gcs().send_named_int("COMPHEALTH", int(compass.get_healthy_mask()));
-    }
+    // }
 }
 
 void GCS_MAVLINK::send_extended_sys_state() const
