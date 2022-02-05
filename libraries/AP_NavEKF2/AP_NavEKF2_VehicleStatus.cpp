@@ -198,10 +198,10 @@ void NavEKF2_core::calcGpsGoodToAlign(void)
     }
 
     // fail if not enough sats for GPS1
-    bool numSatsGPS1Fail = (gps.num_sats(0) < gps.num_sats_arm_min()) && (frontend->_gpsCheck & MASK_GPS_NSATS);
+    bool numSatsGPS1Fail = (gps.get_type(0) =! GPS_Type::GPS_TYPE_NONE) && (gps.num_sats(0) < gps.num_sats_arm_min()) && (frontend->_gpsCheck & MASK_GPS_NSATS);
 
     // fail if GPS2 is enabled and not enough sats for secondary GPS2
-    bool numSatsGPS2Fail = (gps.get_type(1) == 1) && (gps.num_sats(1) < gps.num_sats_arm_min()) && (frontend->_gpsCheck & MASK_GPS_NSATS);
+    bool numSatsGPS2Fail = (gps.get_type(1) =! GPS_Type::GPS_TYPE_NONE) && (gps.num_sats(1) < gps.num_sats_arm_min()) && (frontend->_gpsCheck & MASK_GPS_NSATS);
 
     // Report check result as a text string and bitmask
     if (numSatsGPS1Fail) {
