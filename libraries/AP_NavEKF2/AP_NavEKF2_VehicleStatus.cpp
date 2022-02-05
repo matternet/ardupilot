@@ -199,8 +199,6 @@ void NavEKF2_core::calcGpsGoodToAlign(void)
 
     // fail if not enough sats for GPS1
     bool numSatsGPS1Fail = (gps.num_sats(0) < gps.num_sats_arm_min()) && (frontend->_gpsCheck & MASK_GPS_NSATS);
-    hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
-                   "GPS 0 has %u (needs %u)", gps.num_sats(0), gps.num_sats_arm_min());
 
     // fail if GPS2 is enabled and not enough sats for secondary GPS2
     bool gps2Present = gps.num_sensors() > 1;
@@ -215,7 +213,8 @@ void NavEKF2_core::calcGpsGoodToAlign(void)
     if (numSatsGPS2Fail) {
         if (gps2Present) {
             hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
-                               "GPS 2 numsats %u (needs %u)", gps.num_sats(1), gps.num_sats_arm_min());
+                               numSatsGPS1Fail ? "GPS 1 numsats %u, GPS 2 numsats %u (need %u)", gps.num_sats(0), gps.num_sats(1), gps.num_sats_arm_min()
+                               : "GPS 2 numsats %u (needs %u)", gps.num_sats(1), gps.num_sats_arm_min());
         }
         else {
             hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "GPS 2 not present for sat check");
