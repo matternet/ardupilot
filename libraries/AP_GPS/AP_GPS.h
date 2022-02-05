@@ -486,10 +486,6 @@ public:
         return instance>=GPS_MAX_RECEIVERS? GPS_Type::GPS_TYPE_NONE : GPS_Type(_type[instance].get());
     }
 
-    bool gps_instance_exists(uint8_t instance) const {
-        return get_type(instance) =! GPS_Type::GPS_TYPE_NONE;
-    }
-
     // get change in position and altitude since arming
     bool get_pre_arm_pos_change(uint8_t instance, float &pos_change, float &alt_change) const;
     bool get_pre_arm_pos_change(float &pos_change, float &alt_change) const {
