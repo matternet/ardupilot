@@ -204,13 +204,19 @@ void NavEKF3_core::calcGpsGoodToAlign(void)
     // Report check result as a text string and bitmask
     if (numSatsGPS1Fail) {
         hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
-                       "GPS 1 numsats %u (needs %u)", gps.num_sats(0), gps.num_sats_arm_min());
+                       "GPS1 numsats %u (needs %u)", gps.num_sats(0), gps.num_sats_arm_min());
         gpsCheckStatus.bad_sats = true;
     }
     if (numSatsGPS2Fail) {
         if (gps2Present) {
-            hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
-                               "GPS 2 numsats %u (needs %u)", gps.num_sats(1), gps.num_sats_arm_min());
+            if (numSatsGPS1Fail) {
+                hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
+                                "GPS1 numsats %u GPS2 %u (need %u)", gps.num_sats(0), gps.num_sats(1), gps.num_sats_arm_min());
+            }
+            else {
+                hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
+                                "GPS2 numsats %u (needs %u)", gps.num_sats(1), gps.num_sats_arm_min());
+            }
         }
         else {
             hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "GPS 2 not present for sat check");
