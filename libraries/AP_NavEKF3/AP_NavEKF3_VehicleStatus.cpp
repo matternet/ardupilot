@@ -219,7 +219,7 @@ void NavEKF3_core::calcGpsGoodToAlign(void)
             }
         }
         else {
-            hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "GPS 2 not present for sat check");
+            hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "GPS2 not present for sat check");
         }
         gpsCheckStatus.bad_sats = true;
     } 
