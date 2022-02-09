@@ -289,4 +289,9 @@ void Copter::parachute_manual_release()
     parachute_release();
 }
 
+void Copter::poweroff()
+{
+    parachute.poweroff_request();
+}
+
 #endif // PARACHUTE == ENABLED

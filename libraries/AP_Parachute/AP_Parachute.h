@@ -33,6 +33,7 @@ public:
     AP_Parachute(AP_Relay &relay)
         : _relay(relay)
         , _mttr_fuse_pass(true)
+        , _poweroff(false)
     {
         // setup parameter defaults
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
@@ -82,6 +83,12 @@ public:
     ///   0 = altitude check disabled
     int16_t alt_min() const { return _alt_min; }
 
+    // Request system power off
+    void poweroff_request() { _poweroff = true; }
+
+    // Cancel system power off request; maybe too late
+    void poweroff_cancel() { _poweroff = false; }
+
     /// set_is_flying - accessor to the is_flying flag
     void set_is_flying(const bool is_flying) { _is_flying = is_flying; }
 
@@ -118,6 +125,7 @@ private:
     uint32_t    _sink_time;              // time that the vehicle exceeded critical sink rate
 
     // Matternet FTS
+    bool _poweroff;
     uint32_t _mttr_last_loop_ms;
     uint32_t _mttr_last_status_recv_ms;
     bool _mttr_status_pass;

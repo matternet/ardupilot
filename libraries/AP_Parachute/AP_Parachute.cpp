@@ -207,6 +207,12 @@ void AP_Parachute::mttr_fts_update()
 
     uint32_t tnow_ms = AP_HAL::millis();
 
+    if (_poweroff) {
+        struct fts_msg_power_off_s pwroff_msg;
+        pwroff_msg.msgid = FTS_MSGID_POWER_OFF;
+        mttr_fts_transmit(sizeof(pwroff_msg), (uint8_t*)&pwroff_msg);
+    }
+
     // 20Hz
     if (tnow_ms - _mttr_last_loop_ms > 50) {
         if (_release_in_progress || _released) {
