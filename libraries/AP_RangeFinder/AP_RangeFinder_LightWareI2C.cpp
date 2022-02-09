@@ -58,6 +58,11 @@ static const uint8_t streamSequence[] = { 0 }; // List of 0 based stream Ids tha
 
 static const uint8_t numStreamSequenceIndexes = sizeof(streamSequence)/sizeof(streamSequence[0]);
 
+static uint32_t        last_init_time_ms                 = 0;
+static const uint16_t  MIN_WAIT_TIME_BEFORE_REINIT_MS    = 500;
+static const uint8_t   MAX_VERSION_STRING_RETRY_ATTEMPTS = 3;
+static const uint8_t   MAX_READ_ERRORS_THRESHOLD         = 5;
+
 /*
    The constructor also initializes the rangefinder. Note that this
    constructor is not called until detect() returns true, so we
@@ -196,6 +201,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const c
 bool AP_RangeFinder_LightWareI2C::init()
 {
     if (sf20_init()) {
+        last_init_time_ms = AP_HAL::millis();
         hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::init: Found SF20 native Lidar\n");
         return true;
     }
@@ -203,6 +209,7 @@ bool AP_RangeFinder_LightWareI2C::init()
     //    hal.console->printf("[WARNING] AP_RangeFinder_LightWareI2C::init: Found SF20 legacy Lidar\n");
     //     return true;
     // }
+    last_init_time_ms = AP_HAL::millis();
     hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::init: SF20 Not Found.\n");
     return false;
 }
@@ -255,24 +262,23 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     uint16_t dummy;
     legacy_get_reading(dummy);
 
+    // Attempt to get lidar version up to MAX_VERSION_STRING_RETRY_ATTEMPTS times. This allows the UART to flush in between inits.
     memset(version, 0, sizeof(version));
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < MAX_VERSION_STRING_RETRY_ATTEMPTS; ++i) {
         if (sf20_get_version("?P\r\n", "p:", version)) {
             hal.console->printf("Try: %d, SF20 Lidar version: %s\n", i, version);
             break;
         }
         else {
-            hal.scheduler->delay(100);
+            hal.scheduler->delay(10);
         }
     }
 
     // Makes sure that "address tagging" is turned off.
     // Address tagging starts every response with "0x66".
     // Turns off Address Tagging just in case it was previously left on in the non-volatile configuration.
-    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_init: attempt addresss tagging\n");
     sf20_disable_address_tagging();
     // Disconnect the servo (if applicable)
-    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_init: attempt SC cmd\n");
     sf20_send_and_expect("#SC,0\r\n", "sc:0");
 
     // Change the power consumption:
@@ -414,14 +420,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
     }
     stream[lx20_max_expected_stream_reply_len_bytes] = 0;
 
-    // stream = = char array, with size of lx20_max_expected_stream_reply_len_bytes+1, example: "ldf,0:40.99"
-    // num processed chars = number to observe for successfully processed characters , 0 at the start
-    // static const char *parse_stream_id[NUM_SF20_DATA_STREAMS] = { // List of stream identifier strings. Must match init_stream_id[].
-    //     STREAM1_VAL ":"
-    // };
-    // sf20 stream val = uint16_t array
-    //
-
     if (!sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_stream_val[i])) {
         ++read_errors_;
         hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_get_reading: parse read failure, read_errors_: %lu, stream: %s, i: %d, parse_stream_id[i]: %s\n", read_errors_, stream, i, parse_stream_id[i]);
@@ -534,7 +532,7 @@ void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 {
     hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_timer\n");
     // If no read errors, try to perform nominal readings
-    if (!read_errors_) {
+    if (read_errors_ < MAX_READ_ERRORS_THRESHOLD) {
         if (sf20_get_reading(state.distance_cm)) {
             // Update range_valid state based on distance measured
             update_status();
@@ -543,7 +541,8 @@ void AP_RangeFinder_LightWareI2C::sf20_timer(void)
         }
     } else {
         // Otherwise try to init again.
-        if (init()) {
+        if (last_init_time_ms - AP_HAL::millis() > MIN_WAIT_TIME_BEFORE_REINIT_MS) {
+            init();
             read_errors_ = 0;
         }
     }
