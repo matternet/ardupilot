@@ -762,6 +762,11 @@ MAV_RESULT GCS_MAVLINK_Copter::handle_command_long_packet(const mavlink_command_
             // treat as a manual release which performs some additional check of altitude
             copter.parachute_manual_release();
             return MAV_RESULT_ACCEPTED;
+        // Adding a new enum requires changing xml files which are in submodules. Just add one to the end of the list here.
+        // Easier to merge in new code from mainline branch.
+        case (PARACHUTE_RELEASE + 1):
+            copter.poweroff();
+            return MAV_RESULT_ACCEPTED;
         }
         return MAV_RESULT_FAILED;
 #endif
