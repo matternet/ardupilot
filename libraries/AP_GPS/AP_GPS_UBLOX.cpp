@@ -983,6 +983,11 @@ AP_GPS_UBLOX::_parse_gps(void)
                     (unsigned)_buffer.gnss.configBlock[i].flags);
                 }
 #endif
+                if (_buffer.gnss.configBlock[1].flags & 0x1) {
+                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Enabled!\n");
+                } else {
+                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Disabled!\n");
+                }
 
                 for(int i = 0; i < UBLOX_MAX_GNSS_CONFIG_BLOCKS; i++) {
                     if((gps._gnss_mode[state.instance] & (1 << i)) && i != GNSS_SBAS) {
@@ -1001,10 +1006,9 @@ AP_GPS_UBLOX::_parse_gps(void)
                             // SBAS configuration
                             _buffer.gnss.configBlock[i].flags &= 0xFF000000; // this will disable SBAS
                             if (is_sbas_disabled()) {
-                                GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Disabled\n");
+                                // nothing needs to be done
                             }
                             else {
-                                GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Enabled\n");
                                 // bit  0, 1 = enable
                                 // bit 16, 1 = SBAS L1 C/A
                                 _buffer.gnss.configBlock[i].flags |= (1U<<16);
