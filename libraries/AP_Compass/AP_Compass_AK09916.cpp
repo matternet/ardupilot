@@ -210,6 +210,9 @@ bool AP_Compass_AK09916::init()
         goto fail;
     }
 
+    // one checked register for mode
+    _bus->setup_checked_registers(1);
+
     if (!_setup_mode()) {
         hal.console->printf("AK09916: Could not setup mode\n");
         goto fail;
@@ -268,28 +271,31 @@ void AP_Compass_AK09916::_update()
     Vector3f raw_field;
 
     if (!_bus->block_read(REG_ST1, (uint8_t *) &regs, sizeof(regs))) {
-        return;
+        goto register_check;
     }
 
     if (!(regs.st1 & 0x01)) {
-        return;
+        goto register_check;
     }
 
     /* Check for overflow. See AK09916's datasheet*/
     if ((regs.st2 & 0x08)) {
-        return;
+        goto register_check;
     }
 
     raw_field = Vector3f(regs.val[0], regs.val[1], regs.val[2]);
 
     if (is_zero(raw_field.x) && is_zero(raw_field.y) && is_zero(raw_field.z)) {
-        return;
+        goto register_check;
     }
 
     _make_adc_sensitivity_adjustment(raw_field);
     raw_field *= AK09916_MILLIGAUSS_SCALE;
 
     accumulate_sample(raw_field, _compass_instance, 10);
+
+register_check:
+    _bus->check_next_register();
 }
 
 bool AP_Compass_AK09916::_check_id()
@@ -314,7 +320,7 @@ bool AP_Compass_AK09916::_check_id()
 }
 
 bool AP_Compass_AK09916::_setup_mode() {
-    return _bus->register_write(REG_CNTL2, 0x08); //Continuous Mode 2
+    return _bus->register_write(REG_CNTL2, 0x08, true); //Continuous Mode 2
 }
 
 bool AP_Compass_AK09916::_reset()
@@ -338,9 +344,9 @@ bool AP_AK09916_BusDriver_HALDevice::register_read(uint8_t reg, uint8_t *val)
     return _dev->read_registers(reg, val, 1);
 }
 
-bool AP_AK09916_BusDriver_HALDevice::register_write(uint8_t reg, uint8_t val)
+bool AP_AK09916_BusDriver_HALDevice::register_write(uint8_t reg, uint8_t val, bool checked)
 {
-    return _dev->write_register(reg, val);
+    return _dev->write_register(reg, val, checked);
 }
 
 AP_HAL::Semaphore *AP_AK09916_BusDriver_HALDevice::get_semaphore()
@@ -400,8 +406,9 @@ bool AP_AK09916_BusDriver_Auxiliary::register_read(uint8_t reg, uint8_t *val)
     return _slave->passthrough_read(reg, val, 1) == 1;
 }
 
-bool AP_AK09916_BusDriver_Auxiliary::register_write(uint8_t reg, uint8_t val)
+bool AP_AK09916_BusDriver_Auxiliary::register_write(uint8_t reg, uint8_t val, bool checked)
 {
+    (void)checked;
     return _slave->passthrough_write(reg, val) == 1;
 }
 
