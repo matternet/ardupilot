@@ -200,17 +200,22 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const c
  */
 bool AP_RangeFinder_LightWareI2C::init()
 {
+    // First message sets the LIDAR in I2C mode. It will not respond if it just booted.
+    // However, if it is already streaming then this legacy call will stop it from streaming.
+    uint16_t dummy;
+    legacy_get_reading(dummy);
+
     if (sf20_init()) {
         last_init_time_ms = AP_HAL::millis();
-        hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::init: Found SF20 native Lidar\n");
         return true;
     }
-    // if (legacy_init()) {
-    //    hal.console->printf("[WARNING] AP_RangeFinder_LightWareI2C::init: Found SF20 legacy Lidar\n");
-    //     return true;
-    // }
+    if (legacy_init()) {
+        // The SF20 legacy driver already initializes on its own if disconnectec.
+        // As of 2/11/2022, Matternet has favors using the native driver for SNR data.
+        // This call may be deprecated in the future.
+        return true;
+    }
     last_init_time_ms = AP_HAL::millis();
-    hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::init: SF20 Not Found.\n");
     return false;
 }
 
@@ -254,19 +259,10 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     // version strings for reporting
     char version[15] {};
 
-    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_init.\n");
-    sf20_get_version("?P\r\n", "p:", version);
-
-    // First message sets the LIDAR in I2C mode. It will not respond if it just booted.
-    // However, if it is already streaming then this legacy call will stop it from streaming.
-    uint16_t dummy;
-    legacy_get_reading(dummy);
-
     // Attempt to get lidar version up to MAX_VERSION_STRING_RETRY_ATTEMPTS times. This allows the UART to flush in between inits.
     memset(version, 0, sizeof(version));
     for (int i = 0; i < MAX_VERSION_STRING_RETRY_ATTEMPTS; ++i) {
         if (sf20_get_version("?P\r\n", "p:", version)) {
-            hal.console->printf("Try: %d, SF20 Lidar version: %s\n", i, version);
             break;
         }
         else {
@@ -289,7 +285,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
 
     // Changes the number of lost signal confirmations: 1 [1..250].
     if (!sf20_send_and_expect("#LC,20\r\n", "lc:20")) {
-        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: lost confirmations failure\n");
         return false;
     }
 
@@ -320,7 +315,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
 
     // Sets datum offset [-10.00 ... 10.00].
     if (!sf20_send_and_expect("#LO,0.00\r\n", "lo:0.00")) {
-        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: datum offset failure\n");
         return false;
     }
 
@@ -334,14 +328,12 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     //    7 = 55 readings per second
     //    8 = 48 readings per second
     if (!sf20_send_and_expect("#LM,7\r\n", "lm:7")) {
-        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: measure mode failure\n");
         return false;
     }
 
     // Changes the gain boost value:
     //     Adjustment range = -20.00 ... 5.00
     if (!sf20_send_and_expect("#LB,0.00\r\n", "lb:0.00")) {
-        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: gain boost value failure\n");
         return false;
     }
 
@@ -349,7 +341,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     //    0 = laser is off
     //    1 = laser is running
     if (!sf20_send_and_expect("#LF,1\r\n", "lf:1")) {
-        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: laser state failure\n");
         return false;
     }
 
@@ -357,23 +348,18 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     // 0 = off
     // 1 = on
     if (!sf20_send_and_expect("#SU,1\r\n", "su:1")) {
-        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_init: distance stream failure\n");
         return false;
     }
-
-    // Extra to allow lidar to finish distance streaming.
-    hal.scheduler->delay(600);
 
     // Requests the measurement specified in the first stream.
     write_bytes((uint8_t*)init_stream_id[0], strlen(init_stream_id[0]));
 
     // call timer() at 20Hz
     // Create this periodic calback once only
-    // if (!sf20_periodic_callback_handle_) {
-    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::init: create periodic callback");
-    sf20_periodic_callback_handle_ = _dev->register_periodic_callback(50000,
-                                     FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
-    // }
+    if (!sf20_periodic_callback_handle_) {
+        sf20_periodic_callback_handle_ = _dev->register_periodic_callback(50000,
+                                         FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
+    }
 
     return true;
 }
@@ -394,11 +380,8 @@ bool AP_RangeFinder_LightWareI2C::legacy_get_reading(uint16_t &reading_cm)
         } else {
             reading_cm = uint16_t(signed_val);
         }
-        hal.console->printf("[WARNING] AP_RangeFinder_LightWareI2C::legacy_get_reading: distance cm: %u\n", reading_cm);
         return true;
     }
-    // ++read_errors_;
-    hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::legacy_get_reading: read failure, read_errors_: %lu\n", read_errors_);
     return false;
 }
 
@@ -415,17 +398,14 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
     /* Reads the LiDAR value requested during the last interrupt. */
     if (!_dev->read(stream, sizeof(stream))) {
         ++read_errors_;
-        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_get_reading: timing read failure, read_errors_: %lu\n", read_errors_);
         return false;
     }
     stream[lx20_max_expected_stream_reply_len_bytes] = 0;
 
     if (!sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_stream_val[i])) {
         ++read_errors_;
-        hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_get_reading: parse read failure, read_errors_: %lu, stream: %s, i: %d, parse_stream_id[i]: %s\n", read_errors_, stream, i, parse_stream_id[i]);
         return false;
     }
-    hal.console->printf("[DEBUG] AP_RangeFinder_LightWareI2C::sf20_get_reading: stream: %s, i: %d, parse_stream_id[i]: %s\n", stream, i, parse_stream_id[i]);
 
     if (i==0) {
         reading_cm = sf20_stream_val[0];
@@ -440,7 +420,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 
     // Request the next stream in the sequence from the SF20
     write_bytes((uint8_t*)init_stream_id[i], strlen(init_stream_id[i]));
-    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_get_reading: distance cm: %u\n", reading_cm);
     return true;
 }
 
@@ -451,14 +430,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
 {
     size_t string_identifier_len = strlen(string_identifier);
     for (uint32_t i = 0 ; i < string_identifier_len ; i++) {
-
         if (stream_buf[*p_num_processed_chars] != string_identifier[i]) {
-            hal.console->printf("[ERROR] AP_RangeFinder_LightWareI2C::sf20_parse_stream: npc: %u i: %lu, si[i]: %c, stream_buf[npc]: %u\n",
-             *p_num_processed_chars,
-             i,
-             string_identifier[i],
-             stream_buf[*p_num_processed_chars]
-             );
             return false;
         }
         (*p_num_processed_chars)++;
@@ -519,7 +491,6 @@ void AP_RangeFinder_LightWareI2C::update(void)
 
 void AP_RangeFinder_LightWareI2C::legacy_timer(void)
 {
-    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::legacy_timer\n");
     if (legacy_get_reading(state.distance_cm)) {
         // update range_valid state based on distance measured
         update_status();
@@ -530,7 +501,6 @@ void AP_RangeFinder_LightWareI2C::legacy_timer(void)
 
 void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 {
-    hal.console->printf("[INFO] AP_RangeFinder_LightWareI2C::sf20_timer\n");
     // If no read errors, try to perform nominal readings
     if (read_errors_ < MAX_READ_ERRORS_THRESHOLD) {
         if (sf20_get_reading(state.distance_cm)) {
