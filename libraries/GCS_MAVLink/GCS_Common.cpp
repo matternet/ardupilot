@@ -4170,8 +4170,14 @@ void GCS_MAVLINK::send_sys_status()
 
     const Compass &compass = AP::compass();
 
-    gcs().send_named_int("COMPENABLE", int(compass.enabled()));
-    gcs().send_named_int("COMPNHEALT", int((control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG) == 0));
+    // gcs().send_named_int("COMPENABLE", int(compass.enabled()));
+
+    // Send a message only once for testing, maybe a flag gets set to trigger COMPHEALTH.
+    static bool send_dummy_cmp_msg = false;
+    if (!send_dummy_cmp_msg) {
+        gcs().send_named_int("COMPNHEALT", int((control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG) == 0));
+        send_dummy_cmp_msg = true;
+    }
 
     if (compass.enabled() && ((control_sensors_health & MAV_SYS_STATUS_SENSOR_3D_MAG) == 0)) {
         gcs().send_named_int("COMPHEALTH", int(compass.get_healthy_mask()));
