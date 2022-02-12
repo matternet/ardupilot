@@ -1593,6 +1593,18 @@ Compass::get_healthy_mask() const
     return healthy_mask;
 }
 
+bool
+Compass::healthy(void) const
+{
+    bool health = true;
+    for (uint8_t i = 0; i < COMPASS_MAX_INSTANCES; ++i) {
+        if (use_for_yaw(i)) {
+            health &= healthy(i);
+        }
+    }
+    return health;
+}
+
 void
 Compass::set_offsets(uint8_t i, const Vector3f &offsets)
 {

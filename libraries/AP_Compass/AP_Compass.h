@@ -193,7 +193,8 @@ public:
 
     /// Return the health of a compass
     bool healthy(uint8_t i) const { return _get_state(Priority(i)).healthy; }
-    bool healthy(void) const { return healthy(_first_usable); }
+    bool healthy(void) const;
+
     uint8_t get_healthy_mask() const;
 
     /// Returns the current offset values
