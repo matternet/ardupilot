@@ -75,7 +75,7 @@ void MissionItemProtocol::handle_mission_count(
         return;
     }
 
-    MAV_MISSION_RESULT ret_alloc = allocate_receive_resources(packet.count);
+    MAV_MISSION_RESULT ret_alloc = allocate_receive_resources(packet.count+1);
     if (ret_alloc != MAV_MISSION_ACCEPTED) {
         send_mission_ack(_link, msg, ret_alloc);
         return;
@@ -90,7 +90,7 @@ void MissionItemProtocol::handle_mission_count(
     }
 
     // start waypoint receiving
-    init_send_requests(_link, msg, 0, packet.count-1);
+    init_send_requests(_link, msg, 0, packet.count);
 }
 
 void MissionItemProtocol::handle_mission_request_list(
@@ -259,7 +259,7 @@ void MissionItemProtocol::handle_mission_item(const mavlink_message_t &msg, cons
     timelast_receive_ms = AP_HAL::millis();
     request_i++;
 
-    if (request_i > request_last) {
+    if (request_i >= request_last) {
         transfer_is_complete(*link, msg);
         return;
     }
