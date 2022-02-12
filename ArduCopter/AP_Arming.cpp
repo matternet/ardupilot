@@ -918,7 +918,7 @@ bool AP_Arming_Copter::arm(const AP_Arming::Method method, const bool do_arming_
 
     copter.update_armed_pin();
 
-    AP::logger().Write_Event(DATA_ARMED);
+    AP::logger().Write_Event(LogEvent::ARMED);
 
     // log flight mode in case it was changed while vehicle was disarmed
     AP::logger().Write_Mode((uint8_t)copter.flightmode->mode_number(), copter.control_mode_reason);

@@ -1984,7 +1984,7 @@ bool ModeAuto::do_failsafe_jump(const AP_Mission::Mission_Command& cmd)
 
     // we use a failsafe timeout of at least 2 seconds, to allow for some packet loss
     float failsafe_timeout = MAX(2.0, cmd.content.user_command.param2);
-    float time_since_gcs_heartbeat = (AP_HAL::millis() - copter.failsafe.last_heartbeat_ms) * 0.001;
+    float time_since_gcs_heartbeat = (AP_HAL::millis() - gcs().sysid_myggcs_last_seen_time_ms()) * 0.001;
 
     if (time_since_gcs_heartbeat <= failsafe_timeout) {
         // nothing to do

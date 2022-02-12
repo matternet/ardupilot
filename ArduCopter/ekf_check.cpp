@@ -125,8 +125,6 @@ bool Copter::ekf_over_threshold()
 
     const float mag_max = fmaxf(fmaxf(mag_variance.x,mag_variance.y),mag_variance.z);
 
-    const float mag_max = fmaxf(fmaxf(mag_variance.x,mag_variance.y),mag_variance.z);
-
     // return true if two of compass, velocity and position variances are over the threshold OR velocity variance is twice the threshold
     uint8_t over_thresh_count = 0;
     if (mag_max >= g.fs_ekf_thresh) {
@@ -189,7 +187,7 @@ void Copter::failsafe_ekf_event()
             break;
 
         case FS_EKF_ACTION_PARACHUTE:
-            Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_EKF_FAILSAFE);
+            AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_REASON_EKF_FAILSAFE);
             parachute_release();
             break;
 

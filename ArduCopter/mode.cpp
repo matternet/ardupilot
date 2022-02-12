@@ -198,9 +198,9 @@ bool Copter::set_mode(Mode::Number mode, ModeReason reason)
     }
 
     if (motors->armed() &&
-        (control_mode == Mode::Number::STABILIZE ||
-         control_mode == Mode::Number::ALT_HOLD ||
-         control_mode == Mode::Number::LOITER) &&
+        (flightmode->mode_number() == Mode::Number::STABILIZE ||
+         flightmode->mode_number() == Mode::Number::ALT_HOLD ||
+         flightmode->mode_number() == Mode::Number::LOITER) &&
         reason == ModeReason::GCS_COMMAND) {
         gcs().send_text(MAV_SEVERITY_WARNING,"Refusing GCS mode change");
         return false;

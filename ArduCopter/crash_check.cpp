@@ -237,7 +237,6 @@ void Copter::yaw_imbalance_check()
 void Copter::parachute_check()
 {
     static uint16_t control_loss_count; // number of iterations we have been out of control
-    static int32_t baro_alt_start;
 
     // exit immediately if parachute is not enabled
     if (!parachute.enabled()) {
@@ -297,7 +296,7 @@ void Copter::parachute_check()
     const float tilt_angle_limit = attitude_control->get_tilt_limit_rad() + radians(PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG);
     const float vel_z = -inertial_nav.get_velocity_z()*0.01f; // Convert cm/s to m/s and convert NEU to NED
     const float vel_z_error = -pos_control->get_vel_z_pid().get_error()*0.01f; // Convert cm/s to m/s and convert NEU to NED
-    const float speed_z_excessive_limit_mps = MAX(fabsf(pos_control->get_speed_down()), fabsf(pos_control->get_speed_up()))*0.01f + 1.0f;
+    const float speed_z_excessive_limit_mps = MAX(fabsf(pos_control->get_max_speed_down_cms()), fabsf(pos_control->get_max_speed_up_cms()))*0.01f + 1.0f;
 
     // Start attitude error timer
     bool new_angle_error_excessive = angle_error > PARACHUTE_ANGLE_ERROR_EXCESSIVE_LIMIT_DEG;
@@ -323,20 +322,20 @@ void Copter::parachute_check()
     bool vel_z_error_excessive_timeout = parachute_check_state.vel_z_error_excessive && (millis()-parachute_check_state.vel_z_error_excessive_begin_ms)*1e-3f > PARACHUTE_VERT_VEL_ERROR_EXCESSIVE_TIMEOUT_SEC;
 
     // Check for criterion: "Flight mode is STABILIZE *AND* throttle is zero *AND* downward velocity is greater than 5 m/s"
-    bool stabilize_throttle_cut = control_mode == STABILIZE && ap.throttle_zero && vel_z > 5.0f;
+    bool stabilize_throttle_cut = flightmode->mode_number() == Mode::Number::STABILIZE && ap.throttle_zero && vel_z > 5.0f;
 
     // Deploy the parachute if a criterion is met
     if (angle_error_excessive_timeout) {
-        Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_ANGLE_ERROR_EXCESSIVE_TIMEOUT);
+        AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT);
         parachute_release();
     } else if (tilt_angle_excessive) {
-        Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_TILT_ANGLE_EXCESSIVE);
+        AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_TILT_ANGLE_EXCESSIVE);
         parachute_release();
     } else if (vel_z_error_excessive_timeout) {
-        Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_VEL_Z_ERROR_EXCESSIVE_TIMEOUT);
+        AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_VEL_Z_ERROR_EXCESSIVE_TIMEOUT);
         parachute_release();
     } else if (stabilize_throttle_cut) {
-        Log_Write_Error(ERROR_SUBSYSTEM_PARACHUTE, ERROR_CODE_PARACHUTE_REASON_STABILIZE_THROTTLE_CUT);
+        AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_STABILIZE_THROTTLE_CUT);
         parachute_release();
     }
 }

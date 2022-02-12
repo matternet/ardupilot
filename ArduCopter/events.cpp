@@ -36,7 +36,7 @@ void Copter::failsafe_radio_on_event()
         case FS_THR_ENABLED_ALWAYS_LAND:
             //    Do not switch to land in Auto mode, Switch to LAND in Manual mode
             if ((flightmode->in_guided_mode() && failsafe_option(FailsafeOption::RC_CONTINUE_IF_GUIDED)) ||
-                (control_mode == Mode::Number::AUTO && failsafe_option(FailsafeOption::RC_CONTINUE_IF_AUTO))) {
+                (flightmode->mode_number() == Mode::Number::AUTO && failsafe_option(FailsafeOption::RC_CONTINUE_IF_AUTO))) {
                 desired_action = Failsafe_Action_None;
             } else {
                 desired_action = Failsafe_Action_Land;
@@ -347,7 +347,7 @@ void Copter::set_mode_SmartRTL_or_RTL(ModeReason reason)
 }
 
 bool Copter::should_disarm_on_failsafe() {
-    if (ap.in_arming_delay && control_mode != Mode::Number::GUIDED) {
+    if (ap.in_arming_delay && flightmode->mode_number() != Mode::Number::GUIDED) {
         return true;
     }
 
