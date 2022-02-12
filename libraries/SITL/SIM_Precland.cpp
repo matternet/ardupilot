@@ -50,8 +50,8 @@ const AP_Param::GroupInfo SIM_Precland::var_info[] = {
     AP_GROUPINFO("LON", 2, SIM_Precland, _origin_lon, 0),
 
     // @Param: HEIGHT
-    // @DisplayName: Precland device origin's height above sealevel
-    // @Description: Precland device origin's height above sealevel assume a 2x2m square as station base
+    // @DisplayName: Precland device origin's height above home
+    // @Description: Precland device origin's height above home, assumes a 2x2m square as station base
     // @Units: cm
     // @Increment: 1
     // @Range: 0 10000
