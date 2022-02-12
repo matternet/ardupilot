@@ -3663,6 +3663,8 @@ void GCS_MAVLINK::send_banner()
             send_text(MAV_SEVERITY_INFO, "%s", banner_msg);
         }
     }
+
+    AP::gps().broadcast_gps_version();
 }
 
 
