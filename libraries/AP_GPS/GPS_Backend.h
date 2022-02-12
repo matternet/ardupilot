@@ -69,6 +69,7 @@ public:
     virtual const char *name() const = 0;
 
     void broadcast_gps_type() const;
+    virtual void broadcast_gps_version() const {};
     virtual void Write_AP_Logger_Log_Startup_messages() const;
 
     virtual bool prepare_for_arming(void) { return true; }

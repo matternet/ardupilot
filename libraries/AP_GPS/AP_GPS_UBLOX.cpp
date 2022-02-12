@@ -1945,3 +1945,17 @@ bool AP_GPS_UBLOX::supports_F9_config(void) const
 {
     return _hardware_generation == UBLOX_F9 && _hardware_generation != UBLOX_UNKNOWN_HARDWARE_GENERATION;
 }
+
+/*
+  send out version information for uBlox GPS, if known
+ */
+void AP_GPS_UBLOX::broadcast_gps_version() const
+{
+    if (_version.hwVersion[0] != 0) {
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO,
+                      "u-blox %d HW: %s SW: %s",
+                      state.instance + 1,
+                      _version.hwVersion,
+                      _version.swVersion);
+    }
+}

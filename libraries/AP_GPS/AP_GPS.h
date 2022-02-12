@@ -526,6 +526,9 @@ public:
         return get_pre_arm_pos_change(primary_instance, pos_change, alt_change);
     }
 
+    // announce GPS version on mavlink
+    void broadcast_gps_version(void);
+
 protected:
 
     // configuration parameters
