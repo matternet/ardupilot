@@ -682,6 +682,21 @@ bool AP_Arming_Copter::arm_checks(AP_Arming::Method method)
         return false;
     }
 
+    const NavEKF2 &ekf2 = AP::ahrs_navekf().get_NavEKF2_const();
+    const NavEKF3 &ekf3 = AP::ahrs_navekf().get_NavEKF3_const();
+    const int ekf_lane1 = 0;
+    const int ekf2_enabled = 2;
+    const int ekf3_enabled = 3;
+    
+    // Do not arm if EKF lane 1 is not used as primary during arming, when using a certain EKF (EKF2 or EKF3).
+    if ((ahrs.get_ekf_type() == ekf2_enabled) && (ekf2.currentPrimaryLane() != ekf_lane1)) {
+        check_failed(true, "EKF2 lane 1 not in use as primary");
+        return false;
+    } else if ((ahrs.get_ekf_type() == ekf3_enabled) && (ekf3.currentPrimaryLane() != ekf_lane1)) {
+        check_failed(true, "EKF3 lane 1 not in use as primary");
+        return false;
+    }
+
 #ifndef ALLOW_ARM_NO_COMPASS
     // if external source of heading is available, we can skip compass health check
     if (!ahrs.is_ext_nav_used_for_yaw()) {
