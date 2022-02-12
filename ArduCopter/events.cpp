@@ -34,7 +34,13 @@ void Copter::failsafe_radio_on_event()
             desired_action = Failsafe_Action_SmartRTL_Land;
             break;
         case FS_THR_ENABLED_ALWAYS_LAND:
-            desired_action = Failsafe_Action_Land;
+            //    Do not switch to land in Auto mode, Switch to LAND in Manual mode
+            if ((flightmode->in_guided_mode() && failsafe_option(FailsafeOption::RC_CONTINUE_IF_GUIDED)) ||
+                (control_mode == Mode::Number::AUTO && failsafe_option(FailsafeOption::RC_CONTINUE_IF_AUTO))) {
+                desired_action = Failsafe_Action_None;
+            } else {
+                desired_action = Failsafe_Action_Land;
+            }
             break;
         default:
             desired_action = Failsafe_Action_Land;
@@ -355,8 +361,11 @@ bool Copter::should_disarm_on_failsafe() {
             // if mission has not started AND vehicle is landed, disarm motors
             return !ap.auto_armed && ap.land_complete;
         case Mode::Number::GUIDED:
-            if (g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION ||
-                g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION_ALWAYS_LAND) {
+            if (failsafe_option(FailsafeOption::RC_CONTINUE_IF_AUTO) ||
+                failsafe_option(FailsafeOption::RC_CONTINUE_IF_GUIDED) ||
+                g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION ||
+                g.failsafe_throttle == FS_THR_ENABLED_CONTINUE_MISSION_ALWAYS_LAND ||
+                g.failsafe_throttle == FS_THR_ENABLED_ALWAYS_LAND) {
                 // prevent needing to arm twice in GUIDED
                 return false;
             }
@@ -371,7 +380,6 @@ bool Copter::should_disarm_on_failsafe() {
 
 
 void Copter::do_failsafe_action(Failsafe_Action action, ModeReason reason){
-
     // Execute the specified desired_action
     switch (action) {
         case Failsafe_Action_None:
