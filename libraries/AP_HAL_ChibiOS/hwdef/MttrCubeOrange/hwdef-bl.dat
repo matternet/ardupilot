@@ -1,0 +1,4 @@
+include ../CubeOrange/hwdef-bl.dat
+
+# order of UARTs (and USB)
+SERIAL_ORDER OTG1 USART2
