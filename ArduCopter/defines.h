@@ -106,6 +106,7 @@ enum PayloadPlaceStateType {
 enum DevOptions {
     DevOptionADSBMAVLink = 1,
     DevOptionVFR_HUDRelativeAlt = 2,
+    DevOption_ParachuteMsg = 4,
 };
 
 //  Logging parameters
