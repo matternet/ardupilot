@@ -128,6 +128,7 @@ private:
     bool                        _estimator_initialized; // true if estimator has been initialized after few seconds of the target being detected by sensor
     uint32_t                    _estimator_init_ms; // system time in millisecond when EKF was init
     uint32_t                    _last_backend_los_meas_ms;  // system time target was last seen
+    uint8_t                     _last_backend_max_block_cnt;  // last maximum number of blocks read
 
     PosVelEKF                   _ekf_x, _ekf_y;     // Kalman Filter for x and y axis
     uint32_t                    _outlier_reject_count;  // mini-EKF's outlier counter (3 consecutive outliers lead to EKF accepting updates)

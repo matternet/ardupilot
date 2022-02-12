@@ -122,6 +122,7 @@ const AP_Param::GroupInfo AC_PrecLand::var_info[] = {
 // their values.
 //
 AC_PrecLand::AC_PrecLand()
+    : _last_backend_max_block_cnt(0)
 {
     // set parameters to defaults
     AP_Param::setup_object_defaults(this, var_info);
@@ -212,6 +213,8 @@ void AC_PrecLand::update(float rangefinder_alt_cm, bool rangefinder_alt_valid)
     // update estimator of target position
     if (_backend != nullptr && _enabled) {
         _backend->update();
+        uint8_t cnt = _backend->num_targets();
+        if (cnt > _last_backend_max_block_cnt) _last_backend_max_block_cnt = cnt;
         run_estimator(rangefinder_alt_cm*0.01f, rangefinder_alt_valid);
     }
 

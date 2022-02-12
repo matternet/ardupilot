@@ -36,6 +36,9 @@ public:
     // return true if there is a valid los measurement available
     bool have_los_meas() override;
 
+    // returns the number of blocks in the current frame
+    size_t num_targets() const override { return irlock.num_targets(); }
+
 private:
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     AP_IRLock_SITL irlock;
