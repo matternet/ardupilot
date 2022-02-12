@@ -215,6 +215,12 @@ public:
         float p3;
     };
 
+    // nav user commands
+    struct PACKED User_Command {
+        float param1;
+        float param2;
+    };
+    
     union Content {
         // jump structure
         Jump_Command jump;
@@ -285,6 +291,9 @@ public:
         // do scripting
         scripting_Command scripting;
 
+        // user commands, for custom code
+        User_Command user_command;
+        
         // location
         Location location{};      // Waypoint location
     };

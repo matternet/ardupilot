@@ -1146,6 +1146,11 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.content.scripting.p3 = packet.param4;
         break;
 
+    case MAV_CMD_USER_1 ... MAV_CMD_USER_5:
+        cmd.content.user_command.param1 = packet.param1;
+        cmd.content.user_command.param2 = packet.param2;
+        break;
+        
     default:
         // unrecognised command
         return MAV_MISSION_UNSUPPORTED;
@@ -1600,6 +1605,11 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         packet.param2 = cmd.content.scripting.p1;
         packet.param3 = cmd.content.scripting.p2;
         packet.param4 = cmd.content.scripting.p3;
+        break;
+
+    case MAV_CMD_USER_1 ... MAV_CMD_USER_5:
+        packet.param1 = cmd.content.user_command.param1;
+        packet.param2 = cmd.content.user_command.param2;
         break;
 
     default:
@@ -2311,6 +2321,8 @@ const char *AP_Mission::Mission_Command::type() const
         return "Winch";
     case MAV_CMD_DO_SEND_SCRIPT_MESSAGE:
         return "Scripting";
+    case MAV_CMD_USER_1:
+        return "USER";
 
     default:
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
