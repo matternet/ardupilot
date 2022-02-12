@@ -1020,14 +1020,19 @@ void AP_GPS::update_primary(void)
     if (primary_instance == GPS_BLENDED_INSTANCE) {
         primary_instance = 0;
         for (uint8_t i=1; i<GPS_MAX_RECEIVERS; i++) {
-            // choose GPS with highest state or higher number of satellites
+            // choose GPS with highest state or higher number of satellites with at least
+            if (state[i].status < GPS_OK_FIX_3D) {
+                continue;
+            }
             if ((state[i].status > state[primary_instance].status) ||
+                ((now - state[primary_instance].last_gps_time_ms) > 400 &&
+                 (now - state[i].last_gps_time_ms) < 400) ||
                 ((state[i].status == state[primary_instance].status) && (state[i].num_sats > state[primary_instance].num_sats))) {
                 primary_instance = i;
                 _last_instance_swap_ms = now;
-                gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched from Blended to %u", primary_instance+1);
             }
         }
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched from Blended to %u", primary_instance+1);
         return;
     }
 
