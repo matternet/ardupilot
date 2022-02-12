@@ -1626,7 +1626,9 @@ bool ModeAuto::verify_land()
                 copter.arming.disarm(AP_Arming::Method::LANDED);
                 retval = false;
             }
-            gcs().send_text(MAV_SEVERITY_INFO,"Landed");
+            if (copter.ap.land_complete_maybe) {
+                gcs().send_text(MAV_SEVERITY_INFO,"Landed");
+            }
             break;
 
         default:
