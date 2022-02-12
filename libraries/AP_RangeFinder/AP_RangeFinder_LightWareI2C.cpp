@@ -60,7 +60,7 @@ static const uint8_t numStreamSequenceIndexes = sizeof(streamSequence)/sizeof(st
 
 static uint32_t        last_init_time_ms                 = 0;
 static const uint16_t  MIN_WAIT_TIME_BEFORE_REINIT_MS    = 500;
-static const uint8_t   MAX_VERSION_STRING_RETRY_ATTEMPTS = 3;
+static const uint8_t   MAX_VERSION_STRING_RETRY_ATTEMPTS = 4;
 static const uint8_t   MAX_READ_ERRORS_THRESHOLD         = 5;
 
 /*
@@ -200,18 +200,13 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const c
  */
 bool AP_RangeFinder_LightWareI2C::init()
 {
-    // First message sets the LIDAR in I2C mode. It will not respond if it just booted.
-    // However, if it is already streaming then this legacy call will stop it from streaming.
-    uint16_t dummy;
-    legacy_get_reading(dummy);
-
     if (sf20_init()) {
         last_init_time_ms = AP_HAL::millis();
         return true;
     }
     if (legacy_init()) {
-        // The SF20 legacy driver already initializes on its own if disconnectec.
-        // As of 2/11/2022, Matternet has favors using the native driver for SNR data.
+        // The SF20 legacy driver already initializes on its own if disconnected.
+        // As of 2/11/2022, Matternet favors using the native driver for SNR data.
         // This call may be deprecated in the future.
         return true;
     }
@@ -512,8 +507,9 @@ void AP_RangeFinder_LightWareI2C::sf20_timer(void)
     } else {
         // Otherwise try to init again.
         if (last_init_time_ms - AP_HAL::millis() > MIN_WAIT_TIME_BEFORE_REINIT_MS) {
-            init();
-            read_errors_ = 0;
+            if (init()) {
+                read_errors_ = 0;
+            }
         }
     }
 }
