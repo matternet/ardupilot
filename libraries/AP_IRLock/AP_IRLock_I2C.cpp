@@ -32,9 +32,15 @@ extern const AP_HAL::HAL& hal;
 #define IRLOCK_I2C_ADDRESS      0x54
 
 #define IRLOCK_SYNC         0xAA55AA55
+#define IRLOCK_SYNC_HALFWORD 0xAA55
+
+#define MAX_BLOCK_COUNT         10
+
 
 void AP_IRLock_I2C::init(int8_t bus)
 {
+    _block_cnt = 0;
+
     if (bus < 0) {
         // default to i2c external bus
         bus = 1;
@@ -91,7 +97,7 @@ void AP_IRLock_I2C::pixel_to_1M_plane(float pix_x, float pix_y, float &ret_x, fl
 }
 
 /*
-  read a frame from sensor
+  read a block from sensor
 */
 bool AP_IRLock_I2C::read_block(struct frame &irframe)
 {
@@ -111,21 +117,58 @@ bool AP_IRLock_I2C::read_block(struct frame &irframe)
     return true;
 }
 
+/*
+  read all blocks in a frame from sensor
+*/
+size_t AP_IRLock_I2C::read_blocks(struct frame *blocks, size_t max_cnt)
+{
+    if (!blocks || !max_cnt) {
+        return 0;
+    }
+
+    // The first block read is a special case because its sync bytes were consumed in sync_frame_start.
+    if (!read_block(blocks[0])) {
+        return 0;
+    }
+
+    size_t block_cnt = 1;
+    uint16_t sync_bytes;
+
+    for (; block_cnt < max_cnt; ++block_cnt) {
+        // Read sync bytes and check to see if there are more blocks
+        if (!dev->transfer(nullptr, 0, (uint8_t*)&sync_bytes, sizeof(sync_bytes))) {
+            break;
+        }
+
+        // A new block must start with the sync bytes. It'll be zero if no more blocks are available.
+        if (sync_bytes != IRLOCK_SYNC_HALFWORD ||
+            !read_block(blocks[block_cnt])) {
+            break;
+        }
+    }
+
+    return block_cnt;
+}
+
 void AP_IRLock_I2C::read_frames(void)
 {
     if (!sync_frame_start()) {
-        return;
-    }
-    struct frame irframe;
-    
-    if (!read_block(irframe)) {
+        _block_cnt = 0;
         return;
     }
 
-    int16_t corner1_pix_x = irframe.pixel_x - irframe.pixel_size_x/2;
-    int16_t corner1_pix_y = irframe.pixel_y - irframe.pixel_size_y/2;
-    int16_t corner2_pix_x = irframe.pixel_x + irframe.pixel_size_x/2;
-    int16_t corner2_pix_y = irframe.pixel_y + irframe.pixel_size_y/2;
+    struct frame blocks[MAX_BLOCK_COUNT];
+    _block_cnt = read_blocks(blocks, MAX_BLOCK_COUNT);
+    if (_block_cnt == 0) {
+        return;
+    }
+
+    // The objects in each frame are sorted by size, with the largest objects sent first.
+    struct frame *irframe = &blocks[0];
+    int16_t corner1_pix_x = irframe->pixel_x - irframe->pixel_size_x/2;
+    int16_t corner1_pix_y = irframe->pixel_y - irframe->pixel_size_y/2;
+    int16_t corner2_pix_x = irframe->pixel_x + irframe->pixel_size_x/2;
+    int16_t corner2_pix_y = irframe->pixel_y + irframe->pixel_size_y/2;
 
     float corner1_pos_x, corner1_pos_y, corner2_pos_x, corner2_pos_y;
     pixel_to_1M_plane(corner1_pix_x, corner1_pix_y, corner1_pos_x, corner1_pos_y);
@@ -146,20 +189,21 @@ void AP_IRLock_I2C::read_frames(void)
     static uint32_t lastt;
     if (_target_info.timestamp - lastt > 2000) {
         lastt = _target_info.timestamp;
-        printf("pos_x:%.5f pos_y:%.5f size_x:%.6f size_y:%.5f\n", 
+        printf("pos_x:%.5f pos_y:%.5f size_x:%.6f size_y:%.5f\n",
                _target_info.pos_x, _target_info.pos_y,
                (corner2_pos_x-corner1_pos_x), (corner2_pos_y-corner1_pos_y));
     }
 #endif
 
     // log raw frame to PLXY log message
-    AP::logger().Write("PLXY", "TimeUS,Sig,PX,PY,PSx,PSy", "Qhhhhh",
+    AP::logger().Write("PLXY", "TimeUS,Sig,PX,PY,PSx,PSy,BlkCnt", "QhhhhhB",
                        AP_HAL::micros64(),
-                       irframe.signature,
-                       irframe.pixel_x,
-                       irframe.pixel_y,
-                       irframe.pixel_size_x,
-                       irframe.pixel_size_y);
+                       irframe->signature,
+                       irframe->pixel_x,
+                       irframe->pixel_y,
+                       irframe->pixel_size_x,
+                       irframe->pixel_size_y,
+                       _block_cnt);
 
 }
 
