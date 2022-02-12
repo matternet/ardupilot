@@ -225,9 +225,15 @@ enum class LogErrorCode : uint8_t {
     DEST_OUTSIDE_FENCE = 5,
     RTL_MISSING_RNGFND = 6,
 
-// parachute failed to deploy because of low altitude or landed
+// parachute reasons
     PARACHUTE_TOO_LOW = 2,
     PARACHUTE_LANDED = 3,
+    PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT = 5,
+    PARACHUTE_TILT_ANGLE_EXCESSIVE = 6,
+    PARACHUTE_VEL_Z_ERROR_EXCESSIVE_TIMEOUT = 7,
+    PARACHUTE_STABILIZE_THROTTLE_CUT = 8,
+    PARACHUTE_REASON_EKF_FAILSAFE = 9,
+
 // EKF check definitions
     EKFCHECK_BAD_VARIANCE = 2,
     EKFCHECK_VARIANCE_CLEARED = 0,
