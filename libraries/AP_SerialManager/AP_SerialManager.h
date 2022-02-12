@@ -103,6 +103,11 @@
 #define AP_SERIALMANAGER_MSP_BUFSIZE_TX     256
 #define AP_SERIALMANAGER_MSP_BAUD           115200
 
+// Matternet FTS
+#define AP_SERIALMANAGER_MATTERNET_FTS_BAUD       115200
+#define AP_SERIALMANAGER_MATTERNET_FTS_BUFSIZE_RX     64
+#define AP_SERIALMANAGER_MATTERNET_FTS_BUFSIZE_TX     64
+
 class AP_SerialManager {
 public:
     AP_SerialManager();
@@ -152,6 +157,7 @@ public:
         SerialProtocol_AHRS = 36,
         SerialProtocol_SmartAudio = 37,
         SerialProtocol_FETtecOneWire = 38,
+        SerialProtocol_Matternet_FTS = 100,
         SerialProtocol_NumProtocols                    // must be the last value
     };
 
