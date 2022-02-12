@@ -46,6 +46,11 @@ public:
         return num_cores;
     }
 
+    // Gets the lane number which is used as primary
+    uint8_t currentPrimaryLane(void) const {
+        return primary;
+    }
+
     // Initialise the filter
     bool InitialiseFilter(void);
 
