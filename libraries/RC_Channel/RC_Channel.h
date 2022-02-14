@@ -201,6 +201,12 @@ public:
         GPS_SBAS_DISABLE2      =   163,
         GPS_SBAS_DISABLE_BOTH  =   164,
 
+        MOTOR_KILL_ALL         =   165,
+        MOTOR_KILL_1           =   166,
+        MOTOR_KILL_2           =   167,
+        MOTOR_KILL_3           =   168,
+        MOTOR_KILL_4           =   169,
+
         // inputs eventually used to replace RCMAP
         MAINSAIL =           207, // mainsail input
     };
