@@ -68,7 +68,7 @@ static const uint16_t  MIN_WAIT_TIME_BEFORE_VERSION_STRING_RETRY_MS = 10;   // A
 static const uint8_t   MAX_VERSION_STRING_RETRY_ATTEMPTS            = 4;    // Attempts to get version string. Not blocking if these attempts fail.
                                                                             // 1 to set the Lidar into I2C mode. + 3 for general rety attempts = 4
 static const uint8_t   MAX_READ_ERRORS_THRESHOLD                    = 5;    // Max read errors allowed before a reinit attempt.
-                                                                            // At 20Hz sampling rate, this allows for a full second of the Lidar
+                                                                            // At 20Hz sampling rate, this allows for 250ms of the Lidar
                                                                             // reporting read errors before initialization.
 
 /*
@@ -361,8 +361,8 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     static bool sf20_periodic_callback_handle_created = false;
     if (!sf20_periodic_callback_handle_created) {
         _dev->register_periodic_callback(50000, FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
+        sf20_periodic_callback_handle_created = true;
     }
-
     return true;
 }
 
