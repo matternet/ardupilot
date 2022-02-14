@@ -41,6 +41,8 @@ extern const AP_HAL::HAL& hal;
 #include <AP_IRLock/AP_IRLock.h>
 #include <AP_HAL/I2CDevice.h>
 
+void set_motor_kill(uint8_t motor_num, bool kill);
+
 #define SWITCH_DEBOUNCE_TIME_MS  200
 
 const AP_Param::GroupInfo RC_Channel::var_info[] = {
@@ -492,6 +494,11 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const aux_switch_
     case AUX_FUNC::GPS_SBAS_DISABLE1:
     case AUX_FUNC::GPS_SBAS_DISABLE2:
     case AUX_FUNC::GPS_SBAS_DISABLE_BOTH:
+    case AUX_FUNC::MOTOR_KILL_ALL:
+    case AUX_FUNC::MOTOR_KILL_1:
+    case AUX_FUNC::MOTOR_KILL_2:
+    case AUX_FUNC::MOTOR_KILL_3:
+    case AUX_FUNC::MOTOR_KILL_4:
         do_aux_function(ch_option, ch_flag);
         break;
     default:
@@ -800,6 +807,22 @@ void RC_Channel::do_aux_function(const aux_func_t ch_option, const aux_switch_po
         break;
     case AUX_FUNC::GPS_SBAS_DISABLE_BOTH:
         AP::gps().sbas_disable(ch_flag == HIGH?3:0);
+        break;
+
+    case AUX_FUNC::MOTOR_KILL_ALL:
+        set_motor_kill(0xFF, ch_flag == HIGH);
+        break;
+    case AUX_FUNC::MOTOR_KILL_1:
+        set_motor_kill(0, ch_flag == HIGH);
+        break;
+    case AUX_FUNC::MOTOR_KILL_2:
+        set_motor_kill(1, ch_flag == HIGH);
+        break;
+    case AUX_FUNC::MOTOR_KILL_3:
+        set_motor_kill(2, ch_flag == HIGH);
+        break;
+    case AUX_FUNC::MOTOR_KILL_4:
+        set_motor_kill(3, ch_flag == HIGH);
         break;
 
     case AUX_FUNC::MAG_DISABLE1:
