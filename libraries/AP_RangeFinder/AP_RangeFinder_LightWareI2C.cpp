@@ -58,10 +58,18 @@ static const uint8_t streamSequence[] = { 0 }; // List of 0 based stream Ids tha
 
 static const uint8_t numStreamSequenceIndexes = sizeof(streamSequence)/sizeof(streamSequence[0]);
 
-static uint32_t        last_init_time_ms                 = 0;
-static const uint16_t  MIN_WAIT_TIME_BEFORE_REINIT_MS    = 500;
-static const uint8_t   MAX_VERSION_STRING_RETRY_ATTEMPTS = 4;
-static const uint8_t   MAX_READ_ERRORS_THRESHOLD         = 5;
+static uint32_t        last_init_time_ms                            = 0;    // Track timing before last init.
+
+static const uint16_t  MIN_WAIT_TIME_BEFORE_REINIT_MS               = 500;  // Allow some time before reinits. Helps avoid spamming I2C bus.
+static const uint16_t  MIN_WAIT_TIME_BEFORE_VERSION_STRING_RETRY_MS = 10;   // Allow some time before retrying string to avoid spamming I2C bus.
+                                                                            // Determined through general testing. Longer waits will not increase performance
+                                                                            // and shorter waits are negligible on speed optimization.
+
+static const uint8_t   MAX_VERSION_STRING_RETRY_ATTEMPTS            = 4;    // Attempts to get version string. Not blocking if these attempts fail.
+                                                                            // 1 to set the Lidar into I2C mode. + 3 for general rety attempts = 4
+static const uint8_t   MAX_READ_ERRORS_THRESHOLD                    = 5;    // Max read errors allowed before a reinit attempt.
+                                                                            // At 20Hz sampling rate, this allows for a full second of the Lidar
+                                                                            // reporting read errors before initialization.
 
 /*
    The constructor also initializes the rangefinder. Note that this
@@ -74,7 +82,7 @@ AP_RangeFinder_LightWareI2C::AP_RangeFinder_LightWareI2C(RangeFinder::RangeFinde
     : AP_RangeFinder_Backend(_state, _params)
     , _dev(std::move(dev))
     , read_errors_(0)
-    , sf20_periodic_callback_handle_() {}
+    {}
 
 /*
    Detects if a Lightware rangefinder is connected. We'll detect by
@@ -251,17 +259,16 @@ bool AP_RangeFinder_LightWareI2C::legacy_init()
  */
 bool AP_RangeFinder_LightWareI2C::sf20_init()
 {
-    // version strings for reporting
-    char version[15] {};
+    // Version strings for reporting
+    char version[15] {0};
 
     // Attempt to get lidar version up to MAX_VERSION_STRING_RETRY_ATTEMPTS times. This allows the UART to flush in between inits.
-    memset(version, 0, sizeof(version));
     for (int i = 0; i < MAX_VERSION_STRING_RETRY_ATTEMPTS; ++i) {
         if (sf20_get_version("?P\r\n", "p:", version)) {
             break;
         }
         else {
-            hal.scheduler->delay(10);
+            hal.scheduler->delay(MIN_WAIT_TIME_BEFORE_VERSION_STRING_RETRY_MS);
         }
     }
 
@@ -350,10 +357,10 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     write_bytes((uint8_t*)init_stream_id[0], strlen(init_stream_id[0]));
 
     // call timer() at 20Hz
-    // Create this periodic calback once only
-    if (!sf20_periodic_callback_handle_) {
-        sf20_periodic_callback_handle_ = _dev->register_periodic_callback(50000,
-                                         FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
+    // Create this periodic calllback once only
+    static bool sf20_periodic_callback_handle_created = false;
+    if (!sf20_periodic_callback_handle_created) {
+        _dev->register_periodic_callback(50000, FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
     }
 
     return true;
@@ -506,6 +513,7 @@ void AP_RangeFinder_LightWareI2C::sf20_timer(void)
         }
     } else {
         // Otherwise try to init again.
+        set_status(RangeFinder::RangeFinder_NoData);
         if (last_init_time_ms - AP_HAL::millis() > MIN_WAIT_TIME_BEFORE_REINIT_MS) {
             if (init()) {
                 read_errors_ = 0;
