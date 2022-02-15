@@ -38,6 +38,8 @@ extern const AP_HAL::HAL& hal;
 #include <AP_Arming/AP_Arming.h>
 #include <AP_GPS/AP_GPS.h>
 #include <AC_Fence/AC_Fence.h>
+#include <AP_IRLock/AP_IRLock.h>
+#include <AP_HAL/I2CDevice.h>
 
 #define SWITCH_DEBOUNCE_TIME_MS  200
 
@@ -475,6 +477,21 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const aux_switch_
     case AUX_FUNC::GPS_DISABLE:
     case AUX_FUNC::KILL_IMU1:
     case AUX_FUNC::KILL_IMU2:
+    case AUX_FUNC::GPS_DISABLE1:
+    case AUX_FUNC::GPS_DISABLE2:
+    case AUX_FUNC::GPS_DISABLE_BOTH:
+    case AUX_FUNC::MAG_DISABLE1:
+    case AUX_FUNC::MAG_DISABLE2:
+    case AUX_FUNC::MAG_DISABLE_BOTH:
+    case AUX_FUNC::RFND_DISABLE1:
+    case AUX_FUNC::RFND_DISABLE2:
+    case AUX_FUNC::RFND_DISABLE_BOTH:
+    case AUX_FUNC::PIXY_DISABLE:
+    case AUX_FUNC::I2C_DISABLE:
+    case AUX_FUNC::PLAND_DISABLE:
+    case AUX_FUNC::GPS_SBAS_DISABLE1:
+    case AUX_FUNC::GPS_SBAS_DISABLE2:
+    case AUX_FUNC::GPS_SBAS_DISABLE_BOTH:
         do_aux_function(ch_option, ch_flag);
         break;
     default:
@@ -762,7 +779,68 @@ void RC_Channel::do_aux_function(const aux_func_t ch_option, const aux_switch_po
     }
 
     case AUX_FUNC::GPS_DISABLE:
-        AP::gps().force_disable(ch_flag == HIGH);
+        AP::gps().force_disable(ch_flag == HIGH?1:0);
+        break;
+
+    case AUX_FUNC::GPS_DISABLE1:
+        AP::gps().force_disable(ch_flag == HIGH?1:0);
+        break;
+    case AUX_FUNC::GPS_DISABLE2:
+        AP::gps().force_disable(ch_flag == HIGH?2:0);
+        break;
+    case AUX_FUNC::GPS_DISABLE_BOTH:
+        AP::gps().force_disable(ch_flag == HIGH?3:0);
+        break;
+
+    case AUX_FUNC::GPS_SBAS_DISABLE1:
+        AP::gps().sbas_disable(ch_flag == HIGH?1:0);
+        break;
+    case AUX_FUNC::GPS_SBAS_DISABLE2:
+        AP::gps().sbas_disable(ch_flag == HIGH?2:0);
+        break;
+    case AUX_FUNC::GPS_SBAS_DISABLE_BOTH:
+        AP::gps().sbas_disable(ch_flag == HIGH?3:0);
+        break;
+
+    case AUX_FUNC::MAG_DISABLE1:
+        AP::compass().set_disable_mask(ch_flag == HIGH?1:0);
+        break;
+    case AUX_FUNC::MAG_DISABLE2:
+        AP::compass().set_disable_mask(ch_flag == HIGH?2:0);
+        break;
+    case AUX_FUNC::MAG_DISABLE_BOTH:
+        AP::compass().set_disable_mask(ch_flag == HIGH?3:0);
+        break;
+
+    case AUX_FUNC::RFND_DISABLE1:
+        AP::rangefinder()->set_disable_mask(ch_flag == HIGH?1:0);
+        break;
+    case AUX_FUNC::RFND_DISABLE2:
+        AP::rangefinder()->set_disable_mask(ch_flag == HIGH?2:0);
+        break;
+    case AUX_FUNC::RFND_DISABLE_BOTH:
+        AP::rangefinder()->set_disable_mask(ch_flag == HIGH?3:0);
+        break;
+
+    case AUX_FUNC::PIXY_DISABLE: {
+        auto *irlock = AP::irlock();
+        if (irlock) {
+            irlock->set_disable(ch_flag == HIGH);
+        }
+        break;
+    }
+
+    case AUX_FUNC::PLAND_DISABLE: {
+        auto *irlock = AP::irlock();
+        if (irlock) {
+            irlock->set_disable(ch_flag == HIGH);
+        }
+        AP::rangefinder()->set_disable_mask(ch_flag == HIGH?3:0);
+        break;
+    }
+        
+    case AUX_FUNC::I2C_DISABLE:
+        hal.i2c_mgr->i2c_disable(ch_flag == HIGH);
         break;
 
     case AUX_FUNC::MOTOR_ESTOP:
