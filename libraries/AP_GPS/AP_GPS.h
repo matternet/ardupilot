@@ -492,6 +492,11 @@ public:
     // announce GPS version on mavlink
     void broadcast_gps_version(void);
 
+    // used to disable SBAS
+    void sbas_disable(uint8_t mask) {
+        _sbas_disable_mask = mask;
+    }
+
 protected:
 
     // configuration parameters
@@ -684,6 +689,9 @@ private:
     // mask of GPS instances to disable. Used for flight testing with
     // GPS loss
     uint8_t _force_disable_mask;
+
+    // mask of SBAS instances to disable
+    uint8_t _sbas_disable_mask;
 
     // used to ensure we continue sending status messages if we ever detected the second GPS
     bool has_had_second_instance;
