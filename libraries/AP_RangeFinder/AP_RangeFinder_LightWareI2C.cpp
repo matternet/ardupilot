@@ -58,6 +58,19 @@ static const uint8_t streamSequence[] = { 0 }; // List of 0 based stream Ids tha
 
 static const uint8_t numStreamSequenceIndexes = sizeof(streamSequence)/sizeof(streamSequence[0]);
 
+static uint32_t        last_init_time_ms                            = 0;    // Track timing before last init.
+
+static const uint16_t  MIN_WAIT_TIME_BEFORE_REINIT_MS               = 500;  // Allow some time before reinits. Helps avoid spamming I2C bus.
+static const uint16_t  MIN_WAIT_TIME_BEFORE_VERSION_STRING_RETRY_MS = 10;   // Allow some time before retrying string to avoid spamming I2C bus.
+                                                                            // Determined through general testing. Longer waits will not increase performance
+                                                                            // and shorter waits are negligible on speed optimization.
+
+static const uint8_t   MAX_VERSION_STRING_RETRY_ATTEMPTS            = 4;    // Attempts to get version string. Not blocking if these attempts fail.
+                                                                            // 1 to set the Lidar into I2C mode. + 3 for general rety attempts = 4
+static const uint8_t   MAX_READ_ERRORS_THRESHOLD                    = 5;    // Max read errors allowed before a reinit attempt.
+                                                                            // At 20Hz sampling rate, this allows for 250ms of the Lidar
+                                                                            // reporting read errors before initialization.
+
 /*
    The constructor also initializes the rangefinder. Note that this
    constructor is not called until detect() returns true, so we
@@ -67,7 +80,9 @@ AP_RangeFinder_LightWareI2C::AP_RangeFinder_LightWareI2C(RangeFinder::RangeFinde
         AP_RangeFinder_Params &_params,
         AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev)
     : AP_RangeFinder_Backend(_state, _params)
-    , _dev(std::move(dev)) {}
+    , _dev(std::move(dev))
+    , read_errors_(0)
+    {}
 
 /*
    Detects if a Lightware rangefinder is connected. We'll detect by
@@ -157,23 +172,23 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
   send a native command and fill a reply into a buffer. Used for
   version string
  */
-void AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const char *reply_prefix, char reply[15])
+bool AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const char *reply_prefix, char reply[15])
 {
     const size_t expected_reply_len = 16;
     uint8_t rx_bytes[expected_reply_len + 1];
     memset(rx_bytes, 0, sizeof(rx_bytes));
 
     if (!write_bytes((uint8_t*)send_msg, strlen(send_msg))) {
-        return;
+        return false;
     }
 
     if (!sf20_wait_on_reply(rx_bytes)) {
-        return;
+        return false;
     }
 
     if ((rx_bytes[0] != uint8_t(reply_prefix[0])) ||
         (rx_bytes[1] != uint8_t(reply_prefix[1])) ) {
-        return;
+        return false;
     }
 
     for (uint8_t i=0; i<10; i++) {
@@ -184,6 +199,7 @@ void AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const c
         hal.scheduler->delay(1);
     }
     memcpy(reply, &rx_bytes[2], 14);
+    return true;
 }
 
 /* Driver first attempts to initialize the sf20.
@@ -193,14 +209,16 @@ void AP_RangeFinder_LightWareI2C::sf20_get_version(const char* send_msg, const c
 bool AP_RangeFinder_LightWareI2C::init()
 {
     if (sf20_init()) {
-        hal.console->printf("Found SF20 native Lidar\n");
+        last_init_time_ms = AP_HAL::millis();
         return true;
     }
     if (legacy_init()) {
-        hal.console->printf("Found SF20 legacy Lidar\n");
+        // The SF20 legacy driver already initializes on its own if disconnected.
+        // As of 2/11/2022, Matternet favors using the native driver for SNR data.
+        // This call may be deprecated in the future.
         return true;
     }
-    hal.console->printf("SF20 not found\n");
+    last_init_time_ms = AP_HAL::millis();
     return false;
 }
 
@@ -241,13 +259,17 @@ bool AP_RangeFinder_LightWareI2C::legacy_init()
  */
 bool AP_RangeFinder_LightWareI2C::sf20_init()
 {
-    // version strings for reporting
-    char version[15] {};
+    // Version strings for reporting
+    char version[15] {0};
 
-    sf20_get_version("?P\r\n", "p:", version);
-
-    if (version[0]) {
-        hal.console->printf("SF20 Lidar version %s\n", version);
+    // Attempt to get lidar version up to MAX_VERSION_STRING_RETRY_ATTEMPTS times. This allows the UART to flush in between inits.
+    for (int i = 0; i < MAX_VERSION_STRING_RETRY_ATTEMPTS; ++i) {
+        if (sf20_get_version("?P\r\n", "p:", version)) {
+            break;
+        }
+        else {
+            hal.scheduler->delay(MIN_WAIT_TIME_BEFORE_VERSION_STRING_RETRY_MS);
+        }
     }
 
     // Makes sure that "address tagging" is turned off.
@@ -317,13 +339,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
         return false;
     }
 
-    // Switches distance streaming on or off:
-    // 0 = off
-    // 1 = on
-    if (!sf20_send_and_expect("#SU,1\r\n", "su:1")) {
-        return false;
-    }
-
     // Changes the laser state:
     //    0 = laser is off
     //    1 = laser is running
@@ -331,13 +346,23 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
         return false;
     }
 
+    // Switches distance streaming on or off:
+    // 0 = off
+    // 1 = on
+    if (!sf20_send_and_expect("#SU,1\r\n", "su:1")) {
+        return false;
+    }
+
     // Requests the measurement specified in the first stream.
     write_bytes((uint8_t*)init_stream_id[0], strlen(init_stream_id[0]));
 
     // call timer() at 20Hz
-    _dev->register_periodic_callback(50000,
-                                     FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
-
+    // Create this periodic calllback once only
+    static bool sf20_periodic_callback_handle_created = false;
+    if (!sf20_periodic_callback_handle_created) {
+        _dev->register_periodic_callback(50000, FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::sf20_timer, void));
+        sf20_periodic_callback_handle_created = true;
+    }
     return true;
 }
 
@@ -374,11 +399,13 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 
     /* Reads the LiDAR value requested during the last interrupt. */
     if (!_dev->read(stream, sizeof(stream))) {
+        ++read_errors_;
         return false;
     }
     stream[lx20_max_expected_stream_reply_len_bytes] = 0;
 
     if (!sf20_parse_stream(stream, &num_processed_chars, parse_stream_id[i], sf20_stream_val[i])) {
+        ++read_errors_;
         return false;
     }
 
@@ -395,7 +422,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 
     // Request the next stream in the sequence from the SF20
     write_bytes((uint8_t*)init_stream_id[i], strlen(init_stream_id[i]));
-
     return true;
 }
 
@@ -477,11 +503,22 @@ void AP_RangeFinder_LightWareI2C::legacy_timer(void)
 
 void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 {
-    if (sf20_get_reading(state.distance_cm)) {
-        // update range_valid state based on distance measured
-        update_status();
+    // If no read errors, try to perform nominal readings
+    if (read_errors_ < MAX_READ_ERRORS_THRESHOLD) {
+        if (sf20_get_reading(state.distance_cm)) {
+            // Update range_valid state based on distance measured
+            update_status();
+        } else {
+            set_status(RangeFinder::RangeFinder_NoData);
+        }
     } else {
+        // Otherwise try to init again.
         set_status(RangeFinder::RangeFinder_NoData);
+        if (last_init_time_ms - AP_HAL::millis() > MIN_WAIT_TIME_BEFORE_REINIT_MS) {
+            if (init()) {
+                read_errors_ = 0;
+            }
+        }
     }
 }
 
