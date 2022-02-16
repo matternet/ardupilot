@@ -71,6 +71,9 @@ static const uint8_t   MAX_READ_ERRORS_THRESHOLD                    = 5;    // M
                                                                             // At 20Hz sampling rate, this allows for 250ms of the Lidar
                                                                             // reporting read errors before initialization.
 
+// version strings for reporting
+static char version[15] {};
+
 /*
    The constructor also initializes the rangefinder. Note that this
    constructor is not called until detect() returns true, so we
@@ -221,8 +224,7 @@ bool AP_RangeFinder_LightWareI2C::init()
  */
 bool AP_RangeFinder_LightWareI2C::sf20_init()
 {
-    // Version strings for reporting
-    char version[15] {0};
+    memset(version, 0, sizeof(version));
 
     // Attempt to get lidar version up to MAX_VERSION_STRING_RETRY_ATTEMPTS times. This allows the UART to flush in between inits.
     for (int i = 0; i < MAX_VERSION_STRING_RETRY_ATTEMPTS; ++i) {
@@ -434,11 +436,21 @@ void AP_RangeFinder_LightWareI2C::update(void)
 
 void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 {
+    static const uint32_t TIMER_FREQ = 20;
+    static uint32_t count = 0;
+    count++;
+
     // If no read errors, try to perform nominal readings
     if (read_errors_ < MAX_READ_ERRORS_THRESHOLD) {
         if (sf20_get_reading(state.distance_cm)) {
             // Update range_valid state based on distance measured
             update_status();
+
+            // Manufacturing test debug message
+            if (count % TIMER_FREQ == 0) {
+                gcs().send_text(MAV_SEVERITY_INFO, "SF20 version: %s", version);
+                gcs().send_named_int("LIDAR_DIST", int(state.distance_cm));
+            }
         } else {
             set_status(RangeFinder::RangeFinder_NoData);
         }
