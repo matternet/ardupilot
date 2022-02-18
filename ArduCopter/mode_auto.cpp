@@ -1962,6 +1962,15 @@ void ModeAuto::set_commanded_alt(int32_t alt_cm)
         }
         changealt_state.start_time_ms = 0;
         wp_nav->set_commanded_alt(false, 0);
+    }
+    else if (alt_cm <= -200000) {
+        // cancel command, don't return to previous altitude
+        if (changealt_state.start_time_ms == 0) {
+            // already cancelled
+            return;
+        }
+        changealt_state.start_time_ms = 0;
+        wp_nav->set_commanded_alt(false, changealt_state.commanded_alt_cm);
     } else {
         Location origin;
         if (ahrs.get_origin(origin)) {
