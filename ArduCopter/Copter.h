@@ -63,6 +63,7 @@
 #include <AP_Buffer/AP_Buffer.h>          // APM FIFO Buffer
 #include <AP_Relay/AP_Relay.h>           // APM relay
 #include <AP_ServoRelayEvents/AP_ServoRelayEvents.h>
+#include <Filter/ComplementaryFilter.h>
 #include <AP_Airspeed/AP_Airspeed.h>        // needed for AHRS build
 #include <AP_Vehicle/AP_Vehicle.h>         // needed for AHRS build
 #include <AP_InertialNav/AP_InertialNav.h>     // ArduPilot Mega inertial navigation library
@@ -249,6 +250,8 @@ private:
         uint32_t last_healthy_ms;
         float terrain_height_filt_cm; // terrain height relative to origin, filtered
         int8_t glitch_count;
+        ComplementaryFilter alt_cm_filt; // altitude filter
+        float filter_hz;
     } rangefinder_state = { false, false, 0};
 
 #if RPM_ENABLED == ENABLED

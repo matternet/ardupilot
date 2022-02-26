@@ -53,7 +53,48 @@ void Copter::read_rangefinder(void)
     // Remove rangefinder body offset - converting NED to NEU
     rangefinder_alt_meas += (ahrs.get_rotation_body_to_ned()*rangefinder_pos_offset_cm).z;
 
-    float terrain_height_meas = inertial_nav.get_altitude() - rangefinder_alt_meas;
+    /*
+      Apply a complementary filter to the rangefinder data, using the
+      inertial altitude for the high frequency component and the
+      rangefinder data for the low frequency component.
+
+      When we are loitering shift the time constant of the
+      complementary filter towards a much lower frequency to filter
+      out even quite long period noise from the rangefinder. When not
+      loitering shift back to a shorter time period to handle changes
+      in terrain
+     */
+    float target_filter_hz = RANGEFINDER_WPNAV_FILT_MAX_HZ;
+    if (control_mode == AUTO &&
+        mission.get_current_nav_cmd().id == MAV_CMD_NAV_WAYPOINT &&
+        mode_auto.in_loiter()) {
+        // we are holding position at a waypoint, slew the time constant
+        target_filter_hz = RANGEFINDER_WPNAV_FILT_MIN_HZ;
+    }
+
+    if (!is_equal(target_filter_hz,rangefinder_state.filter_hz)) {
+        // when changing target freq we use a reset to prevent a numerical error in the complementary filter
+        rangefinder_state.filter_hz = target_filter_hz;
+        rangefinder_state.alt_cm_filt.set_cutoff_frequency(rangefinder_state.filter_hz);
+        rangefinder_state.alt_cm_filt.reset();
+    }
+
+    // apply complementary filter
+    if (rangefinder_alt_meas_valid) {
+        rangefinder_state.alt_cm_filt.apply(rangefinder_alt_meas, inertial_nav.get_altitude(), AP_HAL::micros());
+    }
+    const float rangefinder_alt_flt = rangefinder_state.alt_cm_filt.get();
+
+    // temporary debug log message to look at the
+    // performance of the complementary filter
+    DataFlash_Class::instance()->Log_Write("RF2", "TimeUS,LF,HF,Out,FHz", "Qffff",
+                                           AP_HAL::micros64(),
+                                           rangefinder_alt_meas*0.01,
+                                           inertial_nav.get_altitude()*0.01,
+                                           rangefinder_alt_flt*0.01,
+                                           rangefinder_state.filter_hz);
+    
+    float terrain_height_meas = inertial_nav.get_altitude() - rangefinder_alt_flt;
 
     // filter rangefinder for use by AC_WPNav
     uint32_t tnow_ms = AP_HAL::millis();
