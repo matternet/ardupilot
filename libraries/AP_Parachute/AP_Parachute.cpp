@@ -64,7 +64,7 @@ const AP_Param::GroupInfo AP_Parachute::var_info[] = {
     // @Increment: 1
     // @User: Standard
     AP_GROUPINFO("DELAY_MS", 5, AP_Parachute, _delay_ms, AP_PARACHUTE_RELEASE_DELAY_MS),
-    
+
     // @Param: CRT_SINK
     // @DisplayName: Critical sink speed rate in m/s to trigger emergency parachute
     // @Description: Release parachute when critical sink rate is reached
@@ -73,8 +73,8 @@ const AP_Param::GroupInfo AP_Parachute::var_info[] = {
     // @Increment: 1
     // @User: Standard
     AP_GROUPINFO("CRT_SINK", 6, AP_Parachute, _critical_sink, AP_PARACHUTE_CRITICAL_SINK_DEFAULT),
-    
-    
+
+
     AP_GROUPEND
 };
 
@@ -130,11 +130,11 @@ void AP_Parachute::update()
     } else {
         _sink_time = 0;
     }
-    
+
     // calc time since release
     uint32_t time_diff = AP_HAL::millis() - _release_time;
     uint32_t delay_ms = _delay_ms<=0 ? 0: (uint32_t)_delay_ms;
-    
+
     // check if we should release parachute
     if ((_release_time != 0) && !_release_in_progress) {
         if (time_diff >= delay_ms) {
@@ -195,11 +195,20 @@ void AP_Parachute::send_debug_message(uint32_t tnow_ms, uint8_t ind, float value
 
 void AP_Parachute::mttr_fts_update()
 {
+    //#define DISABLE_WATCHDOG_DELAY_MS  (1 * 60 * 1000)
+    #define DISABLE_WATCHDOG_DELAY_MS  (10 * 1000)
+    static uint32_t arm_time = 0;
+    static uint32_t last_print_time = 0;
+
     if (!_mttr_uart) {
         return;
     }
 
     uint32_t tnow_ms = AP_HAL::millis();
+
+    bool do_print = tnow_ms - last_print_time > 500;
+    if (do_print)
+        last_print_time = tnow_ms;
 
     // 20Hz
     if (tnow_ms - _mttr_last_loop_ms > 50) {
@@ -208,25 +217,36 @@ void AP_Parachute::mttr_fts_update()
             deploy_msg.msgid = FTS_MSGID_DEPLOY;
             deploy_msg.magic = FTS_DEPLOY_MAGIC;
             mttr_fts_transmit(sizeof(deploy_msg), (uint8_t*)&deploy_msg);
+
+            if (do_print) hal.console->printf("FTS: sent DEPLOY command\n");
         }
 
         if (tnow_ms - _mttr_last_status_recv_ms > 1000) {
             _mttr_status_pass = false;
         }
 
-        struct fts_msg_wdrst_s wdrst_msg;
-        wdrst_msg.msgid = FTS_MSGID_WDRST;
-        mttr_fts_transmit(sizeof(wdrst_msg), (uint8_t*)&wdrst_msg);
+        if (arm_time == 0 || (tnow_ms - arm_time) < DISABLE_WATCHDOG_DELAY_MS) {
+            struct fts_msg_wdrst_s wdrst_msg;
+            wdrst_msg.msgid = FTS_MSGID_WDRST;
+            mttr_fts_transmit(sizeof(wdrst_msg), (uint8_t*)&wdrst_msg);
+
+            if (do_print) hal.console->printf("FTS: sent WATCHDOG command\n");
+        }
 
         if (!_release_initiated) {
             if (hal.util->get_soft_armed()) {
+                if (arm_time == 0) arm_time = tnow_ms;
                 struct fts_msg_arm_cmd_s arm_msg;
                 arm_msg.msgid = FTS_MSGID_ARM_CMD;
                 mttr_fts_transmit(sizeof(arm_msg), (uint8_t*)&arm_msg);
+
+                if (do_print) hal.console->printf("FTS: sent ARM command\n");
             } else {
                 struct fts_msg_disarm_cmd_s disarm_msg;
                 disarm_msg.msgid = FTS_MSGID_DISARM_CMD;
                 mttr_fts_transmit(sizeof(disarm_msg), (uint8_t*)&disarm_msg);
+
+                if (do_print) hal.console->printf("FTS: sent DISARM command\n");
             }
         }
 
