@@ -80,6 +80,7 @@ AP_RangeFinder_LightWareI2C::AP_RangeFinder_LightWareI2C(RangeFinder::RangeFinde
         AP_RangeFinder_Params &_params,
         AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev)
     : AP_RangeFinder_Backend(_state, _params)
+    , version_("")
     , _dev(std::move(dev))
     , read_errors_(0)
     {}
@@ -166,6 +167,14 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
     }
 
     return memcmp(rx_bytes, expected_reply, expected_reply_len) == 0;
+}
+
+const char *AP_RangeFinder_LightWareI2C::get_version() const {
+    char *full_version = (char*) malloc((LIDAR_VERSION_STRING_SIZE + strlen(RANGEFINDER_LIDAR_I2C_VERSION_PREFIX))
+                                 * sizeof(char) + 1);
+    strcat(full_version, RANGEFINDER_LIDAR_I2C_VERSION_PREFIX);
+    strcat(full_version, version_);
+    return full_version;
 }
 
 /*
@@ -259,12 +268,10 @@ bool AP_RangeFinder_LightWareI2C::legacy_init()
  */
 bool AP_RangeFinder_LightWareI2C::sf20_init()
 {
-    // Version strings for reporting
-    char version[15] {0};
 
     // Attempt to get lidar version up to MAX_VERSION_STRING_RETRY_ATTEMPTS times. This allows the UART to flush in between inits.
     for (int i = 0; i < MAX_VERSION_STRING_RETRY_ATTEMPTS; ++i) {
-        if (sf20_get_version("?P\r\n", "p:", version)) {
+        if (sf20_get_version("?P\r\n", "p:", version_)) {
             break;
         }
         else {

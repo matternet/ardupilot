@@ -3,8 +3,10 @@
 #include "RangeFinder.h"
 #include "RangeFinder_Backend.h"
 #include <AP_HAL/I2CDevice.h>
+#include <string.h>
 
 #define NUM_SF20_DATA_STREAMS 1
+#define LIDAR_VERSION_STRING_SIZE 15
 
 class AP_RangeFinder_LightWareI2C : public AP_RangeFinder_Backend
 {
@@ -17,6 +19,8 @@ public:
 
     // update state
     void update(void) override;
+
+    const char *get_version() const override;
 
 protected:
 
@@ -58,5 +62,6 @@ private:
     void data_log(uint16_t *val);
     AP_HAL::OwnPtr<AP_HAL::I2CDevice> _dev;
 
+    char version_[LIDAR_VERSION_STRING_SIZE];
     uint32_t read_errors_;
 };
