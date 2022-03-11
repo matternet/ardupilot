@@ -80,7 +80,7 @@ AP_RangeFinder_LightWareI2C::AP_RangeFinder_LightWareI2C(RangeFinder::RangeFinde
         AP_RangeFinder_Params &_params,
         AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev)
     : AP_RangeFinder_Backend(_state, _params)
-    , version_("")
+    , version_("UNKNOWN")
     , _dev(std::move(dev))
     , read_errors_(0)
     {}
@@ -169,12 +169,12 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
     return memcmp(rx_bytes, expected_reply, expected_reply_len) == 0;
 }
 
-const char *AP_RangeFinder_LightWareI2C::get_version() const {
-    char *full_version = (char*) malloc((LIDAR_VERSION_STRING_SIZE + strlen(RANGEFINDER_LIDAR_I2C_VERSION_PREFIX))
-                                 * sizeof(char) + 1);
-    strcat(full_version, RANGEFINDER_LIDAR_I2C_VERSION_PREFIX);
-    strcat(full_version, version_);
-    return full_version;
+/*
+  Populate a buffer with the version string found upon device init.
+ */
+void AP_RangeFinder_LightWareI2C::get_version(char *buffer) const {
+    strcpy(buffer, RANGEFINDER_LIDAR_I2C_VERSION_PREFIX);
+    strcat(buffer, version_);
 }
 
 /*

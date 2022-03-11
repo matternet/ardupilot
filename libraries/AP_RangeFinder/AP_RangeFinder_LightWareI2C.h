@@ -3,7 +3,6 @@
 #include "RangeFinder.h"
 #include "RangeFinder_Backend.h"
 #include <AP_HAL/I2CDevice.h>
-#include <string.h>
 
 #define NUM_SF20_DATA_STREAMS 1
 #define LIDAR_VERSION_STRING_SIZE 15
@@ -20,7 +19,7 @@ public:
     // update state
     void update(void) override;
 
-    const char *get_version() const override;
+    void get_version(char *buffer) const override;
 
 protected:
 

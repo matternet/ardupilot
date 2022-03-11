@@ -16,6 +16,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_HAL/AP_HAL.h>
+#include <string.h>
 #include "RangeFinder.h"
 
 class AP_RangeFinder_Backend
@@ -33,7 +34,7 @@ public:
 
     virtual void handle_msg(const mavlink_message_t &msg) { return; }
 
-    virtual const char *get_version() const { return "";}
+    virtual void get_version(char *buffer) const { strcpy(buffer,""); }
 
     enum Rotation orientation() const { return (Rotation)params.orientation.get(); }
     uint16_t distance_cm() const { return state.distance_cm; }

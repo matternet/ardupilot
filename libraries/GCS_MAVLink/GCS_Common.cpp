@@ -3607,22 +3607,22 @@ void GCS_MAVLINK::send_matternet_FTS_version(void) const
  */
 void GCS_MAVLINK::send_rangefinder_versions(void) const
 {
-
     RangeFinder *rangefinder = RangeFinder::get_singleton();
     if (rangefinder == nullptr) {
         return;
     }
-
+    char rangefinder_version[80];
     for (uint8_t i = 0; i < RANGEFINDER_MAX_INSTANCES; i++) {
         AP_RangeFinder_Backend *sensor = rangefinder->get_backend(i);
-        if (sensor == nullptr || sensor->get_version() == nullptr) {
+        if (sensor == nullptr) {
             continue;
         }
-        else if (strcmp(sensor->get_version(),"") == 0) {
+        sensor->get_version(rangefinder_version);
+        if (rangefinder_version == nullptr || strcmp(rangefinder_version, "") == 0) {
             continue;
         }
         else {
-            gcs().send_text(MAV_SEVERITY_INFO, "RANGEFINDER: %s", sensor->get_version());
+            gcs().send_text(MAV_SEVERITY_INFO, "RANGEFINDER: %s", rangefinder_version);
         }
     }
 }
