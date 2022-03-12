@@ -19,7 +19,7 @@ public:
     // update state
     void update(void) override;
 
-    void get_version(char *buffer) const override;
+    void get_version(char *buffer, uint8_t length) const override;
 
 protected:
 

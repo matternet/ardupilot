@@ -172,9 +172,8 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
 /*
   Populate a buffer with the version string found upon device init.
  */
-void AP_RangeFinder_LightWareI2C::get_version(char *buffer) const {
-    strcpy(buffer, RANGEFINDER_LIDAR_I2C_VERSION_PREFIX);
-    strcat(buffer, version_);
+void AP_RangeFinder_LightWareI2C::get_version(char *buffer, uint8_t length) const {
+    snprintf(buffer, length, "%s%s", RANGEFINDER_LIDAR_I2C_VERSION_PREFIX, version_);
 }
 
 /*
@@ -227,6 +226,8 @@ bool AP_RangeFinder_LightWareI2C::init()
         // This call may be deprecated in the future.
         return true;
     }
+    // Reset lidar to be unknown and update last re-init time.
+    strcpy(version_, "UNKNOWN");
     last_init_time_ms = AP_HAL::millis();
     return false;
 }

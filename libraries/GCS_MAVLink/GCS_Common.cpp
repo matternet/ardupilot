@@ -3617,7 +3617,7 @@ void GCS_MAVLINK::send_rangefinder_versions(void) const
         if (sensor == nullptr) {
             continue;
         }
-        sensor->get_version(rangefinder_version);
+        sensor->get_version(rangefinder_version, 80);
         if (rangefinder_version == nullptr || strcmp(rangefinder_version, "") == 0) {
             continue;
         }
