@@ -45,14 +45,11 @@ private:
     bool sf20_get_version(const char* send_msg, const char *reply_prefix, char reply[5]);
     bool sf20_wait_on_reply(uint8_t *rx_two_bytes);
     bool init();
-    bool legacy_init();
     bool sf20_init();
     void sf20_init_streamRecovery();
-    void legacy_timer();
     void sf20_timer();
 
     // get a reading
-    bool legacy_get_reading(uint16_t &reading_cm);
     bool sf20_get_reading(uint16_t &reading_cm);
     bool sf20_parse_stream(uint8_t *stream_buf,
                            size_t *p_num_processed_chars,

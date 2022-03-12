@@ -220,48 +220,10 @@ bool AP_RangeFinder_LightWareI2C::init()
         last_init_time_ms = AP_HAL::millis();
         return true;
     }
-    if (legacy_init()) {
-        // The SF20 legacy driver already initializes on its own if disconnected.
-        // As of 2/11/2022, Matternet favors using the native driver for SNR data.
-        // This call may be deprecated in the future.
-        return true;
-    }
     // Reset lidar to be unknown and update last re-init time.
     strcpy(version_, "UNKNOWN");
     last_init_time_ms = AP_HAL::millis();
     return false;
-}
-
-/*
-  initialise lidar using legacy 16 bit protocol
- */
-bool AP_RangeFinder_LightWareI2C::legacy_init()
-{
-    union {
-        be16_t be16_val;
-        uint8_t bytes[2];
-    } timeout;
-
-    // Retrieve lost signal timeout register
-    const uint8_t read_reg = LIGHTWARE_LOST_SIGNAL_TIMEOUT_READ_REG;
-    if (!_dev->transfer(&read_reg, 1, timeout.bytes, 2)) {
-        return false;
-    }
-
-    // Check lost signal timeout register against desired value and write it if it does not match
-    if (be16toh(timeout.be16_val) != LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE) {
-        timeout.be16_val = htobe16(LIGHTWARE_TIMEOUT_REG_DESIRED_VALUE);
-        const uint8_t send_buf[3] = {LIGHTWARE_LOST_SIGNAL_TIMEOUT_WRITE_REG, timeout.bytes[0], timeout.bytes[1]};
-        if (!_dev->transfer(send_buf, sizeof(send_buf), nullptr, 0)) {
-            return false;
-        }
-    }
-
-    // call timer() at 20Hz
-    _dev->register_periodic_callback(50000,
-                                     FUNCTOR_BIND_MEMBER(&AP_RangeFinder_LightWareI2C::legacy_timer, void));
-
-    return true;
 }
 
 /*
@@ -374,27 +336,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_init()
     return true;
 }
 
-// read - return last value measured by sensor
-bool AP_RangeFinder_LightWareI2C::legacy_get_reading(uint16_t &reading_cm)
-{
-    be16_t val;
-
-    const uint8_t read_reg = LIGHTWARE_DISTANCE_READ_REG;
-
-    // read the high and low byte distance registers
-    if (_dev->transfer(&read_reg, 1, (uint8_t *)&val, sizeof(val))) {
-        int16_t signed_val = int16_t(be16toh(val));
-        if (signed_val < 0) {
-            // some lidar firmwares will return 65436 for out of range
-            reading_cm = uint16_t(max_distance_cm() + LIGHTWARE_OUT_OF_RANGE_ADD_CM);
-        } else {
-            reading_cm = uint16_t(signed_val);
-        }
-        return true;
-    }
-    return false;
-}
-
 // read - return last value measured by sf20 sensor
 bool AP_RangeFinder_LightWareI2C::sf20_get_reading(uint16_t &reading_cm)
 {
@@ -497,16 +438,6 @@ bool AP_RangeFinder_LightWareI2C::sf20_parse_stream(uint8_t *stream_buf,
 void AP_RangeFinder_LightWareI2C::update(void)
 {
     // nothing to do - its all done in the timer()
-}
-
-void AP_RangeFinder_LightWareI2C::legacy_timer(void)
-{
-    if (legacy_get_reading(state.distance_cm)) {
-        // update range_valid state based on distance measured
-        update_status();
-    } else {
-        set_status(RangeFinder::RangeFinder_NoData);
-    }
 }
 
 void AP_RangeFinder_LightWareI2C::sf20_timer(void)
