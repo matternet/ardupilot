@@ -3617,8 +3617,9 @@ void GCS_MAVLINK::send_rangefinder_versions(void) const
         if (sensor == nullptr) {
             continue;
         }
-        sensor->get_version(rangefinder_version, 80);
-        if (rangefinder_version == nullptr || strcmp(rangefinder_version, "") == 0) {
+        sensor->get_version(rangefinder_version, sizeof(rangefinder_version));
+        rangefinder_version[sizeof(rangefinder_version)-1] = '\0';  // Append '\0' at end of string for safety
+        if (strcmp(rangefinder_version, "") == 0) {
             continue;
         }
         else {
