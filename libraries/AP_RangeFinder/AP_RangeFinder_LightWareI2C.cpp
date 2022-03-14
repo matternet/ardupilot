@@ -173,7 +173,7 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
   Populate a buffer with the version string found upon device init.
  */
 void AP_RangeFinder_LightWareI2C::get_version(char *buffer, uint8_t length) const {
-    if (!buffer) {
+    if (!buffer || length == 0) {
         return;
     }
     snprintf(buffer, length, "%s%s", RANGEFINDER_LIDAR_I2C_VERSION_PREFIX, version_);
