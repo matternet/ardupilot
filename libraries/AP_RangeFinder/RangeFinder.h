@@ -33,6 +33,9 @@
 #define RANGEFINDER_PREARM_REQUIRED_CHANGE_CM   50
 #endif
 
+// Prefixes for different types of rangefinders. If more require support define them here.
+#define RANGEFINDER_LIDAR_I2C_VERSION_PREFIX "I2C Lidar "
+
 class AP_RangeFinder_Backend;
 
 class RangeFinder
@@ -154,7 +157,7 @@ public:
 
     // indicate which bit in LOG_BITMASK indicates RFND should be logged
     void set_rfnd_bit(uint32_t log_rfnd_bit) { _log_rfnd_bit = log_rfnd_bit; }
-    
+
     uint16_t snr(enum Rotation orientation) const;
 
     /*

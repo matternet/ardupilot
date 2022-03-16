@@ -80,6 +80,7 @@ AP_RangeFinder_LightWareI2C::AP_RangeFinder_LightWareI2C(RangeFinder::RangeFinde
         AP_RangeFinder_Params &_params,
         AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev)
     : AP_RangeFinder_Backend(_state, _params)
+    , version_("UNKNOWN")
     , _dev(std::move(dev))
     , read_errors_(0)
     {}
@@ -169,6 +170,16 @@ bool AP_RangeFinder_LightWareI2C::sf20_send_and_expect(const char* send_msg, con
 }
 
 /*
+  Populate a buffer with the version string found upon device init.
+ */
+void AP_RangeFinder_LightWareI2C::get_version(char *buffer, uint8_t length) const {
+    if (!buffer || length == 0) {
+        return;
+    }
+    snprintf(buffer, length, "%s%s", RANGEFINDER_LIDAR_I2C_VERSION_PREFIX, version_);
+}
+
+/*
   send a native command and fill a reply into a buffer. Used for
   version string
  */
@@ -212,6 +223,8 @@ bool AP_RangeFinder_LightWareI2C::init()
         last_init_time_ms = AP_HAL::millis();
         return true;
     }
+    // Reset lidar to be unknown and update last re-init time.
+    strcpy(version_, "UNKNOWN");
     last_init_time_ms = AP_HAL::millis();
     return false;
 }
@@ -221,12 +234,10 @@ bool AP_RangeFinder_LightWareI2C::init()
  */
 bool AP_RangeFinder_LightWareI2C::sf20_init()
 {
-    // Version strings for reporting
-    char version[15] {0};
 
     // Attempt to get lidar version up to MAX_VERSION_STRING_RETRY_ATTEMPTS times. This allows the UART to flush in between inits.
     for (int i = 0; i < MAX_VERSION_STRING_RETRY_ATTEMPTS; ++i) {
-        if (sf20_get_version("?P\r\n", "p:", version)) {
+        if (sf20_get_version("?P\r\n", "p:", version_)) {
             break;
         }
         else {
