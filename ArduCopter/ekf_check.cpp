@@ -28,6 +28,12 @@ static struct {
 // should be called at 10hz
 void Copter::ekf_check()
 {
+    ekf_check_bypass_timer(false);
+}
+
+// ekf_check_timer - bypass true removes the timer and forces a check_lane_switch early
+void Copter::ekf_check_bypass_timer(bool bypass)
+{
     // exit immediately if ekf has no origin yet - this assumes the origin can never become unset
     Location temp_loc;
     if (!ahrs.get_origin(temp_loc)) {
@@ -50,7 +56,7 @@ void Copter::ekf_check()
             // increase counter
             ekf_check_state.fail_count++;
 #if EKF_CHECK_ITERATIONS_MAX > 2
-            if (ekf_check_state.fail_count == EKF_CHECK_ITERATIONS_MAX-1) {
+            if (ekf_check_state.fail_count == EKF_CHECK_ITERATIONS_MAX-1 || bypass) {
                 // we are just about to declare a EKF failsafe, ask the EKF if we can change lanes
                 // to resolve the issue
                 ahrs.check_lane_switch();

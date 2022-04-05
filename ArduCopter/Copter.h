@@ -611,6 +611,14 @@ private:
     int16_t hover_roll_trim_scalar_slew;
 #endif
 
+    typedef struct parachute_errors {
+        bool angle_error_excessive_timeout = false;
+        bool tilt_angle_excessive = false;
+        bool vel_z_error_excessive_timeout = false;
+        bool stabilize_throttle_cut = false;
+        bool any_error = false;
+    } parachute_errors;
+
     struct {
         bool angle_error_excessive;
         bool vel_z_error_excessive;
@@ -736,10 +744,12 @@ private:
     void thrust_loss_check();
     void parachute_check();
     void parachute_release();
+    parachute_errors parachute_check_no_release;
     void parachute_manual_release();
 
     // ekf_check.cpp
     void ekf_check();
+    void ekf_check_bypass_timer(bool);
     bool ekf_over_threshold();
     void failsafe_ekf_event();
     void failsafe_ekf_off_event(void);

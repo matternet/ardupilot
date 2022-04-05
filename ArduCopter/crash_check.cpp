@@ -157,7 +157,14 @@ void Copter::thrust_loss_check()
 // - Flight mode is STABILIZE *AND* throttle is zero *AND* downward velocity is greater than 5 m/s
 // called at MAIN_LOOP_RATE
 
-void Copter::parachute_check()
+typedef struct parachute_errors {
+    bool angle_error_excessive_timeout = false;
+    bool tilt_angle_excessive = false;
+    bool vel_z_error_excessive_timeout = false;
+    bool stabilize_throttle_cut = false;
+} parachute_errors;
+
+parachute_errors Copter::parachute_check_no_release()
 {
     // Return immediately if parachute is not enabled
     if (!parachute.enabled()) {
@@ -223,23 +230,54 @@ void Copter::parachute_check()
     // Check for criterion: "Flight mode is STABILIZE *AND* throttle is zero *AND* downward velocity is greater than 5 m/s"
     bool stabilize_throttle_cut = control_mode == Mode::Number::STABILIZE && ap.throttle_zero && vel_z > 5.0f;
 
+    // pass sink rate to parachute library
+    parachute.set_sink_rate(-inertial_nav.get_velocity_z() * 0.01);
+
+    parachute_errors parachute_release_errors;
     // Deploy the parachute if a criterion is met
+    parachute_release_errors.any_error = true;
     if (angle_error_excessive_timeout) {
+        parachute_release_errors.angle_error_excessive_timeout = true;
+    } else if (tilt_angle_excessive) {
+        parachute_release_errors.tilt_angle_excessive = true;
+    } else if (vel_z_error_excessive_timeout) {
+        parachute_release_errors.vel_z_error_excessive_timeout = true;
+    } else if (stabilize_throttle_cut) {
+        parachute_release_errors.stabilize_throttle_cut = true;
+    } else {
+        parachute_release_errors.any_error = false;
+    }
+    return parachute_release_errors;
+}
+
+void Copter::parachute_check()
+{
+    parachute_errors error = parachute_check_no_release();
+    if(!error.any_error) {
+        // If no errors were found, no need to switch lanes or release the parachute.
+        return;
+    }
+
+    // If an error was found, immediately try to switch lanes.
+    ekf_check_bypass_timer(true);
+
+    // Get new parachute data
+    error = parachute_check_no_release();
+
+    // Deploy the parachute if a criterion is met
+    if (error.angle_error_excessive_timeout) {
         AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_ANGLE_ERROR_EXCESSIVE_TIMEOUT);
         parachute_release();
-    } else if (tilt_angle_excessive) {
+    } else if (error.tilt_angle_excessive) {
         AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_TILT_ANGLE_EXCESSIVE);
         parachute_release();
-    } else if (vel_z_error_excessive_timeout) {
+    } else if (error.vel_z_error_excessive_timeout) {
         AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_VEL_Z_ERROR_EXCESSIVE_TIMEOUT);
         parachute_release();
-    } else if (stabilize_throttle_cut) {
+    } else if (error.stabilize_throttle_cut) {
         AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_STABILIZE_THROTTLE_CUT);
         parachute_release();
     }
-
-    // pass sink rate to parachute library
-    parachute.set_sink_rate(-inertial_nav.get_velocity_z() * 0.01);
 }
 
 // parachute_release - trigger the release of the parachute, disarm the motors and notify the user
