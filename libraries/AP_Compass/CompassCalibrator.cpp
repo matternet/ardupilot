@@ -67,6 +67,8 @@
 #define FIELD_RADIUS_MIN 150
 #define FIELD_RADIUS_MAX 950
 
+#define LOG_TEXT_PREFIX "MagCal: "
+
 extern const AP_HAL::HAL& hal;
 
 ////////////////////////////////////////////////////////////
@@ -206,6 +208,7 @@ void CompassCalibrator::update(bool &failure)
     if (_status == Status::RUNNING_STEP_ONE) {
         if (_fit_step >= 10) {
             if (is_equal(_fitness, _initial_fitness) || isnan(_fitness)) {  // if true, means that fitness is diverging instead of converging
+                GCS_SEND_TEXT(MAV_SEVERITY_ERROR, LOG_TEXT_PREFIX "Mag(%u) fitness is diverging", _compass_idx);
                 set_status(Status::FAILED);
                 failure = true;
             } else {
@@ -220,9 +223,15 @@ void CompassCalibrator::update(bool &failure)
         }
     } else if (_status == Status::RUNNING_STEP_TWO) {
         if (_fit_step >= 35) {
-            if (fit_acceptable() && fix_radius() && calculate_orientation()) {
+            bool is_fit_acceptable = fit_acceptable();
+            bool is_fix_radius = fix_radius();
+            bool is_calculate_orientation = calculate_orientation();
+
+            if (is_fit_acceptable && is_fix_radius && is_calculate_orientation) {
                 set_status(Status::SUCCESS);
             } else {
+                GCS_SEND_TEXT(MAV_SEVERITY_ERROR, LOG_TEXT_PREFIX "Mag(%u) step two failed: fit_accpt(%d), fix_rad(%d), calc_ortn(%d)", _compass_idx,
+                              is_fit_acceptable, is_fix_radius, is_calculate_orientation);
                 set_status(Status::FAILED);
                 failure = true;
             }
@@ -375,6 +384,8 @@ bool CompassCalibrator::set_status(CompassCalibrator::Status status)
 
 bool CompassCalibrator::fit_acceptable()
 {
+    bool acceptable = false;
+
     if (!isnan(_fitness) &&
         _params.radius > FIELD_RADIUS_MIN && _params.radius < FIELD_RADIUS_MAX &&
         fabsf(_params.offset.x) < _offset_max &&
@@ -386,9 +397,14 @@ bool CompassCalibrator::fit_acceptable()
         fabsf(_params.offdiag.x) < 1.0f &&      //absolute of sine/cosine output cannot be greater than 1
         fabsf(_params.offdiag.y) < 1.0f &&
         fabsf(_params.offdiag.z) < 1.0f ) {
-            return _fitness <= sq(_tolerance);
+            acceptable = (_fitness <= sq(_tolerance));
+            if (!acceptable) {
+                GCS_SEND_TEXT(MAV_SEVERITY_WARNING, LOG_TEXT_PREFIX "Mag(%u) _fitness (%f) <= sq(_tolerance) (%f)", _compass_idx, _fitness, sq(_tolerance));
+            }
         }
-    return false;
+
+    GCS_SEND_TEXT(MAV_SEVERITY_WARNING, LOG_TEXT_PREFIX "Mag(%u) fit_acceptable() is false", _compass_idx);
+    return acceptable;
 }
 
 void CompassCalibrator::thin_samples()
@@ -451,6 +467,7 @@ bool CompassCalibrator::accept_sample(const Vector3f& sample, uint16_t skip_inde
         if (i != skip_index) {
             float distance = (sample - _sample_buffer[i].get()).length();
             if (distance < min_distance) {
+                GCS_SEND_TEXT(MAV_SEVERITY_WARNING, LOG_TEXT_PREFIX "Mag(%u) accept_sample() is false", _compass_idx);
                 return false;
             }
         }
@@ -570,10 +587,12 @@ void CompassCalibrator::run_sphere_fit()
     }
 
     if (!inverse(JTJ, JTJ, 4)) {
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, LOG_TEXT_PREFIX "Mag(%u) run_sphere_fit: JTJ matrix is singular", _compass_idx);
         return;
     }
 
     if (!inverse(JTJ2, JTJ2, 4)) {
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, LOG_TEXT_PREFIX "Mag(%u) run_sphere_fit: JTJ2 matrix is singular", _compass_idx);
         return;
     }
 
@@ -608,6 +627,9 @@ void CompassCalibrator::run_sphere_fit()
         _fitness = fitness;
         _params = fit1_params;
         update_completion_mask();
+    }
+    else {
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, LOG_TEXT_PREFIX "Mag(%u) fitness is nan", _compass_idx);
     }
 }
 
@@ -686,10 +708,12 @@ void CompassCalibrator::run_ellipsoid_fit()
     }
 
     if (!inverse(JTJ, JTJ, 9)) {
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, LOG_TEXT_PREFIX "Mag(%u) run_ellipsoid_fit: JTJ matrix is singular", _compass_idx);
         return;
     }
 
     if (!inverse(JTJ2, JTJ2, 9)) {
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, LOG_TEXT_PREFIX "Mag(%u) run_ellipsoid_fit: JTJ2 matrix is singular", _compass_idx);
         return;
     }
 
@@ -773,10 +797,10 @@ Matrix3f CompassCalibrator::AttitudeSample::get_rotmat(void)
 /*
   calculate the implied earth field for a compass sample and compass
   rotation. This is used to check for consistency between
-  samples. 
+  samples.
 
   If the orientation is correct then when rotated the same (or
-  similar) earth field should be given for all samples. 
+  similar) earth field should be given for all samples.
 
   Note that this earth field uses an arbitrary north reference, so it
   may not match the true earth field.
@@ -878,16 +902,16 @@ bool CompassCalibrator::calculate_orientation(void)
         pass = _orientation_confidence > variance_threshold;
     }
     if (!pass) {
-        GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "Mag(%u) bad orientation: %u/%u %.1f", _compass_idx,
+        GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, LOG_TEXT_PREFIX "Mag(%u) bad orientation: %u/%u %.1f", _compass_idx,
                         besti, besti2, (double)_orientation_confidence);
         (void)besti2;
     } else if (besti == _orientation) {
         // no orientation change
-        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Mag(%u) good orientation: %u %.1f", _compass_idx, besti, (double)_orientation_confidence);
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, LOG_TEXT_PREFIX "Mag(%u) good orientation: %u %.1f", _compass_idx, besti, (double)_orientation_confidence);
     } else if (!_is_external || !_fix_orientation) {
-        GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, "Mag(%u) internal bad orientation: %u %.1f", _compass_idx, besti, (double)_orientation_confidence);
+        GCS_SEND_TEXT(MAV_SEVERITY_CRITICAL, LOG_TEXT_PREFIX "Mag(%u) internal bad orientation: %u %.1f", _compass_idx, besti, (double)_orientation_confidence);
     } else {
-        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Mag(%u) new orientation: %u was %u %.1f", _compass_idx, besti, _orientation, (double)_orientation_confidence);
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, LOG_TEXT_PREFIX "Mag(%u) new orientation: %u was %u %.1f", _compass_idx, besti, _orientation, (double)_orientation_confidence);
     }
 
     if (!pass) {
@@ -957,7 +981,7 @@ bool CompassCalibrator::fix_radius(void)
 
     if (correction > COMPASS_MAX_SCALE_FACTOR || correction < COMPASS_MIN_SCALE_FACTOR) {
         // don't allow more than 30% scale factor correction
-        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "Mag(%u) bad radius %.0f expected %.0f",
+        GCS_SEND_TEXT(MAV_SEVERITY_ERROR, LOG_TEXT_PREFIX "Mag(%u) bad radius %.0f expected %.0f",
                         _compass_idx,
                         _params.radius,
                         expected_radius);
