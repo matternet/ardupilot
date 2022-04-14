@@ -1,5 +1,6 @@
 #pragma once
 
+#include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AP_Math/AP_Math.h>
 
 #define COMPASS_CAL_NUM_SPHERE_PARAMS       4
@@ -8,6 +9,8 @@
 
 #define COMPASS_MIN_SCALE_FACTOR 0.85
 #define COMPASS_MAX_SCALE_FACTOR 1.4
+
+#define COMPASS_CAL_LOG_TEXT_PREFIX "MagCal: "
 
 class CompassCalibrator {
 public:
@@ -162,6 +165,8 @@ private:
     // fix radius to compensate for sensor scaling errors
     bool fix_radius();
 
+    void defer_send_text(MAV_SEVERITY severity, const char *fmt, ...);
+
     uint8_t _compass_idx;                   // index of the compass providing data
     Status _status;                         // current state of calibrator
     uint32_t _last_sample_ms;               // system time of last sample received for timeout
@@ -195,4 +200,11 @@ private:
     bool _check_orientation;                // true if orientation should be automatically checked
     bool _fix_orientation;                  // true if orientation should be fixed if necessary
     float _orientation_confidence;          // measure of confidence in automatic orientation detection
+
+    struct mavlink_msg {
+        MAV_SEVERITY severity;
+        char text[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN + 1];
+    };
+
+    ObjectBuffer<mavlink_msg> _deferred_logs;
 };
