@@ -1018,7 +1018,7 @@ void CompassCalibrator::defer_send_text(MAV_SEVERITY severity, const char *fmt, 
     va_start(arg_list, fmt);
     mavlink_msg msg;
     msg.severity = severity;
-    vsnprintf(msg.text, sizeof(msg.text), fmt, arg_list);
+    hal.util->vsnprintf(msg.text, sizeof(msg.text), fmt, arg_list);
     _deferred_logs.push_force(msg);
     va_end(arg_list);
 }
