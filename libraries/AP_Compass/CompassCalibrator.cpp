@@ -381,7 +381,7 @@ bool CompassCalibrator::set_status(CompassCalibrator::Status status)
             GCS_SEND_TEXT(MAV_SEVERITY_WARNING, COMPASS_CAL_LOG_TEXT_PREFIX "DEFERRED LOGS BEGIN");
 
             mavlink_msg msg;
-            while (! _deferred_logs.pop(msg)) {
+            while (_deferred_logs.pop(msg)) {
                 gcs().send_statustext(msg.severity, GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask(), msg.text);
             }
 
