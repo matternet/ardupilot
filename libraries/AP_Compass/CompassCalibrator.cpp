@@ -378,14 +378,14 @@ bool CompassCalibrator::set_status(CompassCalibrator::Status status)
             _status = status;
 
             // Write all warning text that were queued up before the error.
-            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, COMPASS_CAL_LOG_TEXT_PREFIX "DEFERRED LOGS BEGIN");
+            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, COMPASS_CAL_LOG_TEXT_PREFIX "Deferred message start...");
 
             mavlink_msg msg;
             while (_deferred_logs.pop(msg)) {
                 gcs().send_statustext(msg.severity, GCS_MAVLINK::active_channel_mask() | GCS_MAVLINK::streaming_channel_mask(), msg.text);
             }
 
-            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, COMPASS_CAL_LOG_TEXT_PREFIX "DEFERRED LOGS END");
+            GCS_SEND_TEXT(MAV_SEVERITY_WARNING, COMPASS_CAL_LOG_TEXT_PREFIX "Deferred message end");
             return true;
 
         default:
