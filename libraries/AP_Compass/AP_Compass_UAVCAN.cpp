@@ -19,6 +19,8 @@
 
 #include "AP_Compass_UAVCAN.h"
 
+#include <GCS_MAVLink/GCS.h>
+
 #include <AP_BoardConfig/AP_BoardConfig_CAN.h>
 #include <AP_UAVCAN/AP_UAVCAN.h>
 
@@ -83,6 +85,10 @@ AP_Compass_Backend* AP_Compass_UAVCAN::probe(uint8_t index)
                 return nullptr;
             }
             _detected_modules[index].driver = driver;
+            GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "Found Mag Node %d on Bus %d Sensor ID %d\n",
+                                _detected_modules[index].node_id,
+                                _detected_modules[index].ap_uavcan->get_driver_index(),
+                                _detected_modules[index].sensor_id);
             debug_mag_uavcan(2,
                                 _detected_modules[index].ap_uavcan->get_driver_index(),
                                 "Found Mag Node %d on Bus %d Sensor ID %d\n",
@@ -104,6 +110,7 @@ bool AP_Compass_UAVCAN::init()
     set_dev_id(_instance, _devid);
     set_external(_instance, true);
 
+    GCS_SEND_TEXT(MAV_SEVERITY_ERROR, "AP_Compass_UAVCAN loaded\n\r");
     debug_mag_uavcan(2, _ap_uavcan->get_driver_index(),  "AP_Compass_UAVCAN loaded\n\r");
     return true;
 }

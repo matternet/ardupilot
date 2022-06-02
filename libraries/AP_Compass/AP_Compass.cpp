@@ -28,6 +28,7 @@
 #include "AP_Compass_RM3100.h"
 #include "AP_Compass.h"
 #include "Compass_learn.h"
+#include <GCS_MAVLink/GCS.h>
 #include <stdio.h>
 
 extern const AP_HAL::HAL& hal;
@@ -1316,6 +1317,7 @@ void Compass::_detect_backends(void)
 #if HAL_WITH_UAVCAN
     if (_driver_enabled(DRIVER_UAVCAN)) {
         for (uint8_t i=0; i<COMPASS_MAX_BACKEND; i++) {
+            gcs().send_text(MAV_SEVERITY_ERROR, "Mag: Calling UAVCAN probe %i", uint8_t(i));
             AP_Compass_Backend* _uavcan_backend = AP_Compass_UAVCAN::probe(i);
             if (_uavcan_backend) {
                 _add_backend(_uavcan_backend);
@@ -1382,6 +1384,9 @@ void Compass::_detect_backends(void)
             }
         }
 #endif
+    }
+    else {
+        gcs().send_text(MAV_SEVERITY_ERROR, "Mag: Driver UAVCAN is not enabled\n\r");
     }
 #endif
 
