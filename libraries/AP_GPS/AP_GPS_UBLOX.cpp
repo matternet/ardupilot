@@ -1266,6 +1266,8 @@ AP_GPS_UBLOX::_parse_gps(void)
         }else{
             next_fix = AP_GPS::NO_FIX;
             state.status = AP_GPS::NO_FIX;
+            GCS_SEND_TEXT(MAV_SEVERITY_ERROR,
+                            "Unexpected GNSS fix status");
         }
 #if UBLOX_FAKE_3DLOCK
         state.status = AP_GPS::GPS_OK_FIX_3D;
@@ -1283,6 +1285,7 @@ AP_GPS_UBLOX::_parse_gps(void)
         state.hdop = 170;
 #endif
         break;
+    // Not used by F9P
     case MSG_SOL:
         Debug("MSG_SOL fix_status=%u fix_type=%u",
               _buffer.solution.fix_status,
@@ -1405,6 +1408,18 @@ AP_GPS_UBLOX::_parse_gps(void)
         state.location.lng    = _buffer.pvt.lon;
         state.location.lat    = _buffer.pvt.lat;
         state.location.alt    = _buffer.pvt.h_msl / 10;
+        // Check if valid fix
+        if (!(_buffer.pvt.flags & 0b00000001) 
+            || (_buffer.pvt.fix_type != 3 && _buffer.pvt.fix_type != 4)) {
+            GCS_SEND_TEXT(MAV_SEVERITY_ERROR,
+                            "Unexpected GNSS PVT fix %d, flags %d", _buffer.pvt.fix_type, _buffer.pvt.flags);
+        }
+        // Check if lat, lon, height, and hMSL valid
+        if (!(_buffer.pvt.flags3 & 0b00000001)) {
+            GCS_SEND_TEXT(MAV_SEVERITY_ERROR,
+                            "Unexpected GNSS PVT validity flag %d", _buffer.pvt.flags3);
+        }
+        // Set fix status
         switch (_buffer.pvt.fix_type) 
         {
             case 0:
@@ -1426,8 +1441,8 @@ AP_GPS_UBLOX::_parse_gps(void)
                     state.status = AP_GPS::GPS_OK_FIX_3D_RTK_FIXED;
                 break;
             case 4:
-                GCS_SEND_TEXT(MAV_SEVERITY_INFO,
-                                "Unexpected state %d", _buffer.pvt.flags);
+                GCS_SEND_TEXT(MAV_SEVERITY_ERROR,
+                                "Unexpected fix type 4 %d. Set 3D", _buffer.pvt.flags);
                 state.status = AP_GPS::GPS_OK_FIX_3D;
                 break;
             case 5:
