@@ -1812,6 +1812,51 @@ bool Compass::configured(uint8_t i)
     return true;
 }
 
+        AP_Int8     external;
+        bool        healthy;
+        bool        registered;
+        Compass::Priority priority;
+        AP_Int8     orientation;
+        AP_Vector3f offset;
+        AP_Vector3f diagonals;
+        AP_Vector3f offdiagonals;
+        AP_Float    scale_factor;
+
+        // device id detected at init.
+        // saved to eeprom when offsets are saved allowing ram &
+        // eeprom values to be compared as consistency check
+        AP_Int32    dev_id;
+        // Initialised when compass is detected
+        int32_t detected_dev_id;
+        // Initialised at boot from saved devid
+        int32_t expected_dev_id;
+
+        // factors multiplied by throttle and added to compass outputs
+        AP_Vector3f motor_compensation;
+
+        // latest compensation added to compass
+        Vector3f    motor_offset;
+
+        // corrected magnetic field strength
+        Vector3f    field;
+
+        // when we last got data
+        uint32_t    last_update_ms;
+        uint32_t    last_update_usec;
+
+        // board specific orientation
+        enum Rotation rotation;
+
+        // accumulated samples, protected by _sem, used by AP_Compass_Backend
+        Vector3f accum;
+        uint32_t accum_count;
+        // We only copy persistent params
+        void copy_from(const mag_state& state);
+
+
+
+
+
 bool Compass::configured(char *failure_msg, uint8_t failure_msg_len)
 {
 #if COMPASS_MAX_INSTANCES > 1
@@ -1819,6 +1864,17 @@ bool Compass::configured(char *failure_msg, uint8_t failure_msg_len)
     for (Priority i(0); i<COMPASS_MAX_INSTANCES; i++) {
         if (_priority_did_list[i] != 0 && use_for_yaw(uint8_t(i))) {
             if (!_get_state(i).registered) {
+                snprintf(failure_msg, failure_msg_len, "Compass external: %d", uint8_t(_get_state(i).dev_id));
+                snprintf(failure_msg, failure_msg_len, "Compass healthy: %d", uint8_t(_get_state(i).healthy));
+                snprintf(failure_msg, failure_msg_len, "Compass registered: %d", uint8_t(_get_state(i).registered));
+                snprintf(failure_msg, failure_msg_len, "Compass priority: %d", uint8_t(_get_state(i).priority));
+                snprintf(failure_msg, failure_msg_len, "Compass orientation: %d", uint8_t(_get_state(i).orientation));
+                snprintf(failure_msg, failure_msg_len, "Compass detected_dev_id: %d", uint8_t(_get_state(i).detected_dev_id));
+                snprintf(failure_msg, failure_msg_len, "Compass expected_dev_id: %d", uint8_t(_get_state(i).expected_dev_id));
+                snprintf(failure_msg, failure_msg_len, "Compass last_update_ms: %d", uint8_t(_get_state(i).last_update_ms));
+                snprintf(failure_msg, failure_msg_len, "Compass last_update_usec: %d", uint8_t(_get_state(i).last_update_usec));
+                snprintf(failure_msg, failure_msg_len, "Compass accum_count: %d", uint8_t(_get_state(i).accum_count));
+                snprintf(failure_msg, failure_msg_len, "Compass external: %d", uint8_t(dev_id));
                 snprintf(failure_msg, failure_msg_len, "Compass %d not Found", uint8_t(i));
                 return false;
             }
