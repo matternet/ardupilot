@@ -521,7 +521,7 @@ protected:
     AP_Int8 _num_sats_arm_min;
     AP_Int8 _status_arm_min;
 
-    bool _degraded_gps[GPS_MAX_RECEIVERS]; // Any GPS that has previously failed is considered degraded
+    bool _degraded_gps[GPS_MAX_RECEIVERS] = { false }; // Any GPS that has previously failed is considered degraded
 
     // Auto_Switch
     enum GPS_AUTO_SWITCH {

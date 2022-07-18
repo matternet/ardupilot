@@ -878,10 +878,10 @@ void AP_GPS::update(void)
 */
 uint8_t AP_GPS::update_and_count_degraded_gps(void) {
     uint8_t count = 0;
-    for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; i++) {
-        if(state[i].status < GPS_OK_FIX_3D) {
+    for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; ++i) {
+        if (state[i].status < GPS_OK_FIX_3D) {
             _degraded_gps[i] = true;
-            count++;
+            ++count;
         }
     }
     return count;
@@ -893,22 +893,23 @@ uint8_t AP_GPS::update_and_count_degraded_gps(void) {
 void AP_GPS::update_primary(void)
 {
 #if defined(GPS_BLENDED_INSTANCE)
-    uint8_t num_failed = update_and_count_degraded_gps();
+    uint8_t num_degraded = update_and_count_degraded_gps();
 
-    if(num_failed > 0 && GPS_MAX_RECEIVERS > 1) {
-        // If the first GPS failed, use the second.
-        if(_degraded_gps[0]) {
+    // Confirm there is a degreded GPS and multiple GPS receivers are being used.
+    if (num_degraded == 1 && GPS_MAX_RECEIVERS > 1) {
+        // If the first GPS is degraded, use the second.
+        if (_degraded_gps[0]) {
             _auto_switch = GPS_AUTO_SWITCH_USESECOND;
         }
 
-        // If the second GPS failed, use the first.
-        if(_degraded_gps[1]) {
+        // If the second GPS is degraded, use the first.
+        if (_degraded_gps[1]) {
             _auto_switch = GPS_AUTO_SWITCH_USEFIRST;
         }
     }
 
-    // All gps's have failed at some point, use the best moving forward
-    if(num_failed == GPS_MAX_RECEIVERS) {
+    // All gps's have become degreded at some point, use the best moving forward
+    if (num_degraded == GPS_MAX_RECEIVERS) {
         _auto_switch = GPS_AUTO_SWITCH_USEBEST;
     }
 
