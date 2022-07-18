@@ -521,6 +521,16 @@ protected:
     AP_Int8 _num_sats_arm_min;
     AP_Int8 _status_arm_min;
 
+    bool _degraded_gps[GPS_MAX_RECEIVERS]; // Any GPS that has previously failed is considered degraded
+
+    // Auto_Switch
+    enum GPS_AUTO_SWITCH {
+        GPS_AUTO_SWITCH_USEFIRST = 0, // Effectively USEFIRST
+        GPS_AUTO_SWITCH_USEBEST = 1,
+        GPS_AUTO_SWITCH_BLEND = 2,
+        GPS_AUTO_SWITCH_USESECOND = 3
+    };
+
     // GPS_DRV_OPTIONS bits
     enum class DRV_OPTIONS {
         MB_USE_UART2 = 1U<<0,
@@ -654,6 +664,9 @@ private:
     bool should_log() const;
 
     bool needs_uart(GPS_Type type) const;
+
+    /// Updates _failed_gps returns number failed.
+    uint8_t update_and_count_degraded_gps(void);
 
     /// Update primary instance
     void update_primary(void);
