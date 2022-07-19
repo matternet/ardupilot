@@ -567,8 +567,16 @@ AP_GPS_UBLOX::read(void)
     }
 
     numc = port->available();
-    for (int16_t i = 0; i < numc; i++) {        // Process bytes received
 
+    if (is_disabled()) {
+        // drain data
+        for (int16_t i = 0; i < numc; i++) {
+            data = port->read();
+        }
+        return false;
+    }
+
+    for (int16_t i = 0; i < numc; i++) {        // Process bytes received
         // read the next byte
         data = port->read();
 
@@ -975,6 +983,11 @@ AP_GPS_UBLOX::_parse_gps(void)
                     (unsigned)_buffer.gnss.configBlock[i].flags);
                 }
 #endif
+                if (_buffer.gnss.configBlock[1].flags & 0x1) {
+                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Enabled!\n");
+                } else {
+                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Disabled!\n");
+                }
 
                 for(int i = 0; i < UBLOX_MAX_GNSS_CONFIG_BLOCKS; i++) {
                     if((gps._gnss_mode[state.instance] & (1 << i)) && i != GNSS_SBAS) {
@@ -988,11 +1001,20 @@ AP_GPS_UBLOX::_parse_gps(void)
                         if(GNSS_SBAS !=_buffer.gnss.configBlock[i].gnssId) {
                             _buffer.gnss.configBlock[i].resTrkCh = (_buffer.gnss.numTrkChHw - 3) / (gnssCount * 2);
                             _buffer.gnss.configBlock[i].maxTrkCh = _buffer.gnss.numTrkChHw;
+                            _buffer.gnss.configBlock[i].flags = _buffer.gnss.configBlock[i].flags | 0x00000001;
                         } else {
-                            _buffer.gnss.configBlock[i].resTrkCh = 1;
-                            _buffer.gnss.configBlock[i].maxTrkCh = 3;
+                            // SBAS configuration
+                            _buffer.gnss.configBlock[i].flags &= 0xFF000000; // this will disable SBAS
+                            if (is_sbas_disabled()) {
+                                // nothing needs to be done
+                            }
+                            else {
+                                // bit  0, 1 = enable
+                                // bit 16, 1 = SBAS L1 C/A
+                                _buffer.gnss.configBlock[i].flags |= (1U<<16);
+                                _buffer.gnss.configBlock[i].flags |= 0x00000001;
+                            }
                         }
-                        _buffer.gnss.configBlock[i].flags = _buffer.gnss.configBlock[i].flags | 0x00000001;
                     } else {
                         _buffer.gnss.configBlock[i].resTrkCh = 0;
                         _buffer.gnss.configBlock[i].maxTrkCh = 0;

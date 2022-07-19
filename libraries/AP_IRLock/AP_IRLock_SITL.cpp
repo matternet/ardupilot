@@ -34,6 +34,9 @@ void AP_IRLock_SITL::init(int8_t bus)
 // retrieve latest sensor data - returns true if new data is available
 bool AP_IRLock_SITL::update()
 {
+    if (_disabled) {
+        return false;
+    }
     // return immediately if not healthy
     _flags.healthy = _sitl->precland_sim.healthy();
     if (!_flags.healthy) {

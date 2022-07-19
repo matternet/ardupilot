@@ -213,9 +213,6 @@ public:
 
     /// Query GPS status
     GPS_Status status(uint8_t instance) const {
-        if (_force_disable_gps && state[instance].status > NO_FIX) {
-            return NO_FIX;
-        }
         return state[instance].status;
     }
     GPS_Status status(void) const {
@@ -474,8 +471,8 @@ public:
     bool logging_enabled(void) const { return _raw_data != 0; }
 
     // used to disable GPS for GPS failure testing in flight
-    void force_disable(bool disable) {
-        _force_disable_gps = disable;
+    void force_disable(uint8_t mask) {
+        _force_disable_mask = mask;
     }
 
     // handle possibly fragmented RTCM injection data
@@ -494,6 +491,11 @@ public:
 
     // announce GPS version on mavlink
     void broadcast_gps_version(void);
+
+    // used to disable SBAS
+    void sbas_disable(uint8_t mask) {
+        _sbas_disable_mask = mask;
+    }
 
 protected:
 
@@ -680,8 +682,12 @@ private:
         GPS_AUTO_CONFIG_ENABLE  = 1
     };
 
-    // used for flight testing with GPS loss
-    bool _force_disable_gps;
+    // mask of GPS instances to disable. Used for flight testing with
+    // GPS loss
+    uint8_t _force_disable_mask;
+
+    // mask of SBAS instances to disable
+    uint8_t _sbas_disable_mask;
 
     // used to ensure we continue sending status messages if we ever detected the second GPS
     bool has_had_second_instance;
