@@ -874,13 +874,48 @@ void AP_GPS::update(void)
 }
 
 /*
+    determines if any gps's are degraded
+*/
+uint8_t AP_GPS::update_and_count_degraded_gps(void) {
+    uint8_t count = 0;
+    for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; ++i) {
+        if (state[i].status < GPS_OK_FIX_3D) {
+            _degraded_gps[i] = true;
+            ++count;
+        }
+    }
+    return count;
+}
+
+/*
   update primary GPS instance
  */
 void AP_GPS::update_primary(void)
 {
 #if defined(GPS_BLENDED_INSTANCE)
+    uint8_t num_degraded = update_and_count_degraded_gps();
+
+    // Confirm there is a degreded GPS and multiple GPS receivers are being used.
+    if (num_degraded == 1 && GPS_MAX_RECEIVERS > 1) {
+        // If the first GPS is degraded, use the second.
+        if (_degraded_gps[0]) {
+            _auto_switch = GPS_AUTO_SWITCH_USESECOND;
+        }
+
+        // If the second GPS is degraded, use the first.
+        if (_degraded_gps[1]) {
+            _auto_switch = GPS_AUTO_SWITCH_USEFIRST;
+        }
+    }
+
+    // All gps's have become degreded at some point, use the best moving forward
+    if (num_degraded == GPS_MAX_RECEIVERS) {
+        _auto_switch = GPS_AUTO_SWITCH_USEBEST;
+    }
+
+
     // if blending is requested, attempt to calculate weighting for each GPS
-    if (_auto_switch == 2) {
+    if (_auto_switch == GPS_AUTO_SWITCH_BLEND) {
         _output_is_blended = calc_blend_weights();
         // adjust blend health counter
         if (!_output_is_blended) {
@@ -905,13 +940,13 @@ void AP_GPS::update_primary(void)
         return;
     }
 
-    if (_auto_switch == 0) {
+    if (_auto_switch == GPS_AUTO_SWITCH_USEFIRST) {
         // AUTO_SWITCH is 0 so no switching of GPSs, always use first instance
         primary_instance = 0;
         return;
     }
 
-    if (_auto_switch == 3) {
+    if (_auto_switch == GPS_AUTO_SWITCH_USESECOND) {
         // always select the second GPS instance
         primary_instance = 1;
         return;
