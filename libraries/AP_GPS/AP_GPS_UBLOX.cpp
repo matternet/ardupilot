@@ -1408,12 +1408,6 @@ AP_GPS_UBLOX::_parse_gps(void)
         state.location.lng    = _buffer.pvt.lon;
         state.location.lat    = _buffer.pvt.lat;
         state.location.alt    = _buffer.pvt.h_msl / 10;
-        // Check if valid fix
-        if (!(_buffer.pvt.flags & 0b00000001) 
-            || (_buffer.pvt.fix_type != 3 && _buffer.pvt.fix_type != 4)) {
-            GCS_SEND_TEXT(MAV_SEVERITY_ERROR,
-                            "Unexpected GNSS PVT fix %d, flags %d", _buffer.pvt.fix_type, _buffer.pvt.flags);
-        }
         // Check if lat, lon, height, and hMSL valid
         if ((_buffer.pvt.flags3 & 0b00000001)) {
             GCS_SEND_TEXT(MAV_SEVERITY_ERROR,
