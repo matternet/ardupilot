@@ -874,9 +874,35 @@ void AP_GPS::update(void)
 }
 
 /*
+    checks to see if the GPSs have all aquired a fix.
+*/ 
+bool AP_GPS::check_gps_warmup(void) {
+    // Previously warmed up.
+    if (_degraded_gps_enabled) {
+        return true;
+    }
+
+    // Once all GPSs have warmed up, enable the degraded GPS feature
+    for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; ++i) {
+        if (state[i].status < GPS_OK_FIX_3D) {
+            return false; // GPS i hasn't warmed up yet, don't enable gps degredation.
+        }
+    }
+
+    // All GPSs have warmed up, feature can be enabled.
+    _degraded_gps_enabled = true;
+    return true;
+}
+
+/*
     determines if any gps's are degraded
 */
 uint8_t AP_GPS::update_and_count_degraded_gps(void) {
+    // Prior to the GPS being warmed up, nothing is considered degraded.
+    if(!check_gps_warmup()) {
+        return 0;
+    }
+
     uint8_t count = 0;
     for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; ++i) {
         if (state[i].status < GPS_OK_FIX_3D) {
@@ -895,7 +921,7 @@ void AP_GPS::update_primary(void)
 #if defined(GPS_BLENDED_INSTANCE)
     uint8_t num_degraded = update_and_count_degraded_gps();
 
-    // Confirm there is a degreded GPS and multiple GPS receivers are being used.
+    // Confirm there is a degraded GPS and multiple GPS receivers are being used.
     if (num_degraded == 1 && GPS_MAX_RECEIVERS > 1) {
         // If the first GPS is degraded, use the second.
         if (_degraded_gps[0]) {
@@ -908,7 +934,7 @@ void AP_GPS::update_primary(void)
         }
     }
 
-    // All gps's have become degreded at some point, use the best moving forward
+    // All gps's have become degraded at some point, use the best moving forward
     if (num_degraded == GPS_MAX_RECEIVERS) {
         _auto_switch = GPS_AUTO_SWITCH_USEBEST;
     }
