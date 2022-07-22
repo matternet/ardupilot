@@ -669,7 +669,7 @@ private:
     /// Updates _failed_gps returns number failed.
     uint8_t update_and_count_degraded_gps(void);
 
-    /// Checks to see if all GPS's have waremd up.
+    /// Checks to see if all GPS's have warmed up.
     bool check_gps_warmup(void);
 
     /// Update primary instance
