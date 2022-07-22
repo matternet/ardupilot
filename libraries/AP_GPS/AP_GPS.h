@@ -521,6 +521,7 @@ protected:
     AP_Int8 _num_sats_arm_min;
     AP_Int8 _status_arm_min;
 
+    bool _degraded_gps_enabled = false;
     bool _degraded_gps[GPS_MAX_RECEIVERS] = { false }; // Any GPS that has previously failed is considered degraded
 
     // Auto_Switch
@@ -667,6 +668,9 @@ private:
 
     /// Updates _failed_gps returns number failed.
     uint8_t update_and_count_degraded_gps(void);
+
+    /// Checks to see if all GPS's have waremd up.
+    bool check_gps_warmup(void);
 
     /// Update primary instance
     void update_primary(void);
