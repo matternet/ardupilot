@@ -907,9 +907,12 @@ uint8_t AP_GPS::update_and_count_degraded_gps(void) {
     for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; ++i) {
         if (state[i].status < GPS_OK_FIX_3D) {
             _degraded_gps[i] = true;
+        }
+        if (_degraded_gps[i]) {
             ++count;
         }
     }
+    
     return count;
 }
 
@@ -938,7 +941,6 @@ void AP_GPS::update_primary(void)
     if (num_degraded == GPS_MAX_RECEIVERS) {
         _auto_switch = GPS_AUTO_SWITCH_USEBEST;
     }
-
 
     // if blending is requested, attempt to calculate weighting for each GPS
     if (_auto_switch == GPS_AUTO_SWITCH_BLEND) {
