@@ -1413,11 +1413,6 @@ AP_GPS_UBLOX::_parse_gps(void)
             GCS_SEND_TEXT(MAV_SEVERITY_ERROR,
                             "Unexpected GNSS PVT validity flag %d", _buffer.pvt.flags3);
         }
-        // Check if lat, lon, height, and hMSL valid
-        if ((_buffer.pvt.flags3 & 0b00000001)) {
-            GCS_SEND_TEXT(MAV_SEVERITY_ERROR,
-                            "Unexpected GNSS PVT validity flag %d", _buffer.pvt.flags3);
-        }
         // Set fix status
         switch (_buffer.pvt.fix_type) 
         {
