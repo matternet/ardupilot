@@ -289,6 +289,8 @@ private:
         uint32_t glitch_cleared_ms; // system time glitch cleared
     } rangefinder_state, rangefinder_up_state;
 
+    RangeFinderState *rangefinder_secondary_state = &rangefinder_up_state;
+
     /*
       return rangefinder height interpolated using inertial altitude
      */

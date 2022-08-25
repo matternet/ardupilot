@@ -152,10 +152,16 @@ bool Copter::rangefinder_alt_ok()
     return (rangefinder_state.enabled && rangefinder_state.alt_healthy);
 }
 
-// return true if rangefinder_alt can be used
+// return true if rangefinder_up_alt can be used
 bool Copter::rangefinder_up_ok()
 {
     return (rangefinder_up_state.enabled && rangefinder_up_state.alt_healthy);
+}
+
+// return true if rangefinder_secondary_alt can be used
+bool Copter::rangefinder_secondary_ok()
+{
+    return (rangefinder_secondary_state.enabled && rangefinder_secondary_state.alt_healthy);
 }
 
 /*
