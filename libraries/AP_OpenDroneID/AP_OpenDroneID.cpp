@@ -62,7 +62,7 @@ const AP_Param::GroupInfo AP_OpenDroneID::var_info[] = {
     // @Description: DroneCAN driver index, 0 to disable DroneCAN
     // @Values: 0:Disabled,1:Driver1,2:Driver2
     AP_GROUPINFO("CANDRIVER", 3, AP_OpenDroneID, _can_driver, 0),
-    
+
     // @Param: OPTIONS
     // @DisplayName: OpenDroneID options
     // @Description: Options for OpenDroneID subsystem. Bit 0 means to enforce arming checks
@@ -134,12 +134,12 @@ bool AP_OpenDroneID::pre_arm_check(char* failmsg, uint8_t failmsg_len)
         strncpy(failmsg, "SYSTEM not available", failmsg_len);
         return false;
     }
-    
+
     if (arm_status.status != MAV_ODID_GOOD_TO_ARM) {
         strncpy(failmsg, arm_status.error, failmsg_len);
         return false;
     }
-    
+
     return true;
 }
 
@@ -202,7 +202,7 @@ void AP_OpenDroneID::send_static_out()
         last_lost_operator_msg_ms = now_ms;
         GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ODID: lost operator location");
     }
-    
+
     const uint32_t msg_spacing_ms = _mavlink_static_period_ms / 4;
     if (now_ms - last_msg_send_ms >= msg_spacing_ms) {
         // allow update of channel during setup, this makes it easy to debug with a GCS
@@ -632,7 +632,12 @@ void AP_OpenDroneID::handle_msg(mavlink_channel_t chan, const mavlink_message_t 
     WITH_SEMAPHORE(_sem);
 
     switch (msg.msgid) {
-    // only accept ARM_STATUS from the transmitter
+    // only accept ARM_STATUS and STATUSTEXT from the transmitter
+    case MAVLINK_MSG_ID_STATUSTEXT:
+        // Forward STATUSTEXT messages to the GCS
+        mavlink_msg_statustext_decode(&msg, &pkt_statustext);
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ODID: %s", (char*) pkt_statustext.text);
+        break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS: {
         if (chan == _chan) {
             mavlink_msg_open_drone_id_arm_status_decode(&msg, &arm_status);

@@ -142,6 +142,7 @@ private:
     mavlink_open_drone_id_system_t pkt_system;
     mavlink_open_drone_id_self_id_t pkt_self_id;
     mavlink_open_drone_id_operator_id_t pkt_operator_id;
+    mavlink_statustext_t pkt_statustext;  // StatusText message used for logging firmware
 
     // last time we got a SYSTEM message
     uint32_t last_system_ms;
@@ -158,7 +159,7 @@ private:
 
     // last time we sent a lost operator location notice
     uint32_t last_lost_operator_msg_ms;
-    
+
     // transmit functions to manually send a static MAVLink message
     void send_dynamic_out();
     void send_static_out();
