@@ -639,10 +639,9 @@ void AP_OpenDroneID::handle_msg(mavlink_channel_t chan, const mavlink_message_t 
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ODID: %s", (char*) pkt_statustext.text);
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS: {
-        if (chan == _chan) {
-            mavlink_msg_open_drone_id_arm_status_decode(&msg, &arm_status);
-            last_arm_status_ms = AP_HAL::millis();
-        }
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS: chan: %d", chan);
+        mavlink_msg_open_drone_id_arm_status_decode(&msg, &arm_status);
+        last_arm_status_ms = AP_HAL::millis();
         break;
     }
     // accept other messages from the GCS
