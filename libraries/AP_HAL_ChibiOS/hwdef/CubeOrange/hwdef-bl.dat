@@ -29,11 +29,7 @@ FLASH_BOOTLOADER_LOAD_KB 128
 define HAL_LED_ON 0
 
 # order of UARTs (and USB)
-SERIAL_ORDER OTG1 USART2 UART7
-
-# UART7 maps to uartF in the HAL (serial5 in SERIALn_ parameters).
-PE7 UART7_RX UART7
-PE8 UART7_TX UART7
+SERIAL_ORDER OTG1 USART2
 
 # UART2 maps to serial1 in SERIALn_ parameters
 PD3 USART2_CTS USART2
