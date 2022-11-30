@@ -43,10 +43,6 @@ public:
 
     virtual void inject_data(const uint8_t *data, uint16_t len);
 
-    // allow handling of fragmented RTCM data by backends. Used to
-    // forward GPS_RTCM_DATA from MAVLink over UAVCAN
-    virtual void handle_rtcm_data(uint8_t flags, const uint8_t *data, uint16_t len) {}
-
     //MAVLink methods
     virtual bool supports_mavlink_gps_rtk_message() { return false; }
     virtual void send_mavlink_gps_rtk(mavlink_channel_t chan);

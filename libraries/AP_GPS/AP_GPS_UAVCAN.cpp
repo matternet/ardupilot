@@ -85,12 +85,7 @@ void AP_GPS_UAVCAN::handle_gnss_msg(const AP_GPS::GPS_State &msg)
     }
 }
 
-/*
-  handle RTCM data from MAVLink GPS_RTCM_DATA, forwarding it over
-  MAVLink. We don't use the inject_data method as we want to retain
-  the fragmentation and let the GPS de-fragment it
- */
-void AP_GPS_UAVCAN::handle_rtcm_data(uint8_t flags, const uint8_t *data, uint16_t len)
+void AP_GPS_UAVCAN::inject_data(const uint8_t *data, uint16_t len)
 {
     // we only handle this if we are the first UAVCAN GPS, as we send
     // the data as broadcast on all UAVCAN devive ports and we don't
@@ -98,7 +93,7 @@ void AP_GPS_UAVCAN::handle_rtcm_data(uint8_t flags, const uint8_t *data, uint16_
     if (instance == 0) {
         AP_UAVCAN *ap_uavcan = AP_UAVCAN::get_uavcan(_manager);
         if (ap_uavcan != nullptr) {
-            ap_uavcan->send_GNSS_Inject(flags, data, len);
+            ap_uavcan->send_RTCMStream(data, len);
         }
     }
 }

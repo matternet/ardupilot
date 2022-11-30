@@ -22,7 +22,7 @@
 #include <uavcan/equipment/indication/RGB565.hpp>
 
 #ifndef UAVCAN_NODE_POOL_SIZE
-#define UAVCAN_NODE_POOL_SIZE 32
+#define UAVCAN_NODE_POOL_SIZE 128
 #endif
 
 #ifndef UAVCAN_NODE_POOL_BLOCK_SIZE
@@ -169,8 +169,8 @@ public:
     void SRV_send_servos();
     void SRV_send_esc();
 
-    // send GNSS Inject packets. Same conventions as MAVLink GPS_RTCM_DATA
-    void send_GNSS_Inject(uint8_t flags, const uint8_t *data, uint8_t len);
+    // send RTCMStream packets
+    void send_RTCMStream(const uint8_t *data, uint32_t len);
 
     template <typename DataType_>
     class RegistryBinder {
@@ -327,6 +327,8 @@ private:
 
     uavcan::PoolAllocator<UAVCAN_NODE_POOL_SIZE*UAVCAN_NODE_POOL_BLOCK_SIZE, UAVCAN_NODE_POOL_BLOCK_SIZE, AP_UAVCAN::RaiiSynchronizer> _node_allocator;
 
+    // send GNSS injection
+    void rtcm_stream_send();
     AP_Int8 _uavcan_node;
     AP_Int32 _servo_bm;
     AP_Int32 _esc_bm;
@@ -353,6 +355,12 @@ public:
     {
         _parent_can_mgr = parent_can_mgr;
     }
+    // GNSS RTCM injection
+    struct {
+        AP_HAL::Semaphore *sem;
+        uint32_t last_send_ms;
+        ByteBuffer *buf;
+    } _rtcm_stream;
     static void handle_traffic_report(AP_UAVCAN* ap_uavcan, uint8_t node_id, const TrafficReportCb &cb);
 };
 

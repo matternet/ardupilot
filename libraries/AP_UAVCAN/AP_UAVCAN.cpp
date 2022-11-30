@@ -16,7 +16,7 @@
 #include <AP_BoardConfig/AP_BoardConfig_CAN.h>
 
 // Zubax GPS and other GPS, baro, magnetic sensors
-#include <uavcan/equipment/gnss/Fix.hpp>
+#include <uavcan/equipment/gnss/Fix2.hpp>
 #include <uavcan/equipment/gnss/Auxiliary.hpp>
 
 #include <uavcan/equipment/ahrs/MagneticFieldStrength.hpp>
@@ -32,7 +32,7 @@
 #include <uavcan/equipment/indication/LightsCommand.hpp>
 #include <uavcan/equipment/indication/SingleLightCommand.hpp>
 #include <uavcan/equipment/indication/RGB565.hpp>
-#include <ardupilot/equipment/gnss/Inject.hpp>
+#include <uavcan/equipment/gnss/RTCMStream.hpp>
 
 #include <uavcan/equipment/power/BatteryInfo.hpp>
 #include <uavcan/protocol/NodeStatus.hpp>
@@ -111,7 +111,7 @@ static void uwb_range_cb(const uavcan::ReceivedDataStructure<com::matternet::equ
     }
 }
 
-static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg, uint8_t mgr)
+static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix2>& msg, uint8_t mgr)
 {
     AP_UAVCAN *ap_uavcan = AP_UAVCAN::get_uavcan(mgr);
     if (ap_uavcan == nullptr) {
@@ -125,20 +125,32 @@ static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::g
 
     bool process = false;
 
-    if (msg.status == uavcan::equipment::gnss::Fix::STATUS_NO_FIX) {
+    if (msg.status == uavcan::equipment::gnss::Fix2::STATUS_NO_FIX) {
         state->status = AP_GPS::GPS_Status::NO_FIX;
     } else {
-        if (msg.status == uavcan::equipment::gnss::Fix::STATUS_TIME_ONLY) {
+        if (msg.status == uavcan::equipment::gnss::Fix2::STATUS_TIME_ONLY) {
             state->status = AP_GPS::GPS_Status::NO_FIX;
-        } else if (msg.status == uavcan::equipment::gnss::Fix::STATUS_2D_FIX) {
+        } else if (msg.status == uavcan::equipment::gnss::Fix2::STATUS_2D_FIX) {
             state->status = AP_GPS::GPS_Status::GPS_OK_FIX_2D;
             process = true;
-        } else if (msg.status == uavcan::equipment::gnss::Fix::STATUS_3D_FIX) {
+        } else if (msg.status == uavcan::equipment::gnss::Fix2::STATUS_3D_FIX) {
             state->status = AP_GPS::GPS_Status::GPS_OK_FIX_3D;
             process = true;
         }
 
-        if (msg.gnss_time_standard == uavcan::equipment::gnss::Fix::GNSS_TIME_STANDARD_UTC) {
+        if (state->status == AP_GPS::GPS_Status::GPS_OK_FIX_3D) {
+            if (msg.mode == uavcan::equipment::gnss::Fix2::MODE_DGPS) {
+                state->status = AP_GPS::GPS_Status::GPS_OK_FIX_3D_DGPS;
+            } else if (msg.mode == uavcan::equipment::gnss::Fix2::MODE_RTK) {
+                if (msg.sub_mode == uavcan::equipment::gnss::Fix2::SUB_MODE_RTK_FLOAT) {
+                    state->status = AP_GPS::GPS_Status::GPS_OK_FIX_3D_RTK_FLOAT;
+                } else if (msg.sub_mode == uavcan::equipment::gnss::Fix2::SUB_MODE_RTK_FIXED) {
+                    state->status = AP_GPS::GPS_Status::GPS_OK_FIX_3D_RTK_FIXED;
+                }
+            }
+        }
+
+        if (msg.gnss_time_standard == uavcan::equipment::gnss::Fix2::GNSS_TIME_STANDARD_UTC) {
             uint64_t epoch_ms = uavcan::UtcTime(msg.gnss_timestamp).toUSec();
             epoch_ms /= 1000;
             uint64_t gps_ms = epoch_ms - UNIX_OFFSET_MSEC;
@@ -165,38 +177,27 @@ static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::g
             state->have_vertical_velocity = false;
         }
 
-        float pos_cov[9];
-        msg.position_covariance.unpackSquareMatrix(pos_cov);
-        if (!uavcan::isNaN(pos_cov[8])) {
-            if (pos_cov[8] > 0) {
-                state->vertical_accuracy = sqrtf(pos_cov[8]);
-                state->have_vertical_accuracy = true;
-            } else {
-                state->have_vertical_accuracy = false;
-            }
-        } else {
-            state->have_vertical_accuracy = false;
-        }
-
-        const float horizontal_pos_variance = MAX(pos_cov[0], pos_cov[4]);
-        if (!uavcan::isNaN(horizontal_pos_variance)) {
-            if (horizontal_pos_variance > 0) {
-                state->horizontal_accuracy = sqrtf(horizontal_pos_variance);
+        if (msg.covariance.size() == 6) {
+            if (!uavcan::isNaN(msg.covariance[0])) {
+                state->horizontal_accuracy = sqrtf(msg.covariance[0]);
                 state->have_horizontal_accuracy = true;
             } else {
                 state->have_horizontal_accuracy = false;
             }
-        } else {
-            state->have_horizontal_accuracy = false;
-        }
-
-        float vel_cov[9];
-        msg.velocity_covariance.unpackSquareMatrix(vel_cov);
-        if (!uavcan::isNaN(vel_cov[0])) {
-            state->speed_accuracy = sqrtf((vel_cov[0] + vel_cov[4] + vel_cov[8]) / 3.0);
-            state->have_speed_accuracy = true;
-        } else {
-            state->have_speed_accuracy = false;
+            if (!uavcan::isNaN(msg.covariance[2])) {
+                state->vertical_accuracy = sqrtf(msg.covariance[2]);
+                state->have_vertical_accuracy = true;
+            } else {
+                state->have_vertical_accuracy = false;
+            }
+            if (!uavcan::isNaN(msg.covariance[3]) &&
+                !uavcan::isNaN(msg.covariance[4]) &&
+                !uavcan::isNaN(msg.covariance[5])) {
+                state->speed_accuracy = sqrtf((msg.covariance[3] + msg.covariance[4] + msg.covariance[5])/3);
+                state->have_speed_accuracy = true;
+            } else {
+                state->have_speed_accuracy = false;
+            }
         }
 
         state->num_sats = msg.sats_used;
@@ -214,11 +215,11 @@ static void gnss_fix_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::g
     ap_uavcan->update_gps_state(msg.getSrcNodeID().get());
 }
 
-static void gnss_fix_cb0(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg)
+static void gnss_fix_cb0(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix2>& msg)
 {   gnss_fix_cb(msg, 0); }
-static void gnss_fix_cb1(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg)
+static void gnss_fix_cb1(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix2>& msg)
 {   gnss_fix_cb(msg, 1); }
-static void (*gnss_fix_cb_arr[2])(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix>& msg)
+static void (*gnss_fix_cb_arr[2])(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Fix2>& msg)
         = { gnss_fix_cb0, gnss_fix_cb1 };
 
 static void gnss_aux_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::gnss::Auxiliary>& msg, uint8_t mgr)
@@ -414,7 +415,7 @@ static void (*rangefinder_cb_arr[2])(const uavcan::ReceivedDataStructure<uavcan:
 static uavcan::Publisher<uavcan::equipment::actuator::ArrayCommand>* act_out_array[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::esc::RawCommand>* esc_raw[MAX_NUMBER_OF_CAN_DRIVERS];
 static uavcan::Publisher<uavcan::equipment::indication::LightsCommand>* rgb_led[MAX_NUMBER_OF_CAN_DRIVERS];
-static uavcan::Publisher<ardupilot::equipment::gnss::Inject>* gnss_inject[MAX_NUMBER_OF_CAN_DRIVERS];
+static uavcan::Publisher<uavcan::equipment::gnss::RTCMStream>* rtcm_stream[MAX_NUMBER_OF_CAN_DRIVERS];
 
 // handler TrafficReport
 UC_REGISTRY_BINDER(TrafficReportCb, com::matternet::equipment::trafficmonitor::TrafficReport);
@@ -476,6 +477,7 @@ AP_UAVCAN::AP_UAVCAN() :
 
     SRV_sem = hal.util->new_semaphore();
     _led_out_sem = hal.util->new_semaphore();
+    _rtcm_stream.sem = hal.util->new_semaphore();
 
     debug_uavcan(2, "AP_UAVCAN constructed\n\r");
 }
@@ -545,8 +547,8 @@ bool AP_UAVCAN::try_init(void)
         debug_uavcan(1, "UAVCAN: node start problem\n\r");
     }
 
-    uavcan::Subscriber<uavcan::equipment::gnss::Fix> *gnss_fix;
-    gnss_fix = new uavcan::Subscriber<uavcan::equipment::gnss::Fix>(*node);
+    uavcan::Subscriber<uavcan::equipment::gnss::Fix2> *gnss_fix;
+    gnss_fix = new uavcan::Subscriber<uavcan::equipment::gnss::Fix2>(*node);
 
 
     uavcan::Subscriber<com::matternet::equipment::uwb::RangeObservation> *uwb_range;
@@ -646,9 +648,9 @@ bool AP_UAVCAN::try_init(void)
     rgb_led[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
     rgb_led[_uavcan_i]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
 
-    gnss_inject[_uavcan_i] = new uavcan::Publisher<ardupilot::equipment::gnss::Inject>(*_node);
-    gnss_inject[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
-    gnss_inject[_uavcan_i]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
+    rtcm_stream[_uavcan_i] = new uavcan::Publisher<uavcan::equipment::gnss::RTCMStream>(*_node);
+    rtcm_stream[_uavcan_i]->setTxTimeout(uavcan::MonotonicDuration::fromMSec(20));
+    rtcm_stream[_uavcan_i]->setPriority(uavcan::TransferPriority::OneHigherThanLowest);
 
     _led_conf.devices_count = 0;
 
@@ -820,6 +822,7 @@ void AP_UAVCAN::do_cyclic(void)
         led_out_sem_give();
     }
 
+    rtcm_stream_send();
 }
 
 bool AP_UAVCAN::led_out_sem_take()
@@ -1478,21 +1481,54 @@ uint8_t AP_UAVCAN::find_smallest_free_rangefinder_node()
 
 
 /*
- send GNSS Inject packet on all active UAVCAN drivers
- Same conventions as MAVLink GPS_RTCM_DATA
+ send RTCMStream packet on all active UAVCAN drivers
 */
-void AP_UAVCAN::send_GNSS_Inject(uint8_t flags, const uint8_t *data, uint8_t len)
+void AP_UAVCAN::send_RTCMStream(const uint8_t *data, uint32_t len)
 {
-    ardupilot::equipment::gnss::Inject msg;
-    msg.flags = flags;
-    while (len--) {
-        msg.data.push_back(*data++);
+    _rtcm_stream.sem->take_blocking();
+    if (_rtcm_stream.buf == nullptr) {
+        // give enough space for a full round from a NTRIP server with all
+        // constellations
+        _rtcm_stream.buf = new ByteBuffer(2400);
     }
-    for (uint8_t i=0; i<MAX_NUMBER_OF_CAN_DRIVERS; i++) {
-        if (gnss_inject[i] != nullptr) {
-            gnss_inject[i]->broadcast(msg);
+    if (_rtcm_stream.buf != nullptr) {
+        _rtcm_stream.buf->write(data, len);
+    }
+    _rtcm_stream.sem->give();
+}
+
+void AP_UAVCAN::rtcm_stream_send()
+{
+    _rtcm_stream.sem->take_blocking();
+    if (_rtcm_stream.buf == nullptr ||
+        _rtcm_stream.buf->available() == 0) {
+        // nothing to send
+        _rtcm_stream.sem->give();
+        return;
+    }
+    uint32_t now = AP_HAL::millis();
+    if (now - _rtcm_stream.last_send_ms < 10) {
+        // don't send more than 100 per second
+        _rtcm_stream.sem->give();
+        return;
+    }
+    _rtcm_stream.last_send_ms = now;
+    uavcan::equipment::gnss::RTCMStream msg;
+    uint32_t len = _rtcm_stream.buf->available();
+    if (len > 64) {
+        len = 64;
+    }
+    msg.protocol_id = uavcan::equipment::gnss::RTCMStream::PROTOCOL_ID_RTCM3;
+    for (uint8_t i=0; i<len; i++) {
+        uint8_t b;
+        if (!_rtcm_stream.buf->read_byte(&b)) {
+            _rtcm_stream.sem->give();
+            return;
         }
+        msg.data.push_back(b);
     }
+    rtcm_stream[_uavcan_i]->broadcast(msg);
+    _rtcm_stream.sem->give();
 }
 
 /*

@@ -1083,13 +1083,6 @@ bool AP_GPS::blend_health_check() const
  */
 void AP_GPS::handle_gps_rtcm_fragment(uint8_t flags, const uint8_t *data, uint8_t len)
 {
-    // allow backends access to the unfragmented data (for UAVCAN)
-    for (uint8_t instance=0; instance<num_instances; instance++) {
-        if (drivers[instance]) {
-            drivers[instance]->handle_rtcm_data(flags, data, len);
-        }
-    }
-
     if ((flags & 1) == 0) {
         // it is not fragmented, pass direct
         inject_data(data, len);
