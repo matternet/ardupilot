@@ -17,13 +17,13 @@ echo $PATH
 
 ./waf distclean
 
-./waf configure --board=MttrCubeBlack
+./waf configure --board=MttrCubeBlack --enable-opendroneid
 ./waf copter
 
-./waf configure --board=MttrCubeOrange
+./waf configure --board=MttrCubeOrange --enable-opendroneid
 ./waf copter
 
-./waf configure --board=sitl --debug
+./waf configure --board=sitl --debug --enable-opendroneid
 ./waf copter
 
 mv build/MttrCubeBlack/bin/arducopter.apj "/tmp/deploy_files/copter-MttrCubeBlack.apj"
