@@ -634,15 +634,13 @@ void AP_OpenDroneID::handle_msg(mavlink_channel_t chan, const mavlink_message_t 
     switch (msg.msgid) {
     // only accept ARM_STATUS and STATUSTEXT from the transmitter
     case MAVLINK_MSG_ID_STATUSTEXT:
-        // Forward STATUSTEXT messages to the GCS
         mavlink_msg_statustext_decode(&msg, &pkt_statustext);
+        // Forward STATUSTEXT messages to the GCS
         GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ODID: %s", (char*) pkt_statustext.text);
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS: {
-        if (chan == _chan) {
-            mavlink_msg_open_drone_id_arm_status_decode(&msg, &arm_status);
-            last_arm_status_ms = AP_HAL::millis();
-        }
+        mavlink_msg_open_drone_id_arm_status_decode(&msg, &arm_status);
+        last_arm_status_ms = AP_HAL::millis();
         break;
     }
     // accept other messages from the GCS
