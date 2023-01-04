@@ -251,6 +251,7 @@ void AP_OpenDroneID::send_location_message()
     auto &ahrs = AP::ahrs();
     const auto &barometer = AP::baro();
     const auto &gps = AP::gps();
+    const auto &parachute = AP::parachute();
 
     const AP_GPS::GPS_Status gps_status = gps.status();
     const bool got_bad_gps_fix = (gps_status < AP_GPS::GPS_Status::GPS_OK_FIX_3D);
@@ -259,7 +260,9 @@ void AP_OpenDroneID::send_location_message()
     if (!ahrs.get_position(current_location)) {
         return;
     }
-    const uint8_t uav_status = hal.util->get_soft_armed()? MAV_ODID_STATUS_AIRBORNE : MAV_ODID_STATUS_GROUND;
+    const uint8_t uav_status = parachute.released() ? MAV_ODID_STATUS_EMERGENCY
+                                                    : hal.util->get_soft_armed() ? MAV_ODID_STATUS_AIRBORNE
+                                                                                 : MAV_ODID_STATUS_GROUND;
 
     float direction = ODID_INV_DIR;
     if (!got_bad_gps_fix) {
