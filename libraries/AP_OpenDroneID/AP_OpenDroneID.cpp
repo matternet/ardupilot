@@ -261,9 +261,9 @@ void AP_OpenDroneID::send_location_message()
     if (!ahrs.get_position(current_location)) {
         return;
     }
-    const uint8_t uav_status = parachute.released() ? MAV_ODID_STATUS_EMERGENCY
-                                                    : hal.util->get_soft_armed() ? MAV_ODID_STATUS_AIRBORNE
-                                                                                 : MAV_ODID_STATUS_GROUND;
+    const uint8_t uav_status = parachute->released() ? MAV_ODID_STATUS_EMERGENCY
+                                                     : hal.util->get_soft_armed() ? MAV_ODID_STATUS_AIRBORNE
+                                                                                  : MAV_ODID_STATUS_GROUND;
 
     float direction = ODID_INV_DIR;
     if (!got_bad_gps_fix) {
