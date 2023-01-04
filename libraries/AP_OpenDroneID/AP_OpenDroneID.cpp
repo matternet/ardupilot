@@ -40,6 +40,7 @@
 #include <AP_GPS/AP_GPS.h>
 #include <AP_Baro/AP_Baro.h>
 #include <AP_AHRS/AP_AHRS.h>
+#include <AP_Parachute/AP_Parachute.h>
 
 extern const AP_HAL::HAL &hal;
 
