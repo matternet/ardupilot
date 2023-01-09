@@ -252,18 +252,17 @@ void AP_OpenDroneID::send_location_message()
     auto &ahrs = AP::ahrs();
     const auto &barometer = AP::baro();
     const auto &gps = AP::gps();
-    const auto &parachute = AP::parachute();
 
     const AP_GPS::GPS_Status gps_status = gps.status();
     const bool got_bad_gps_fix = (gps_status < AP_GPS::GPS_Status::GPS_OK_FIX_3D);
 
+    // Get current location. An invalid location will be reflected in the uav status as SYSTEM_FAILURE
     Location current_location;
-    if (!ahrs.get_position(current_location)) {
-        return;
-    }
-    const uint8_t uav_status = parachute->released() ? MAV_ODID_STATUS_EMERGENCY
-                                                     : hal.util->get_soft_armed() ? MAV_ODID_STATUS_AIRBORNE
-                                                                                  : MAV_ODID_STATUS_GROUND;
+    ahrs.get_position(current_location);
+
+    // Get uav status. If in uncontrolled descent or unrecoverable change in trajectory, report EMERGENCY.
+    // Otherwise, report GROUNDED or AIRBORNE.
+    const uint8_t uav_status = create_location_uav_status(current_location);
 
     float direction = ODID_INV_DIR;
     if (!got_bad_gps_fix) {
@@ -347,14 +346,13 @@ void AP_OpenDroneID::send_location_message()
 
     // Timestamp here is the number of seconds after into the current hour referenced to UTC time (up to one hour)
 
-    // FIX we need to only set this if w have a GPS lock is 2D good enough for that?
+    // FIX we need to only set this if we have a GPS lock is 2D good enough for that?
     float timestamp = ODID_INV_TIMESTAMP;
     if (!got_bad_gps_fix) {
         uint32_t time_week_ms = gps.time_week_ms();
         timestamp = float(time_week_ms % (3600 * 1000)) * 0.001;
         timestamp = create_location_timestamp(timestamp);   //make sure timestamp is within Remote ID limit
     }
-
 
     {
         WITH_SEMAPHORE(_sem);
@@ -628,6 +626,28 @@ float AP_OpenDroneID::create_location_timestamp(float timestamp) const
     }
 
     return timestamp;
+}
+
+uint8_t AP_OpenDroneID::create_location_uav_status(const Location &current_location) const
+{
+    uint8_t uav_status = MAV_ODID_STATUS_REMOTE_ID_SYSTEM_FAILURE;
+    const auto &parachute = AP::parachute();
+
+    if (!current_location.check_latlng() || // location is invalid
+        parachute == nullptr) {             // issue retrieving parachute
+        return uav_status;
+    }
+    else if (parachute->released()) {
+        uav_status = MAV_ODID_STATUS_EMERGENCY;
+    }
+    else if (hal.util->get_soft_armed()) {
+        uav_status = MAV_ODID_STATUS_AIRBORNE;
+    }
+    else {
+        uav_status = MAV_ODID_STATUS_GROUND;
+    }
+    
+    return uav_status;
 }
 
 // handle a message from the GCS

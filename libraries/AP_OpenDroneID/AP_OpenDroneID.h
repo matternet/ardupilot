@@ -188,6 +188,7 @@ private:
     int16_t create_speed_vertical(int16_t speed) const;
     float create_altitude(float altitude) const;
     float create_location_timestamp(float timestamp) const;
+    uint8_t create_location_uav_status(const Location &current_location) const;
 
     // mask of what UAVCAN drivers need to send each packet
     const uint8_t dronecan_send_all = (1U<<HAL_MAX_CAN_PROTOCOL_DRIVERS)-1;
