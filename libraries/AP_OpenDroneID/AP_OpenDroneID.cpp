@@ -630,7 +630,7 @@ float AP_OpenDroneID::create_location_timestamp(float timestamp) const
 
 uint8_t AP_OpenDroneID::create_location_uav_status(const Location &current_location) const
 {
-    uint8_t uav_status = MAV_ODID_STATUS_REMOTE_ID_SYSTEM_FAILURE;
+    uint8_t uav_status = MAV_ODID_STATUS_SYSTEM_FAILURE;
     const auto &parachute = AP::parachute();
 
     if (!current_location.check_latlng() || // location is invalid
