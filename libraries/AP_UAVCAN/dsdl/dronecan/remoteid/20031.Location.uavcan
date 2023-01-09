@@ -8,6 +8,7 @@ uint8 ODID_STATUS_UNDECLARED = 0 # The status of the (UA) Unmanned Aircraft is u
 uint8 ODID_STATUS_GROUND = 1 # The UA is on the ground
 uint8 ODID_STATUS_AIRBORNE = 2 # The UA is in the air
 uint8 ODID_STATUS_EMERGENCY = 3 # The UA is having an emergency
+uint8 ODID_STATUS_SYSTEM_FAILURE = 4 # The remote ID system is failing or unreliable in some way.
 uint8 status
 
 uint16 direction # centi-deg, 0-35999
