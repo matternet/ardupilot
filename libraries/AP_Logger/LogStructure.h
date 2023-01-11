@@ -1406,7 +1406,7 @@ struct PACKED log_Arm_Disarm {
     { LOG_MODE_MSG, sizeof(log_Mode), \
       "MODE", "QMBB",         "TimeUS,Mode,ModeNum,Rsn", "s---", "F---" }, \
     { LOG_RFND_MSG, sizeof(log_RFND), \
-      "RFND", "QBCCBB", "TimeUS,Instance,Dist,Snr,Stat,Orient", "s#m---", "F-B---" }, \
+      "RFND", "QBCHBB", "TimeUS,Instance,Dist,Snr,Stat,Orient", "s#m---", "F-B---" }, \
     { LOG_MAV_STATS, sizeof(log_MAV_Stats), \
       "DMS", "IIIIIBBBBBBBBB",         "TimeMS,N,Dp,RT,RS,Fa,Fmn,Fmx,Pa,Pmn,Pmx,Sa,Smn,Smx", "s-------------", "C-------------" }, \
     { LOG_BEACON_MSG, sizeof(log_Beacon), \
