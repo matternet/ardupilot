@@ -197,7 +197,7 @@ void AP_Parachute::mttr_fts_update()
 {
     if (!_mttr_uart) {
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        _mttr_status_pass = (msg->state == FTS_DISARMED_MASTER_PRESENT || msg->state == FTS_ARMED);
+        _mttr_status_pass = true;
         _mttr_fuse_pass = true;
 #endif
         return;
