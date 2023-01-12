@@ -271,7 +271,10 @@ void AP_OpenDroneID::send_location_message()
     if (parachute != nullptr && parachute->released()) {
         uav_status = MAV_ODID_STATUS_EMERGENCY;
     }
-    fprintf(stdout, "HAL_PARACHUTE_ENABLED, released: %s, uav_status: %s\n", parachute->released(), uav_status);
+    if (parachute != nullptr) {
+        fprintf(stdout, "parachute released: %s\n", parachute->released());
+    }
+    fprintf(stdout, "HAL_PARACHUTE_ENABLED, uav_status: %s\n", uav_status);
 #endif
     // Not yet implemented in Ardupilot 7.0.4
     // if (AP::vehicle()->is_crashed()) {
