@@ -42,8 +42,6 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Parachute/AP_Parachute.h>
 #include <AP_Vehicle/AP_Vehicle.h>
-#include <stdio.h>
-#include <unistd.h>
 
 extern const AP_HAL::HAL &hal;
 
@@ -271,10 +269,6 @@ void AP_OpenDroneID::send_location_message()
     if (parachute != nullptr && parachute->released()) {
         uav_status = MAV_ODID_STATUS_EMERGENCY;
     }
-    if (parachute != nullptr) {
-        fprintf(stdout, "parachute released: %s\n", parachute->released());
-    }
-    fprintf(stdout, "HAL_PARACHUTE_ENABLED, uav_status: %s\n", uav_status);
 #endif
     // Not yet implemented in Ardupilot 7.0.4
     // if (AP::vehicle()->is_crashed()) {
