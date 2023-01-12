@@ -196,10 +196,6 @@ void AP_Parachute::send_debug_message(uint32_t tnow_ms, uint8_t ind, float value
 void AP_Parachute::mttr_fts_update()
 {
     if (!_mttr_uart) {
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        _mttr_status_pass = true;
-        _mttr_fuse_pass = true;
-#endif
         return;
     }
 

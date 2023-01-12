@@ -96,13 +96,7 @@ public:
     void set_sink_rate(float sink_rate) { _sink_rate = sink_rate; }
 
     const char* mttr_get_fts_version() { return _mttr_fts_version; }
-    bool get_mttr_prearm_pass() { 
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        return true;
-#else
-        return _mttr_status_pass && _mttr_fuse_pass;
-#endif
-    }
+    bool get_mttr_prearm_pass() { return _mttr_status_pass && _mttr_fuse_pass; }
 
     static const struct AP_Param::GroupInfo        var_info[];
 
