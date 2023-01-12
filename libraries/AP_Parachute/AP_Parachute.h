@@ -101,6 +101,7 @@ public:
         return true;
 #else
         return _mttr_status_pass && _mttr_fuse_pass;
+#endif
     }
 
     static const struct AP_Param::GroupInfo        var_info[];
