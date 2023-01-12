@@ -261,13 +261,15 @@ void AP_OpenDroneID::send_location_message()
     if (!ahrs.get_position(current_location)) {
         return;
     }
-        uint8_t uav_status = hal.util->get_soft_armed()? MAV_ODID_STATUS_AIRBORNE : MAV_ODID_STATUS_GROUND;
+    
+    uint8_t uav_status = hal.util->get_soft_armed()? MAV_ODID_STATUS_AIRBORNE : MAV_ODID_STATUS_GROUND;
 #if HAL_PARACHUTE_ENABLED
     // set emergency status if chute is released
     const auto *parachute = AP::parachute();
     if (parachute != nullptr && parachute->released()) {
         uav_status = MAV_ODID_STATUS_EMERGENCY;
     }
+    fprintf(stdout, "HAL_PARACHUTE_ENABLED, released: %s, uav_status: %s\n", parachute->released(), uav_status);
 #endif
     // Not yet implemented in Ardupilot 7.0.4
     // if (AP::vehicle()->is_crashed()) {
