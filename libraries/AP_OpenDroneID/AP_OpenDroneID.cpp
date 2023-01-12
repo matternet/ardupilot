@@ -269,10 +269,11 @@ void AP_OpenDroneID::send_location_message()
         uav_status = MAV_ODID_STATUS_EMERGENCY;
     }
 #endif
-    if (AP::vehicle()->is_crashed()) {
-        // if in crashed state also declare an emergency
-        uav_status = MAV_ODID_STATUS_EMERGENCY;
-    }
+    // Not yet implemented in Ardupilot 7.0.4
+    // if (AP::vehicle()->is_crashed()) {
+    //     // if in crashed state also declare an emergency
+    //     uav_status = MAV_ODID_STATUS_EMERGENCY;
+    // }
 
     float direction = ODID_INV_DIR;
     if (!got_bad_gps_fix) {
