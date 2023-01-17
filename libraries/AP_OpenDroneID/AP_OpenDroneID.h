@@ -115,6 +115,7 @@ private:
 
     enum Options : int16_t {
         EnforceArming     = (1U << 0U),
+        AllowNonGPSPosition = (1U << 1U),
     };
 
     // check if an option is set
@@ -142,7 +143,6 @@ private:
     mavlink_open_drone_id_system_t pkt_system;
     mavlink_open_drone_id_self_id_t pkt_self_id;
     mavlink_open_drone_id_operator_id_t pkt_operator_id;
-    mavlink_statustext_t pkt_statustext;  // StatusText message used for logging firmware
 
     // last time we got a SYSTEM message
     uint32_t last_system_ms;
