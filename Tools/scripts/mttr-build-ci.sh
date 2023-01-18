@@ -26,8 +26,20 @@ echo $PATH
 ./waf configure --board=sitl --debug --enable-opendroneid
 ./waf copter
 
-mv build/MttrCubeBlack/bin/arducopter.apj "/tmp/deploy_files/copter-MttrCubeBlack.apj"
-mv build/MttrCubeOrange/bin/arducopter.apj "/tmp/deploy_files/copter-MttrCubeOrange.apj"
-mv build/MttrCubeBlack/bin/arducopter "/tmp/deploy_files/copter-MttrCubeBlack.elf"
-mv build/MttrCubeOrange/bin/arducopter "/tmp/deploy_files/copter-MttrCubeOrange.elf"
+# Get Ardupilot version
+eval $(sed -n 's/^#define  *\([^ ]*\)  *\(.*\) *$/export \1=\2/p' ArduCopter/version.h)
+
+# Get mttr git tag (replace all dashes with underscores)
+MTTR_GIT_TAG=$(echo $(git tag --points-at HEAD --sort -version:refname | head -1) | tr - _)
+
+# Get mttr git hash
+MTTR_GIT_HASH=$(git rev-parse --short=7 HEAD)
+
+# Create version string
+VERSION_DESCRIPTION="ap_${FW_MAJOR}.${FW_MINOR}.${FW_PATCH}-${MTTR_GIT_TAG}-${MTTR_GIT_HASH}"
+
+mv build/MttrCubeBlack/bin/arducopter.apj "/tmp/deploy_files/copter-${VERSION_DESCRIPTION}-MttrCubeBlack.apj"
+mv build/MttrCubeOrange/bin/arducopter.apj "/tmp/deploy_files/copter-${VERSION_DESCRIPTION}-MttrCubeOrange.apj"
+mv build/MttrCubeBlack/bin/arducopter "/tmp/deploy_files/copter-${VERSION_DESCRIPTION}-MttrCubeBlack.elf"
+mv build/MttrCubeOrange/bin/arducopter "/tmp/deploy_files/copter-${VERSION_DESCRIPTION}-MttrCubeOrange.elf"
 mv build/sitl/bin/arducopter "/tmp/deploy_files/sitl.elf"
