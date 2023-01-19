@@ -30,6 +30,7 @@ echo $PATH
 eval $(sed -n 's/^#define  *\([^ ]*\)  *\(.*\) *$/export \1=\2/p' ArduCopter/version.h)
 
 # Get mttr git tag (replace all dashes with underscores)
+git fetch -t
 MTTR_GIT_TAG=$(echo $(git describe --tags --abbrev=0) | tr - _)
 
 # Get mttr git hash
