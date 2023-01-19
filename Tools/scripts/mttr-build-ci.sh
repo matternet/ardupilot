@@ -31,7 +31,7 @@ eval $(sed -n 's/^#define  *\([^ ]*\)  *\(.*\) *$/export \1=\2/p' ArduCopter/ver
 
 # Get mttr git tag (replace all dashes with underscores)
 git fetch --tags --no-recurse-submodules
-MTTR_GIT_TAG=$(echo $(git describe --tags --abbrev=0) | tr - _)
+MTTR_GIT_TAG=$(echo $(git tag -l "mttr-*" --sort=-committerdate | head -1) | tr - _)
 
 # Get mttr git hash
 MTTR_GIT_HASH=$(git rev-parse --short=7 HEAD)
