@@ -287,9 +287,11 @@ void AP_OpenDroneID::send_location_message()
         uav_status = MAV_ODID_STATUS_EMERGENCY;
     }
 
+    // Direction over ground (not heading, but direction of movement)
+    // measured clockwise from true North: 0 - 35999 centi-degrees. If unknown: 36100 centi-degrees.
     float direction = ODID_INV_DIR;
     if (!got_bad_gps_fix) {
-        direction = wrap_360(degrees(ahrs.groundspeed_vector().angle())); // heading (degrees)
+        direction = wrap_360(degrees(ahrs.groundspeed_vector().angle()));
     }
 
     const float speed_horizontal = create_speed_horizontal(ahrs.groundspeed());
