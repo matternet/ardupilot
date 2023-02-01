@@ -390,7 +390,7 @@ void AP_OpenDroneID::send_location_message()
         altitude_geodetic : altitude_geodetic,
         height : height_above_takeoff,
         timestamp : timestamp,
-        direction : uint16_t(movement_direction * 100.0), // Heading (centi-degrees)
+        direction : uint16_t(movement_direction * 100.0), // Direction of movement (centi-degrees)
         speed_horizontal : uint16_t(speed_horizontal * 100.0), // Ground speed (cm/s)
         speed_vertical : int16_t(climb_rate * 100.0), // Climb rate (cm/s)
         target_system : 0,
