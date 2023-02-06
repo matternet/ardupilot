@@ -203,6 +203,7 @@ void AP_OpenDroneID::send_static_out()
     if (now_ms - last_system_ms > 5000 && now_ms - last_lost_operator_msg_ms > 5000) {
         last_lost_operator_msg_ms = now_ms;
         GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ODID: lost operator location");
+        printf("ODID: lost operator location: %d - %d = %d\n", last_system_ms, now_ms, (now_ms - last_system_ms));
     }
 
     const uint32_t msg_spacing_ms = _mavlink_static_period_ms / 4;
@@ -679,6 +680,7 @@ void AP_OpenDroneID::handle_msg(mavlink_channel_t chan, const mavlink_message_t 
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM:
         mavlink_msg_open_drone_id_system_decode(&msg, &pkt_system);
         last_system_ms = AP_HAL::millis();
+        printf("GOT ODID SYSTEM. last_system_ms: %d\n", last_system_ms);
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM_UPDATE: {
         mavlink_open_drone_id_system_update_t pkt_system_update;
