@@ -42,6 +42,7 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Parachute/AP_Parachute.h>
 #include <AP_Vehicle/AP_Vehicle.h>
+#include <stdio.h>
 
 extern const AP_HAL::HAL &hal;
 
