@@ -287,9 +287,11 @@ void AP_OpenDroneID::send_location_message()
         uav_status = MAV_ODID_STATUS_EMERGENCY;
     }
 
-    float direction = ODID_INV_DIR;
+    // Direction over ground (not heading, but direction of movement)
+    // measured clockwise from true North: 0 - 35999 centi-degrees. If unknown: 36100 centi-degrees.
+    float movement_direction = ODID_INV_DIR;
     if (!got_bad_gps_fix) {
-        direction = wrap_360(degrees(ahrs.groundspeed_vector().angle())); // heading (degrees)
+        movement_direction = wrap_360(degrees(ahrs.groundspeed_vector().angle()));
     }
 
     const float speed_horizontal = create_speed_horizontal(ahrs.groundspeed());
@@ -388,7 +390,7 @@ void AP_OpenDroneID::send_location_message()
         altitude_geodetic : altitude_geodetic,
         height : height_above_takeoff,
         timestamp : timestamp,
-        direction : uint16_t(direction * 100.0), // Heading (centi-degrees)
+        direction : uint16_t(movement_direction * 100.0), // Direction of movement (centi-degrees)
         speed_horizontal : uint16_t(speed_horizontal * 100.0), // Ground speed (cm/s)
         speed_vertical : int16_t(climb_rate * 100.0), // Climb rate (cm/s)
         target_system : 0,
