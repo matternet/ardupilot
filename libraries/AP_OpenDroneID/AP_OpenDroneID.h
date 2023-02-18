@@ -171,10 +171,10 @@ private:
     void send_location_message();
     enum next_msg : uint8_t {
         NEXT_MSG_BASIC_ID = 0,
-        NEXT_MSG_SYSTEM,
-        NEXT_MSG_SELF_ID,
-        NEXT_MSG_OPERATOR_ID,
-        NEXT_MSG_ENUM_END
+        NEXT_MSG_SYSTEM = 1,
+        NEXT_MSG_SELF_ID = 2,
+        NEXT_MSG_OPERATOR_ID = 3,
+        NEXT_MSG_ENUM_END = 4
     } next_msg_to_send;
     uint32_t last_msg_send_ms;
 
