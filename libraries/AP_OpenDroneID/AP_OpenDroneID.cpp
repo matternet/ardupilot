@@ -205,7 +205,7 @@ void AP_OpenDroneID::send_static_out()
         GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "ODID: lost operator location");
     }
 
-    const uint32_t msg_spacing_ms = _mavlink_static_period_ms / 4;
+    const uint32_t msg_spacing_ms = _mavlink_static_period_ms / 5;
     if (now_ms - last_msg_send_ms >= msg_spacing_ms) {
         // allow update of channel during setup, this makes it easy to debug with a GCS
         _chan = mavlink_channel_t(gcs().get_channel_from_port_number(_mav_port));
