@@ -129,8 +129,8 @@ private:
     uint32_t _last_send_location_ms;
     uint32_t _last_send_system_update_ms;
     uint32_t _last_send_static_messages_ms;
-    const uint32_t _mavlink_dynamic_period_ms = 1000; //how often are mavlink dynamic messages sent in ms. E.g. 1000 = 1 Hz
-    const uint32_t _mavlink_static_period_ms = 5000; //how often are mavlink static messages sent in ms
+    const uint32_t _mavlink_dynamic_period_ms = 800; //how often are mavlink dynamic messages sent in ms as required by ASTM F3411−22a 5.4.4.1. E.g. 1000 = 1 Hz. Send slightly faster than 1 Hz.
+    const uint32_t _mavlink_static_period_ms = 2800; //how often are mavlink static messages sent in ms as required by ASTM F3411−22a 5.4.4.1. E.g. 3000 = 1/3 Hz. Send slightly faster than 1/3 Hz.
 
     bool     _have_height_above_takeoff;
     Location _takeoff_location;
