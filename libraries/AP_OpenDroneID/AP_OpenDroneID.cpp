@@ -28,6 +28,7 @@
  */
 
 #include "AP_OpenDroneID.h"
+#include <stdio.h>
 
 #if AP_OPENDRONEID_ENABLED
 
@@ -662,6 +663,7 @@ void AP_OpenDroneID::handle_msg(mavlink_channel_t chan, const mavlink_message_t 
     switch (msg.msgid) {
     // only accept ARM_STATUS from the transmitter
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS: {
+        printf("GOT ARM STATUS\n");
         if (chan == _chan) {
             mavlink_msg_open_drone_id_arm_status_decode(&msg, &arm_status);
             last_arm_status_ms = AP_HAL::millis();
@@ -670,19 +672,24 @@ void AP_OpenDroneID::handle_msg(mavlink_channel_t chan, const mavlink_message_t 
     }
     // accept other messages from the GCS
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_OPERATOR_ID:
+        printf("GOT OPERATOR ID\n");
         mavlink_msg_open_drone_id_operator_id_decode(&msg, &pkt_operator_id);
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_SELF_ID:
+        printf("GOT SELF ID\n");
         mavlink_msg_open_drone_id_self_id_decode(&msg, &pkt_self_id);
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID:
+        printf("GOT BASIC ID\n");
         mavlink_msg_open_drone_id_basic_id_decode(&msg, &pkt_basic_id);
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM:
+        printf("GOT SYSTEM\n");
         mavlink_msg_open_drone_id_system_decode(&msg, &pkt_system);
         last_system_ms = AP_HAL::millis();
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM_UPDATE: {
+        printf("GOT SYSTEM UPDATE\n");
         mavlink_open_drone_id_system_update_t pkt_system_update;
         mavlink_msg_open_drone_id_system_update_decode(&msg, &pkt_system_update);
         pkt_system.operator_latitude = pkt_system_update.operator_latitude;
