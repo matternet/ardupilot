@@ -663,7 +663,6 @@ void AP_OpenDroneID::handle_msg(mavlink_channel_t chan, const mavlink_message_t 
     switch (msg.msgid) {
     // only accept ARM_STATUS from the transmitter
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_ARM_STATUS: {
-        printf("GOT ARM STATUS\n");
         if (chan == _chan) {
             mavlink_msg_open_drone_id_arm_status_decode(&msg, &arm_status);
             last_arm_status_ms = AP_HAL::millis();
