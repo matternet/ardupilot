@@ -3282,6 +3282,8 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
         break;
 #endif
     }
+
+    default: fprint("UNKNOWN TYPE: %d", msg.msgid);
 }
 
 void GCS_MAVLINK::handle_common_mission_message(const mavlink_message_t &msg)
