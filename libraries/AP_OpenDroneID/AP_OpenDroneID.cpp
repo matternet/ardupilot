@@ -671,24 +671,24 @@ void AP_OpenDroneID::handle_msg(mavlink_channel_t chan, const mavlink_message_t 
     }
     // accept other messages from the GCS
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_OPERATOR_ID:
-        printf("GOT OPERATOR ID\n");
+        printf("GOT OPERATOR ID %d\n", static_cast<int>(msg.seq));
         mavlink_msg_open_drone_id_operator_id_decode(&msg, &pkt_operator_id);
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_SELF_ID:
-        printf("GOT SELF ID\n");
+        printf("GOT SELF ID %d\n", static_cast<int>(msg.seq));
         mavlink_msg_open_drone_id_self_id_decode(&msg, &pkt_self_id);
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID:
-        printf("GOT BASIC ID\n");
+        printf("GOT BASIC ID %d\n", static_cast<int>(msg.seq));
         mavlink_msg_open_drone_id_basic_id_decode(&msg, &pkt_basic_id);
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM:
-        printf("GOT SYSTEM\n");
+        printf("GOT SYSTEM %d\n", static_cast<int>(msg.seq));
         mavlink_msg_open_drone_id_system_decode(&msg, &pkt_system);
         last_system_ms = AP_HAL::millis();
         break;
     case MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM_UPDATE: {
-        printf("GOT SYSTEM UPDATE\n");
+        printf("GOT SYSTEM UPDATE %d\n", static_cast<int>(msg.seq));
         mavlink_open_drone_id_system_update_t pkt_system_update;
         mavlink_msg_open_drone_id_system_update_decode(&msg, &pkt_system_update);
         pkt_system.operator_latitude = pkt_system_update.operator_latitude;

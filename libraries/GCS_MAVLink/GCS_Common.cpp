@@ -1294,6 +1294,7 @@ void GCS_MAVLINK::packetReceived(const mavlink_status_t &status,
     }
     if (!routing.check_and_forward(chan, msg)) {
         // the routing code has indicated we should not handle this packet locally
+        printf("FORWARDING MSG: %d,%d", msg.msgid, static_cast<int>(msg.seq));
         return;
     }
     if (!accept_packet(status, msg)) {
