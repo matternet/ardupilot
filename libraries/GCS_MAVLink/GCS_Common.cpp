@@ -3281,7 +3281,7 @@ void GCS_MAVLINK::handle_common_message(const mavlink_message_t &msg)
         AP::opendroneid().handle_msg(chan, msg);
         break;
 #endif
-    default: fprint("UNKNOWN TYPE: %d", msg.msgid); break;
+    default: printf("UNKNOWN TYPE: %d", msg.msgid); break;
     }
 
 }
