@@ -570,7 +570,7 @@ uint32_t AP_Logger_File::_get_log_size(const uint16_t log_num)
     struct stat st;
     EXPECT_DELAY_MS(3000);
     if (AP::FS().stat(fname, &st) != 0) {
-        printf("Unable to fetch Log File Size: %s\n", strerror(errno));
+        printf("Unable to fetch Log File Size (%s, %s): %s\n", fname, _write_filename, strerror(errno));
         free(fname);
         return 0;
     }
