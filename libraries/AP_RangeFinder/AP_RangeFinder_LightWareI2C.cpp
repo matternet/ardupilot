@@ -446,7 +446,7 @@ void AP_RangeFinder_LightWareI2C::update(void)
 void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 {
 #ifdef MFG_TEST_BUILD
-    static const uint32_t TIMER_FREQ = 20;
+    static const uint32_t TIMER_FREQ_HZ = 20;
     static uint32_t count = 0;
     count++;
 #endif // MFG_TEST_BUILD
@@ -459,7 +459,7 @@ void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 
 #ifdef MFG_TEST_BUILD
             // Manufacturing test debug message
-            if (count % TIMER_FREQ == 0) {
+            if (count % TIMER_FREQ_HZ == 0) {
                 gcs().send_text(MAV_SEVERITY_INFO, "RANGEFINDER: %s%s", RANGEFINDER_LIDAR_I2C_VERSION_PREFIX, version_);
                 gcs().send_named_int("LIDAR_DIST", int(state.distance_cm));
             }

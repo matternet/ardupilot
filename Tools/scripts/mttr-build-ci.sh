@@ -23,11 +23,16 @@ echo $PATH
 ./waf configure --board=MttrCubeOrange --enable-opendroneid
 ./waf copter
 
+./waf configure --board=MttrCubeOrangeMfgTest --enable-opendroneid
+./waf copter
+
 ./waf configure --board=sitl --debug --enable-opendroneid
 ./waf copter
 
 mv build/MttrCubeBlack/bin/arducopter.apj "/tmp/deploy_files/copter-MttrCubeBlack.apj"
 mv build/MttrCubeOrange/bin/arducopter.apj "/tmp/deploy_files/copter-MttrCubeOrange.apj"
+mv build/MttrCubeOrangeMfgTest/bin/arducopter.apj "/tmp/deploy_files/copter-MttrCubeOrangeMfgTest.apj"
 mv build/MttrCubeBlack/bin/arducopter "/tmp/deploy_files/copter-MttrCubeBlack.elf"
 mv build/MttrCubeOrange/bin/arducopter "/tmp/deploy_files/copter-MttrCubeOrange.elf"
+mv build/MttrCubeOrangeMfgTest/bin/arducopter "/tmp/deploy_files/copter-MttrCubeOrangeMfgTest.elf"
 mv build/sitl/bin/arducopter "/tmp/deploy_files/sitl.elf"
