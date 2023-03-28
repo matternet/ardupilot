@@ -1,0 +1,5 @@
+# hw definition for Matternet CubeOrange build
+
+include ../MttrCubeOrange/hwdef.dat
+
+define MFG_TEST_BUILD
