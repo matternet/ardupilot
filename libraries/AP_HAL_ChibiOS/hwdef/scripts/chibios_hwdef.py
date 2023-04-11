@@ -1477,7 +1477,7 @@ def write_PWM_config(f):
         f.write('#define STM32_PWM_USE_ADVANCED TRUE\n')
 
 
-def write_ADC_config(f):
+def write_ADC_config(f, mfg_test=False):
     '''write ADC config defines'''
     f.write('// ADC config\n')
     adc_chans = []
@@ -1501,7 +1501,10 @@ def write_ADC_config(f):
     vdd = float(vdd) * 0.01
     f.write('#define HAL_ANALOG_PINS { \\\n')
     for (chan, scale, label, portpin) in adc_chans:
-        scale_str = '%.2f/4096' % vdd
+        if mfg_test is True:
+            scale_str = '%.2f/65536' % vdd
+        else:
+            scale_str = '%.2f/4096' % vdd
         if scale is not None and scale != '1':
             scale_str = scale + '*' + scale_str
         f.write('{ %2u, %12s }, /* %s %s */ \\\n' % (chan, scale_str, portpin,
