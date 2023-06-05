@@ -7,6 +7,8 @@
 
 #include "IRLock.h"
 
+IRLock *IRLock::singleton;
+
 // retrieve body frame unit vector in direction of target
 // returns true if data is available
 bool IRLock::get_unit_vector_body(Vector3f& ret) const
@@ -22,4 +24,11 @@ bool IRLock::get_unit_vector_body(Vector3f& ret) const
     ret.z = _target_info.pos_z;
     ret /= ret.length();
     return true;
+}
+
+namespace AP {
+IRLock *irlock()
+{
+    return IRLock::get_singleton();
+}
 }
