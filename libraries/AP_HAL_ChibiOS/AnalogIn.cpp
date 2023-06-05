@@ -40,8 +40,14 @@ extern AP_IOMCU iomcu;
 
 #define ANLOGIN_DEBUGGING 0
 
-// base voltage scaling for 12 bit 3.3V ADC
-#define VOLTAGE_SCALING (3.3f/(1<<12))
+// base voltage scaling for 3.3V
+// 12-bit for production, 16-bit for MfgTest
+#ifndef MFG_TEST_BUILD
+#define VOLTAGE_SCALING_SHIFT 12
+#else
+#define VOLTAGE_SCALING_SHIFT 16
+#endif // MFG_TEST_BUILD
+#define VOLTAGE_SCALING (3.3f/(1<<VOLTAGE_SCALING_SHIFT))
 
 #if ANLOGIN_DEBUGGING
  # define Debug(fmt, args ...)  do {printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); } while(0)
@@ -210,9 +216,13 @@ void AnalogIn::init()
     adcgrpcfg.num_channels = ADC_GRP1_NUM_CHANNELS;
     adcgrpcfg.end_cb = adccallback;
 #if defined(STM32H7)
+  #ifndef MFG_TEST_BUILD
     // use 12 bits resolution to keep scaling factors the same as other boards.
     // todo: enable oversampling in cfgr2 ?
     adcgrpcfg.cfgr = ADC_CFGR_CONT | ADC_CFGR_RES_12BITS;
+  #else
+    adcgrpcfg.cfgr = ADC_CFGR_CONT | ADC_CFGR_RES_16BITS;
+  #endif // MFG_TEST_BUILD
 #else
     adcgrpcfg.sqr1 = ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS);
     adcgrpcfg.cr2 = ADC_CR2_SWSTART;

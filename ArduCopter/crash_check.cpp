@@ -264,6 +264,7 @@ void Copter::parachute_manual_release()
         return;
     }
 
+#ifndef MFG_TEST_BUILD
     // do not release if vehicle is landed
     // do not release if we are landed or below the minimum altitude above home
     if (ap.land_complete) {
@@ -272,6 +273,7 @@ void Copter::parachute_manual_release()
         AP::logger().Write_Error(LogErrorSubsystem::PARACHUTES, LogErrorCode::PARACHUTE_LANDED);
         return;
     }
+#endif // MFG_TEST_BUILD
 
     // do not release if we are landed or below the minimum altitude above home
 #if 0
@@ -286,5 +288,12 @@ void Copter::parachute_manual_release()
     // if we get this far release parachute
     parachute_release();
 }
+
+#ifdef MFG_TEST_BUILD
+void Copter::poweroff()
+{
+    parachute.poweroff_request();
+}
+#endif // MFG_TEST_BUILD
 
 #endif // PARACHUTE == ENABLED

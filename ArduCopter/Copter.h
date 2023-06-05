@@ -738,6 +738,9 @@ private:
     void parachute_check();
     void parachute_release();
     void parachute_manual_release();
+#ifdef MFG_TEST_BUILD
+    void poweroff();
+#endif // MFG_TEST_BUILD
 
     // ekf_check.cpp
     void ekf_check();
@@ -846,7 +849,11 @@ private:
     // motor_test.cpp
     void motor_test_output();
     bool mavlink_motor_test_check(const GCS_MAVLINK &gcs_chan, bool check_rc);
+#ifndef MFG_TEST_BUILD
     MAV_RESULT mavlink_motor_test_start(const GCS_MAVLINK &gcs_chan, uint8_t motor_seq, uint8_t throttle_type, uint16_t throttle_value, float timeout_sec, uint8_t motor_count);
+#else
+    MAV_RESULT mavlink_motor_test_start(const GCS_MAVLINK &gcs_chan, uint8_t motor_seq, uint8_t throttle_type, uint16_t throttle_value, float timeout_sec, uint8_t step_count, uint16_t start_throttle);
+#endif // MFG_TEST_BUILD
     void motor_test_stop();
 
     // motors.cpp
