@@ -25,6 +25,12 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+# set MfgTest flag
+isMfgTest = False
+if "MfgTest" in args.hwdef:
+    print("MfgTest build selected!")
+    isMfgTest = True
+
 # output variables for each pin
 f4f7_vtypes = ['MODER', 'OTYPER', 'OSPEEDR', 'PUPDR', 'ODR', 'AFRL', 'AFRH']
 f1_vtypes = ['CRL', 'CRH', 'ODR']
