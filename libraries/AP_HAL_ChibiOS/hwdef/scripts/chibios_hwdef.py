@@ -25,6 +25,12 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+# set MfgTest flag
+isMfgTest = False
+if "MfgTest" in args.hwdef:
+    print("MfgTest build selected!")
+    isMfgTest = True
+
 # output variables for each pin
 f4f7_vtypes = ['MODER', 'OTYPER', 'OSPEEDR', 'PUPDR', 'ODR', 'AFRL', 'AFRH']
 f1_vtypes = ['CRL', 'CRH', 'ODR']
@@ -1479,6 +1485,9 @@ def write_PWM_config(f):
 
 def write_ADC_config(f, mfg_test=False):
     '''write ADC config defines'''
+    if mfg_test is True:
+        print("MfgTest uses 16-bit ADC scaling")
+
     f.write('// ADC config\n')
     adc_chans = []
     for l in bylabel:
@@ -1672,7 +1681,7 @@ def write_hwdef_header(outfilename):
 
     write_mcu_config(f)
     write_SPI_config(f)
-    write_ADC_config(f)
+    write_ADC_config(f, isMfgTest)
     write_GPIO_config(f)
     write_IMU_config(f)
     write_MAG_config(f)
