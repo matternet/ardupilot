@@ -512,7 +512,7 @@ void AC_PosControl::set_target_to_stopping_point_z() {
 /// get_stopping_point_z - calculates stopping point based on current position,
 /// velocity, vehicle acceleration
 void AC_PosControl::get_stopping_point_z(Vector3f &stopping_point) const {
-  const float curr_pos_z = _inav.get_altitude();
+  // const float curr_pos_z = _inav.get_altitude();
   // float curr_vel_z = _inav.get_velocity_z();
 
   // float linear_distance; // half the distance we swap between linear and sqrt
@@ -554,7 +554,7 @@ void AC_PosControl::get_stopping_point_z(Vector3f &stopping_point) const {
   // stopping_point.z = constrain_float(stopping_point.z, curr_pos_z -
   // POSCONTROL_STOPPING_DIST_DOWN_MAX, curr_pos_z +
   // POSCONTROL_STOPPING_DIST_UP_MAX);
-  stopping_point.z = curr_pos_z;
+  stopping_point.z = 0;
   return;
 }
 
