@@ -2,6 +2,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Math/AP_Math.h>
+#include <assert.h>
 
 extern const AP_HAL::HAL &hal;
 
