@@ -554,8 +554,8 @@ void AC_PosControl::get_stopping_point_z(Vector3f &stopping_point) const {
   // stopping_point.z = constrain_float(stopping_point.z, curr_pos_z -
   // POSCONTROL_STOPPING_DIST_DOWN_MAX, curr_pos_z +
   // POSCONTROL_STOPPING_DIST_UP_MAX);
-  stopping_point.z = 0;
-  return;
+  //   stopping_point.z = 0;
+  assert(false);
 }
 
 /// init_takeoff - initialises target altitude if we are taking off
