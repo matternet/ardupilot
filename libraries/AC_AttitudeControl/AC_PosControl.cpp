@@ -555,7 +555,7 @@ void AC_PosControl::get_stopping_point_z(Vector3f &stopping_point) const {
   // stopping_point.z = constrain_float(stopping_point.z, curr_pos_z -
   // POSCONTROL_STOPPING_DIST_DOWN_MAX, curr_pos_z +
   // POSCONTROL_STOPPING_DIST_UP_MAX);
-  stopping_point.z = curr_pos_z;
+  stopping_point.z = 0;
 }
 
 /// init_takeoff - initialises target altitude if we are taking off
@@ -614,9 +614,11 @@ void AC_PosControl::update_z_controller() {
 ///     changed
 void AC_PosControl::calc_leash_length_z() {
   if (_flags.recalc_leash_z) {
-    _leash_up_z = calc_leash_length(_speed_up_cms, _accel_z_cms, _p_pos_z.kP());
-    _leash_down_z =
-        calc_leash_length(-_speed_down_cms, _accel_z_cms, _p_pos_z.kP());
+    _leash_up_z = 10000;
+    _leash_up_z = 10000;
+    // _leash_up_z = calc_leash_length(_speed_up_cms, _accel_z_cms,
+    // _p_pos_z.kP()); _leash_down_z =
+    //     calc_leash_length(-_speed_down_cms, _accel_z_cms, _p_pos_z.kP());
     _flags.recalc_leash_z = false;
   }
 }
