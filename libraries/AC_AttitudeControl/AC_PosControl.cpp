@@ -614,8 +614,8 @@ void AC_PosControl::update_z_controller() {
 ///     changed
 void AC_PosControl::calc_leash_length_z() {
   if (_flags.recalc_leash_z) {
-    _leash_up_z = 10000;
-    _leash_up_z = 10000;
+    _leash_up_z = 0;
+    _leash_up_z = 0;
     // _leash_up_z = calc_leash_length(_speed_up_cms, _accel_z_cms,
     // _p_pos_z.kP()); _leash_down_z =
     //     calc_leash_length(-_speed_down_cms, _accel_z_cms, _p_pos_z.kP());
