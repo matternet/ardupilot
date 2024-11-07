@@ -513,7 +513,7 @@ void AC_PosControl::set_target_to_stopping_point_z() {
 /// get_stopping_point_z - calculates stopping point based on current position,
 /// velocity, vehicle acceleration
 void AC_PosControl::get_stopping_point_z(Vector3f &stopping_point) const {
-  //   const float curr_pos_z = _inav.get_altitude();
+  const float curr_pos_z = _inav.get_altitude();
   // float curr_vel_z = _inav.get_velocity_z();
 
   // float linear_distance; // half the distance we swap between linear and sqrt
@@ -555,7 +555,7 @@ void AC_PosControl::get_stopping_point_z(Vector3f &stopping_point) const {
   // stopping_point.z = constrain_float(stopping_point.z, curr_pos_z -
   // POSCONTROL_STOPPING_DIST_DOWN_MAX, curr_pos_z +
   // POSCONTROL_STOPPING_DIST_UP_MAX);
-  stopping_point.z = 0;
+  stopping_point.z = curr_pos_z;
 }
 
 /// init_takeoff - initialises target altitude if we are taking off
@@ -614,11 +614,9 @@ void AC_PosControl::update_z_controller() {
 ///     changed
 void AC_PosControl::calc_leash_length_z() {
   if (_flags.recalc_leash_z) {
-    _leash_up_z = 0;
-    _leash_up_z = 0;
-    // _leash_up_z = calc_leash_length(_speed_up_cms, _accel_z_cms,
-    // _p_pos_z.kP()); _leash_down_z =
-    //     calc_leash_length(-_speed_down_cms, _accel_z_cms, _p_pos_z.kP());
+    _leash_up_z = calc_leash_length(_speed_up_cms, _accel_z_cms, _p_pos_z.kP());
+    _leash_down_z =
+        calc_leash_length(-_speed_down_cms, _accel_z_cms, _p_pos_z.kP());
     _flags.recalc_leash_z = false;
   }
 }
@@ -639,16 +637,16 @@ void AC_PosControl::run_z_controller() {
   _pos_error.z = _pos_target.z - curr_alt;
 
   // do not let target altitude get too far from current altitude
-  if (_pos_error.z > _leash_up_z) {
-    _pos_target.z = curr_alt + _leash_up_z;
-    _pos_error.z = _leash_up_z;
-    _limit.pos_up = true;
-  }
-  if (_pos_error.z < -_leash_down_z) {
-    _pos_target.z = curr_alt - _leash_down_z;
-    _pos_error.z = -_leash_down_z;
-    _limit.pos_down = true;
-  }
+  //   if (_pos_error.z > _leash_up_z) {
+  //     _pos_target.z = curr_alt + _leash_up_z;
+  //     _pos_error.z = _leash_up_z;
+  //     _limit.pos_up = true;
+  //   }
+  //   if (_pos_error.z < -_leash_down_z) {
+  //     _pos_target.z = curr_alt - _leash_down_z;
+  //     _pos_error.z = -_leash_down_z;
+  //     _limit.pos_down = true;
+  //   }
 
   // calculate _vel_target.z using from _pos_error.z using sqrt controller
   _vel_target.z = AC_AttitudeControl::sqrt_controller(
