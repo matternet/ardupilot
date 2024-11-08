@@ -530,9 +530,7 @@ bool AC_WPNav::advance_wp_target_along_track(float dt) {
   // recalculate the desired position
   Vector3f final_target = _origin + _pos_delta_unit * _track_desired;
   // convert final_target.z to altitude above the ekf origin
-  if (_flags.new_wp_destination) {
-    final_target.z += terr_offset;
-  }
+  final_target.z += terr_offset;
   _pos_control.set_pos_target(final_target);
 
   // check if we've reached the waypoint
@@ -617,7 +615,7 @@ bool AC_WPNav::update_wpnav() {
   // freeze feedforwards during known discontinuities
   if (_flags.new_wp_destination) {
     _flags.new_wp_destination = false;
-    _pos_control.freeze_ff_z();
+    // _pos_control.freeze_ff_z();
   }
 
   _pos_control.update_xy_controller();
