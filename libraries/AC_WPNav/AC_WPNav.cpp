@@ -214,6 +214,7 @@ bool AC_WPNav::set_wp_destination(const Vector3f &destination,
 
   // if waypoint controller is active use the existing position target as the
   // origin
+  _pos_control.z = 0;
   if ((AP_HAL::millis() - _wp_last_update) < 1000) {
     origin = _pos_control.get_pos_target();
   } else {
@@ -615,7 +616,7 @@ bool AC_WPNav::update_wpnav() {
   // freeze feedforwards during known discontinuities
   if (_flags.new_wp_destination) {
     _flags.new_wp_destination = false;
-    // _pos_control.freeze_ff_z();
+    _pos_control.freeze_ff_z();
   }
 
   _pos_control.update_xy_controller();
