@@ -221,8 +221,8 @@ bool AC_WPNav::set_wp_destination(const Vector3f &destination,
     // point (using curr pos and velocity)
     _pos_control.set_desired_velocity_z(0);
     _pos_control.get_stopping_point_xy(origin);
+    _pos_control.get_stopping_point_z(origin);
   }
-  _pos_control.get_stopping_point_z(origin);
 
   // convert origin to alt-above-terrain
   if (_commanded_alt_enabled || !is_zero(_commanded_alt_offset_cm)) {

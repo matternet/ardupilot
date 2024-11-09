@@ -2,7 +2,6 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Logger/AP_Logger.h>
 #include <AP_Math/AP_Math.h>
-#include <assert.h>
 
 extern const AP_HAL::HAL &hal;
 
@@ -514,48 +513,51 @@ void AC_PosControl::set_target_to_stopping_point_z() {
 /// velocity, vehicle acceleration
 void AC_PosControl::get_stopping_point_z(Vector3f &stopping_point) const {
   const float curr_pos_z = _inav.get_altitude();
-  // float curr_vel_z = _inav.get_velocity_z();
+  float curr_vel_z = _inav.get_velocity_z();
 
-  // float linear_distance; // half the distance we swap between linear and sqrt
-  // and the distance we offset sqrt float linear_velocity;  // the velocity we
-  // swap between linear and sqrt
+  float linear_distance; // half the distance we swap between linear and sqrt
+                         // and the distance we offset sqrt
+  float linear_velocity; // the velocity we swap between linear and sqrt
 
-  // // if position controller is active add current velocity error to avoid
-  // sudden jump in acceleration if (is_active_z()) {
-  //     curr_vel_z += _vel_error.z;
-  //     if (_flags.use_desvel_ff_z) {
-  //         curr_vel_z -= _vel_desired.z;
-  //     }
-  // }
+  // if position controller is active add current velocity error to avoid sudden
+  // jump in acceleration
+  if (is_active_z()) {
+    curr_vel_z += _vel_error.z;
+    if (_flags.use_desvel_ff_z) {
+      curr_vel_z -= _vel_desired.z;
+    }
+  }
 
-  // // avoid divide by zero by using current position if kP is very low or
-  // acceleration is zero if (_p_pos_z.kP() <= 0.0f || _accel_z_cms <= 0.0f) {
-  //     stopping_point.z = curr_pos_z;
-  //     return;
-  // }
+  // avoid divide by zero by using current position if kP is very low or
+  // acceleration is zero
+  if (_p_pos_z.kP() <= 0.0f || _accel_z_cms <= 0.0f) {
+    stopping_point.z = curr_pos_z;
+    return;
+  }
 
-  // // calculate the velocity at which we switch from calculating the stopping
-  // point using a linear function to a sqrt function linear_velocity =
-  // _accel_z_cms / _p_pos_z.kP();
+  // calculate the velocity at which we switch from calculating the stopping
+  // point using a linear function to a sqrt function
+  linear_velocity = _accel_z_cms / _p_pos_z.kP();
 
-  // if (fabsf(curr_vel_z) < linear_velocity) {
-  //     // if our current velocity is below the cross-over point we use a
-  //     linear function stopping_point.z = curr_pos_z + curr_vel_z /
-  //     _p_pos_z.kP();
-  // } else {
-  //     linear_distance = _accel_z_cms / (2.0f * _p_pos_z.kP() *
-  //     _p_pos_z.kP()); if (curr_vel_z > 0) {
-  //         stopping_point.z = curr_pos_z + (linear_distance + curr_vel_z *
-  //         curr_vel_z / (2.0f * _accel_z_cms));
-  //     } else {
-  //         stopping_point.z = curr_pos_z - (linear_distance + curr_vel_z *
-  //         curr_vel_z / (2.0f * _accel_z_cms));
-  //     }
-  // }
-  // stopping_point.z = constrain_float(stopping_point.z, curr_pos_z -
-  // POSCONTROL_STOPPING_DIST_DOWN_MAX, curr_pos_z +
-  // POSCONTROL_STOPPING_DIST_UP_MAX);
-  stopping_point.z = curr_pos_z;
+  if (fabsf(curr_vel_z) < linear_velocity) {
+    // if our current velocity is below the cross-over point we use a linear
+    // function
+    stopping_point.z = curr_pos_z + curr_vel_z / _p_pos_z.kP();
+  } else {
+    linear_distance = _accel_z_cms / (2.0f * _p_pos_z.kP() * _p_pos_z.kP());
+    if (curr_vel_z > 0) {
+      stopping_point.z =
+          curr_pos_z +
+          (linear_distance + curr_vel_z * curr_vel_z / (2.0f * _accel_z_cms));
+    } else {
+      stopping_point.z =
+          curr_pos_z -
+          (linear_distance + curr_vel_z * curr_vel_z / (2.0f * _accel_z_cms));
+    }
+  }
+  stopping_point.z = constrain_float(
+      stopping_point.z, curr_pos_z - POSCONTROL_STOPPING_DIST_DOWN_MAX,
+      curr_pos_z + POSCONTROL_STOPPING_DIST_UP_MAX);
 }
 
 /// init_takeoff - initialises target altitude if we are taking off
@@ -637,16 +639,16 @@ void AC_PosControl::run_z_controller() {
   _pos_error.z = _pos_target.z - curr_alt;
 
   // do not let target altitude get too far from current altitude
-  //   if (_pos_error.z > _leash_up_z) {
-  //     _pos_target.z = curr_alt + _leash_up_z;
-  //     _pos_error.z = _leash_up_z;
-  //     _limit.pos_up = true;
-  //   }
-  //   if (_pos_error.z < -_leash_down_z) {
-  //     _pos_target.z = curr_alt - _leash_down_z;
-  //     _pos_error.z = -_leash_down_z;
-  //     _limit.pos_down = true;
-  //   }
+  if (_pos_error.z > _leash_up_z) {
+    _pos_target.z = curr_alt + _leash_up_z;
+    _pos_error.z = _leash_up_z;
+    _limit.pos_up = true;
+  }
+  if (_pos_error.z < -_leash_down_z) {
+    _pos_target.z = curr_alt - _leash_down_z;
+    _pos_error.z = -_leash_down_z;
+    _limit.pos_down = true;
+  }
 
   // calculate _vel_target.z using from _pos_error.z using sqrt controller
   _vel_target.z = AC_AttitudeControl::sqrt_controller(
