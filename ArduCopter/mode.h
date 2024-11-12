@@ -36,6 +36,7 @@ public:
         ZIGZAG    =    24,  // ZIGZAG mode is able to fly in a zigzag manner with predefined point A and point B
         SYSTEMID  =    25,  // System ID mode produces automated system identification signals in the controllers
         AUTOROTATE =   26,  // Autonomous autorotation
+        EBRAKE =       27,  // Emergency Brake
     };
 
     // constructor
@@ -583,6 +584,33 @@ private:
 
 };
 
+class ModeEBrake : public Mode
+{
+
+public:
+    // inherit constructor
+    using Mode::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return false; };
+    bool is_autopilot() const override { return false; }
+
+    void timeout_to_loiter_ms(uint32_t timeout_ms);
+
+protected:
+    const char *name() const override { return "EBRAKE"; }
+    const char *name4() const override { return "EBRK"; }
+
+private:
+    void init_target();
+
+    uint32_t _timeout_start;
+    uint32_t _timeout_ms;
+};
 
 class ModeCircle : public Mode {
 

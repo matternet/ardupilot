@@ -288,6 +288,12 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
+// EBrake mode - bring vehicle to stop at its current altitude
+#ifndef MODE_EBRAKE_ENABLED
+#define MODE_EBRAKE_ENABLED ENABLED
+#endif
+
+//////////////////////////////////////////////////////////////////////////////
 // Circle - fly vehicle around a central point
 #ifndef MODE_CIRCLE_ENABLED
 # define MODE_CIRCLE_ENABLED ENABLED

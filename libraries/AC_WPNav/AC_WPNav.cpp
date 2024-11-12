@@ -255,7 +255,7 @@ bool AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
         _pos_delta_unit.x = 0;
         _pos_delta_unit.y = 0;
         _pos_delta_unit.z = 0;
-    }else{
+    } else {
         _pos_delta_unit = pos_delta/_track_length;
     }
 

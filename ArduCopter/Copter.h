@@ -221,6 +221,7 @@ public:
     friend class ModeAutoTune;
     friend class ModeAvoidADSB;
     friend class ModeBrake;
+    friend class ModeEBrake;
     friend class ModeCircle;
     friend class ModeDrift;
     friend class ModeFlip;
@@ -440,7 +441,8 @@ private:
 
     bool any_failsafe_triggered() const {
         bool ret = battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain || failsafe.adsb;
-        if (control_mode != Mode::Number::GUIDED && control_mode != Mode::Number::AUTO && control_mode != Mode::Number::BRAKE) {
+        if (control_mode != Mode::Number::GUIDED && control_mode != Mode::Number::AUTO && control_mode != Mode::Number::BRAKE && control_mode != Mode::Number::EBRAKE)
+        {
             ret |= failsafe.radio;
         }
         return ret;
@@ -973,6 +975,9 @@ private:
 #endif
 #if MODE_BRAKE_ENABLED == ENABLED
     ModeBrake mode_brake;
+#endif
+#if MODE_EBRAKE_ENABLED == ENABLED
+    ModeEBrake mode_ebrake;
 #endif
 #if MODE_CIRCLE_ENABLED == ENABLED
     ModeCircle mode_circle;
