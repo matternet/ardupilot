@@ -448,19 +448,10 @@ void AP_RangeFinder_LightWareI2C::update(void) {
   // nothing to do - its all done in the timer()
 }
 
-void AP_RangeFinder_LightWareI2C::legacy_timer(void) {
+void AP_RangeFinder_LightWareI2C::sf20_timer(void) {
   if (state.disabled) {
     return;
   }
-  if (legacy_get_reading(state.distance_cm)) {
-    // update range_valid state based on distance measured
-    update_status();
-  } else {
-    set_status(RangeFinder::RangeFinder_NoData);
-  }
-}
-
-void AP_RangeFinder_LightWareI2C::sf20_timer(void) {
 #ifdef MFG_TEST_BUILD
   static const uint32_t TIMER_FREQ_HZ = 20;
   static uint32_t count = 0;
