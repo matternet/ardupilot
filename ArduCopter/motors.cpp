@@ -4,7 +4,7 @@
 #define DISARM_DELAY 20       // called at 10hz so 2 seconds
 #define AUTO_TRIM_DELAY 100   // called at 10hz so 10 seconds
 #define LOST_VEHICLE_DELAY 10 // called at 10hz so 1 second
-#define 8_BIT_UINT_MAX 255
+#define UINT_8BIT_MAX 255
 
 static uint32_t auto_disarm_begin;
 
@@ -204,7 +204,7 @@ void Copter::motors_output() {
 }
 
 void set_motor_kill(uint8_t motor_num, bool kill) {
-  if (motor_num == 8_BIT_UINT_MAX) {
+  if (motor_num == UINT_8BIT_MAX) {
     motor_kill_all = kill;
   } else if (motor_num < MOTOR_COUNT) {
     motor_kill[motor_num] = kill;
