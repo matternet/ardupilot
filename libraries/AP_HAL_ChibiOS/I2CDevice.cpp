@@ -64,6 +64,9 @@ I2CBus I2CDeviceManager::businfo[ARRAY_SIZE(I2CD)];
 #define HAL_I2C_CLEAR_ON_TIMEOUT 1
 #endif
 
+// allow disable of all i2c for testing
+static bool _i2c_disable;
+
 // get a handle for DMA sharing DMA channels with other subsystems
 void I2CBus::dma_init(void)
 {
@@ -208,6 +211,10 @@ void I2CBus::dma_deallocate(Shared_DMA *)
 bool I2CDevice::transfer(const uint8_t *send, uint32_t send_len,
                          uint8_t *recv, uint32_t recv_len)
 {
+    if (_i2c_disable) {
+        return false;
+    }
+
     if (!bus.semaphore.check_owner()) {
         hal.console->printf("I2C: not owner of 0x%x for addr 0x%02x\n", (unsigned)get_bus_id(), _address);
         return false;
@@ -256,6 +263,9 @@ bool I2CDevice::transfer(const uint8_t *send, uint32_t send_len,
 bool I2CDevice::_transfer(const uint8_t *send, uint32_t send_len,
                          uint8_t *recv, uint32_t recv_len)
 {
+    if (_i2c_disable) {
+        return false;
+    }
     i2cAcquireBus(I2CD[bus.busnum].i2c);
 
     if (!bus.bouncebuffer_setup(send, send_len, recv, recv_len)) {
@@ -381,6 +391,12 @@ uint32_t I2CDeviceManager::get_bus_mask_external(void) const
 {
     // assume first bus is internal
     return get_bus_mask() & ~HAL_I2C_INTERNAL_MASK;
+}
+
+// disable i2c devices for testing
+void I2CDeviceManager::i2c_disable(bool disable)
+{
+    _i2c_disable = disable;
 }
 
 #endif // HAL_USE_I2C

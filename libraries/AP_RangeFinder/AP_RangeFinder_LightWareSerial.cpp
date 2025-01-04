@@ -65,6 +65,10 @@ bool AP_RangeFinder_LightWareSerial::get_reading(uint16_t &reading_cm)
     int16_t nbytes = uart->available();
     while (nbytes-- > 0) {
         char c = uart->read();
+        if (state.disabled) {
+            continue;
+        }
+        
         if (c == '\r') {
             linebuf[linebuf_len] = 0;
             const float dist = (float)atof(linebuf);

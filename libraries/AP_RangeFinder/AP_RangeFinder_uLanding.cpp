@@ -74,7 +74,9 @@ bool AP_RangeFinder_uLanding::detect_version(void)
 
     while (nbytes-- > 0) {
         uint8_t c = uart->read();
-        
+        if (state.disabled) {
+            continue;
+        }
         if (((c == ULANDING_HDR_V0) || (c == ULANDING_HDR)) && !hdr_found) {
             byte1 = c;
             hdr_found = true;
