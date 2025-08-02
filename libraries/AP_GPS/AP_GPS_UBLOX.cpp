@@ -34,7 +34,7 @@
 #endif
 
 
-#define UBLOX_DEBUGGING 0
+#define UBLOX_DEBUGGING 1
 #define UBLOX_FAKE_3DLOCK 0
 #define CONFIGURE_PPS_PIN 0
 
@@ -48,8 +48,9 @@
 extern const AP_HAL::HAL& hal;
 
 #if UBLOX_DEBUGGING
- # define Debug(fmt, args ...)  do {hal.console->printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); hal.scheduler->delay(1); } while(0)
-#else
+// # define Debug(fmt, args ...)  do {hal.console->printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); hal.scheduler->delay(1); } while(0)
+ # define Debug(fmt, args ...) GCS_SEND_TEXT(MAV_SEVERITY_INFO, "%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args)
+ #else
  # define Debug(fmt, args ...)
 #endif
 
@@ -671,6 +672,7 @@ AP_GPS_UBLOX::read(void)
             _step++;
             if (_ck_a != data) {
                 Debug("bad cka %x should be %x", data, _ck_a);
+//                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "bad cka %x should be %x", data, _ck_a);
                 _step = 0;
 				goto reset;
             }
@@ -679,6 +681,7 @@ AP_GPS_UBLOX::read(void)
             _step = 0;
             if (_ck_b != data) {
                 Debug("bad ckb %x should be %x", data, _ck_b);
+//                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "bad ckb %x should be %x", data, _ck_b);
                 break;                                                  // bad checksum
             }
 
