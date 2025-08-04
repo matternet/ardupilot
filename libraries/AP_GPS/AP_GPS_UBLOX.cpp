@@ -49,7 +49,7 @@ extern const AP_HAL::HAL& hal;
 
 #if UBLOX_DEBUGGING
 // # define Debug(fmt, args ...)  do {hal.console->printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); hal.scheduler->delay(1); } while(0)
- # define Debug(fmt, args ...) GCS_SEND_TEXT(MAV_SEVERITY_INFO, "%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args)
+ # define Debug(fmt, args ...) GCS_SEND_TEXT(MAV_SEVERITY_INFO, "%s:%d:  ACSW(GPS) " fmt "\n", __FUNCTION__, __LINE__, ## args)
  #else
  # define Debug(fmt, args ...)
 #endif
