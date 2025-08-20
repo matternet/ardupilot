@@ -231,7 +231,6 @@ AP_GPS_UBLOX::_request_next_config(void)
     }
 
     Debug("Unconfigured messages: 0x%x Current message: %u\n", (unsigned)_unconfigured_messages, (unsigned)_next_message);
-    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ACSW(GPS) Unconfigured messages: 0x%x Current message: %u\n", (unsigned)_unconfigured_messages, (unsigned)_next_message);
 
     // check AP_GPS_UBLOX.h for the enum that controls the order.
     // This switch statement isn't maintained against the enum in order to reduce code churn
