@@ -48,9 +48,8 @@
 extern const AP_HAL::HAL& hal;
 
 #if UBLOX_DEBUGGING
-// # define Debug(fmt, args ...)  do {hal.console->printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); hal.scheduler->delay(1); } while(0)
- # define Debug(fmt, args ...) GCS_SEND_TEXT(MAV_SEVERITY_INFO, "%s:%d:  ACSW(GPS) " fmt "\n", __FUNCTION__, __LINE__, ## args)
- #else
+ # define Debug(fmt, args ...)  do {hal.console->printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); hal.scheduler->delay(1); } while(0)
+#else
  # define Debug(fmt, args ...)
 #endif
 
@@ -232,6 +231,7 @@ AP_GPS_UBLOX::_request_next_config(void)
     }
 
     Debug("Unconfigured messages: 0x%x Current message: %u\n", (unsigned)_unconfigured_messages, (unsigned)_next_message);
+    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ACSW(GPS) Unconfigured messages: 0x%x Current message: %u\n", (unsigned)_unconfigured_messages, (unsigned)_next_message);
 
     // check AP_GPS_UBLOX.h for the enum that controls the order.
     // This switch statement isn't maintained against the enum in order to reduce code churn
@@ -672,7 +672,7 @@ AP_GPS_UBLOX::read(void)
             _step++;
             if (_ck_a != data) {
                 Debug("bad cka %x should be %x", data, _ck_a);
-//                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "bad cka %x should be %x", data, _ck_a);
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ACSW(GPS) bad cka %x should be %x\n", data, _ck_a);
                 _step = 0;
 				goto reset;
             }
@@ -681,7 +681,7 @@ AP_GPS_UBLOX::read(void)
             _step = 0;
             if (_ck_b != data) {
                 Debug("bad ckb %x should be %x", data, _ck_b);
-//                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "bad ckb %x should be %x", data, _ck_b);
+                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ACSW(GPS) bad ckb %x should be %x\n", data, _ck_b);
                 break;                                                  // bad checksum
             }
 
