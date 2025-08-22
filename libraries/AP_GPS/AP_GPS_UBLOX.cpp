@@ -34,7 +34,7 @@
 #endif
 
 
-#define UBLOX_DEBUGGING 1
+#define UBLOX_DEBUGGING 0
 #define UBLOX_FAKE_3DLOCK 0
 #define CONFIGURE_PPS_PIN 0
 
