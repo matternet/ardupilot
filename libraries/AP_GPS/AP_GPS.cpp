@@ -1025,19 +1025,33 @@ void AP_GPS::update_primary(void)
     if (primary_instance == GPS_BLENDED_INSTANCE) {
         primary_instance = 0;
         for (uint8_t i=1; i<GPS_MAX_RECEIVERS; i++) {
-            // choose GPS with highest state or higher number of satellites with at least
-            if (state[i].status < GPS_OK_FIX_3D) {
+            // Choose GPS with highest state or higher number of satellites.
+            // Reject a GPS with an old update time, as it may be the old timestamp that triggered the loss of blending
+            const uint32_t delay_threshold_ms = 400;
+            const bool higher_status = state[i].status > state[primary_instance].status;
+            const bool old_data_primary = (now - state[primary_instance].last_gps_time_ms) > delay_threshold_ms;
+            const bool old_data = (now - state[i].last_gps_time_ms) < delay_threshold_ms;
+            const bool equal_status = (state[i].status == state[primary_instance].status);
+            const bool more_sats = (state[i].num_sats > state[primary_instance].num_sats);
+
+            if (old_data && !old_data_primary) {
+                // Don't switch to a GPS that has not updated in 400ms
                 continue;
             }
-            if ((state[i].status > state[primary_instance].status) ||
-                ((now - state[primary_instance].last_gps_time_ms) > 400 &&
-                 (now - state[i].last_gps_time_ms) < 400) ||
-                ((state[i].status == state[primary_instance].status) && (state[i].num_sats > state[primary_instance].num_sats))) {
+
+            if (state[i].status < GPS_OK_FIX_3D) {
+                // Don't use a GPS without 3D fix or better
+                continue;
+            }
+
+            // Select the new GPS if the primary has old data,
+            // or new GPS either has higher status,
+            // or has the same status and more satellites
+            if ((old_data_primary && !old_data) || higher_status || (equal_status && more_sats)) {
                 primary_instance = i;
-                _last_instance_swap_ms = now;
             }
         }
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "GPS Switch: Switched from Blended to %u", primary_instance+1);
+        _last_instance_swap_ms = now;
         return;
     }
 
