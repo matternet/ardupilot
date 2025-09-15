@@ -445,6 +445,9 @@ void AP_RangeFinder_LightWareI2C::update(void)
 
 void AP_RangeFinder_LightWareI2C::sf20_timer(void)
 {
+    if (state.disabled) {
+        return;
+    }
 #ifdef MFG_TEST_BUILD
     static const uint32_t TIMER_FREQ_HZ = 20;
     static uint32_t count = 0;

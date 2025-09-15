@@ -114,6 +114,12 @@ protected:
         return uint16_t(gps._driver_options.get());
     }
 
+    // check if an instance is disabled
+    bool is_disabled(void) const;
+
+    // check if an instance has SBAS in disabled
+    bool is_sbas_disabled(void) const;
+
 private:
     // itow from previous message
     uint32_t _last_itow;

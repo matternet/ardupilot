@@ -104,6 +104,9 @@ public:
       get mask of bus numbers for all configured internal I2C buses
      */
     virtual uint32_t get_bus_mask_internal(void) const { return 0x01; }
+
+    // disable i2c devices for testing
+    virtual void i2c_disable(bool disable) {}
 };
 
 /*
