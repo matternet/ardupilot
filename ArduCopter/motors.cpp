@@ -4,7 +4,7 @@
 #define DISARM_DELAY            20  // called at 10hz so 2 seconds
 #define AUTO_TRIM_DELAY         100 // called at 10hz so 10 seconds
 #define LOST_VEHICLE_DELAY      10  // called at 10hz so 1 second
-#define UINT_8BIT_MAX 255       255
+#define UINT_8BIT_MAX           255
 
 static uint32_t auto_disarm_begin;
 
