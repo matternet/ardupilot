@@ -984,7 +984,7 @@ AP_GPS_UBLOX::_parse_gps(void)
                 }
 #endif
                 if (_buffer.gnss.configBlock[1].flags & 0x1) {
-                    GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Enabled!\n");
+                    // GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Enabled!\n");
                 } else {
                     GCS_SEND_TEXT(MAV_SEVERITY_ALERT, "SBAS Disabled!\n");
                 }
