@@ -97,7 +97,7 @@ const AP_ToneAlarm::Tone AP_ToneAlarm::_tones[] {
 #define AP_NOTIFY_TONE_NO_SDCARD 30
     { "MNBGG", false },
 #define AP_NOTIFY_TONE_QUIET_MISSION_LOADED_CTS 31
-    { "MBT40L1V100O3E", true },
+    { "MBT50L4V100O3CEG>C<AGE2.P4CEGA>C<A2.P4", true },
 };
 
 bool AP_ToneAlarm::init()
