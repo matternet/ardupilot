@@ -96,6 +96,8 @@ const AP_ToneAlarm::Tone AP_ToneAlarm::_tones[] {
     { "MFMST200L64O4ceceP32ceceP8df#df#P32df#df#P8L16gf#g>c", false },
 #define AP_NOTIFY_TONE_NO_SDCARD 30
     { "MNBGG", false },
+#define AP_NOTIFY_TONE_QUIET_MISSION_LOADED_CTS 31
+    { "MBT100L8V180O4EP16", true },
 };
 
 bool AP_ToneAlarm::init()
@@ -351,6 +353,11 @@ void AP_ToneAlarm::update()
                 stop_cont_tone();
             }
         }
+    }
+
+    // bench test: play continuous tone while disarmed
+    if (!flags.armed && _cont_tone_playing == -1) {
+        play_tone(AP_NOTIFY_TONE_QUIET_MISSION_LOADED_CTS);
     }
 
     // check if battery status has changed
