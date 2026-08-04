@@ -842,6 +842,7 @@ private:
     uint32_t prevTasStep_ms;        // time stamp of last TAS fusion step
     uint32_t prevBetaStep_ms;       // time stamp of last synthetic sideslip fusion step
     uint32_t lastMagUpdate_us;      // last time compass was updated in usec
+    uint32_t lastMagLog_us;         // last time compass was logged in usec (throttle for logging when not fused)
     uint32_t lastMagRead_ms;        // last time compass data was successfully read
     Vector3f velDotNED;             // rate of change of velocity in NED frame
     Vector3f velDotNEDfilt;         // low pass filtered velDotNED
