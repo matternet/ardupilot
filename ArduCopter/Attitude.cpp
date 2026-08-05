@@ -10,9 +10,14 @@ float Copter::get_pilot_desired_yaw_rate(int16_t stick_angle)
     }
     float yaw_request;
 
-    if (control_mode == Mode::Number::AUTO) {
-        return 0;
-    }
+    // TEST ONLY (AS-1452 -- DO NOT MERGE): upstream disallows pilot yaw in AUTO
+    // (commit c658f15d5b "disallow pilot yaw in AUTO mode"). It is re-enabled on this
+    // branch so a pilot can induce a heading change during the AUTO mag-cutoff landing
+    // descent to flight-test the descent-safety yaw backstop (TC-10). Restore this
+    // guard before any production merge.
+    // if (control_mode == Mode::Number::AUTO) {
+    //     return 0;
+    // }
 
     // range check expo
     g2.acro_y_expo = constrain_float(g2.acro_y_expo, 0.0f, 1.0f);
