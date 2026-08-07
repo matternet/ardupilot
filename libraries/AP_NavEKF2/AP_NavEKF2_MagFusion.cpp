@@ -237,6 +237,21 @@ void NavEKF2_core::SelectMagFusion()
     // used for load levelling
     magFusePerformed = false;
 
+    // Log the compass whenever a fresh healthy sample arrives, even when it is not being fused (e.g.
+    // during a COMPASS_USE = 0 mag cutoff), so the MAG message stays present in the dataflash / replay
+    // log. This must run before the !use_compass() early-return below: that branch skips readMagData()
+    // (and therefore all mag logging) for the entire duration of a cutoff. Dedicated throttle because
+    // Write_Compass() has no internal rate limit and this runs at the filter rate; the 70ms cap matches
+    // the fusion cadence in readMagData().
+    if (_ahrs->get_compass() != nullptr) {
+        auto &compass = *_ahrs->get_compass();
+        if (compass.healthy(magSelectIndex) &&
+            compass.last_update_usec(magSelectIndex) - lastMagLog_us > 70000) {
+            frontend->logging.log_compass = true;
+            lastMagLog_us = compass.last_update_usec(magSelectIndex);
+        }
+    }
+
     // Handle case where we are not using a yaw sensor of any type and and attempt to reset the yaw in
     // flight using the output from the GSF yaw estimator.
     if (!use_compass() && tiltAlignComplete) {

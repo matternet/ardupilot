@@ -350,6 +350,7 @@ void NavEKF2_core::InitialiseVariablesMag()
 {
     lastHealthyMagTime_ms = imuSampleTime_ms;
     lastMagUpdate_us = 0;
+    lastMagLog_us = 0;
     magYawResetTimer_ms = imuSampleTime_ms;
     magTimeout = false;
     allMagSensorsFailed = false;
