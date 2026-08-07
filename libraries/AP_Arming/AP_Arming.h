@@ -97,6 +97,12 @@ protected:
     AP_Int8                 _rudder_arming;
     AP_Int32                 _required_mission_items;
 
+    // Minimum magnetic field strength for the pre-arm compass check, in mG
+    AP_Float                _magfield_min_mG;
+
+    // Maximum magnetic field strength for the pre-arm compass check, in mG
+    AP_Float                _magfield_max_mG;
+
     // internal members
     bool                    armed;
     uint32_t                last_accel_pass_ms[INS_MAX_INSTANCES];

@@ -49,8 +49,6 @@
 #include <AP_Logger/AP_Logger.h>
 
 #define AP_ARMING_COMPASS_MAGFIELD_EXPECTED 530
-#define AP_ARMING_COMPASS_MAGFIELD_MIN  200     // 250 milligauss min closer to the equator, give 50 mG buffer
-#define AP_ARMING_COMPASS_MAGFIELD_MAX  700     // 650 milligauss max closer to poles, give 50 mG buffer
 #define AP_ARMING_BOARD_VOLTAGE_MAX     5.8f
 #define AP_ARMING_ACCEL_ERROR_THRESHOLD 0.75f
 #define AP_ARMING_AHRS_GPS_ERROR_MAX    10      // accept up to 10m difference between AHRS and GPS
@@ -114,6 +112,24 @@ const AP_Param::GroupInfo AP_Arming::var_info[] = {
     // @Bitmask{Plane}: 0:All,1:Barometer,2:Compass,3:GPS lock,4:INS,5:Parameters,6:RC Channels,7:Board voltage,8:Battery Level,9:Airspeed,10:Logging Available,11:Hardware safety switch,12:GPS Configuration,13:System,14:Mission,15:Rangefinder
     // @User: Standard
     AP_GROUPINFO("CHECK",        8,     AP_Arming,  checks_to_perform,       ARMING_CHECK_ALL),
+
+    // @Param: MAGF_MIN
+    // @DisplayName: Compass magnetic field strength minimum
+    // @Description: This sets the minimum acceptable magnetic field strength for the pre-arm compass check.
+    // @Range: 0 500
+    // @Units: mGauss
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("MAGF_MIN",     9,     AP_Arming,  _magfield_min_mG,        200.0f),
+
+    // @Param: MAGF_MAX
+    // @DisplayName: Compass magnetic field strength maximum
+    // @Description: This sets the maximum acceptable magnetic field strength for the pre-arm compass check.
+    // @Range: 500 2000
+    // @Units: mGauss
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("MAGF_MAX",     10,    AP_Arming,  _magfield_max_mG,        700.0f),
 
     AP_GROUPEND
 };
@@ -428,7 +444,7 @@ bool AP_Arming::compass_checks(bool report)
 
         // check for unreasonable mag field length
         const float mag_field = _compass.get_field().length();
-        if (mag_field > AP_ARMING_COMPASS_MAGFIELD_MAX || mag_field < AP_ARMING_COMPASS_MAGFIELD_MIN) {
+        if (mag_field > _magfield_max_mG || mag_field < _magfield_min_mG) {
             check_failed(ARMING_CHECK_COMPASS, report, "Check mag field");
             return false;
         }
