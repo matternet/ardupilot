@@ -939,14 +939,15 @@ bool CompassCalibrator::calculate_orientation(void)
  */
 bool CompassCalibrator::fix_radius(void)
 {
-    if (AP::gps().status() < AP_GPS::GPS_OK_FIX_2D) {
+    struct Location loc;
+    if (!AP::ahrs().get_position(loc) && !AP::ahrs().get_origin(loc)) {
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "MagCal: No location, fix_radius skipped");
         // we don't have a position, leave scale factor as 0. This
         // will disable use of WMM in the EKF. Users can manually set
         // scale factor after calibration if it is known
         _params.scale_factor = 0;
         return true;
     }
-    const struct Location &loc = AP::gps().location();
     float intensity;
     float declination;
     float inclination;
