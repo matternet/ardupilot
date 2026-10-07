@@ -98,6 +98,7 @@ void Copter::update_land_detector()
             // components of the landing detector
             rangefinder_check = true;
         }
+        rangefinder_check = false; // Always fail rangefinder condition (for FTEST-15739 only)
 
         // landing criteria that do not depend on the rangefinder
         const bool inertial_landed = motor_at_lower_limit && accel_stationary && descent_rate_low;
