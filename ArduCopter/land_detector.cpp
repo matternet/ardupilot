@@ -10,6 +10,9 @@
 // counter to verify landings
 static uint32_t land_detector_count = 0;
 
+// counter of consecutive loops in which every landing criterion except the rangefinder check has held
+static uint32_t land_detector_rngfnd_timeout_count = 0;
+
 // run land and crash detectors
 // called at MAIN_LOOP_RATE
 void Copter::update_land_and_crash_detectors()
@@ -58,6 +61,7 @@ void Copter::update_land_detector()
     } else if (standby_active) {
         // land detector will not run in standby mode
         land_detector_count = 0;
+        land_detector_rngfnd_timeout_count = 0;
     } else {
 
 #if FRAME_CONFIG == HELI_FRAME
@@ -95,7 +99,10 @@ void Copter::update_land_detector()
             rangefinder_check = true;
         }
 
-        if (motor_at_lower_limit && accel_stationary && descent_rate_low && rangefinder_check) {
+        // landing criteria that do not depend on the rangefinder
+        const bool inertial_landed = motor_at_lower_limit && accel_stationary && descent_rate_low;
+
+        if (inertial_landed && rangefinder_check) {
             // landed criteria met - increment the counter and check if we've triggered
             if( land_detector_count < ((float)LAND_DETECTOR_TRIGGER_SEC)*scheduler.get_loop_rate_hz()) {
                 land_detector_count++;
@@ -105,6 +112,21 @@ void Copter::update_land_detector()
         } else {
             // we've sensed movement up or down so reset land_detector
             land_detector_count = 0;
+        }
+
+        // a rangefinder can report a healthy but false distance while the vehicle is on the
+        // ground (NCT-3495), which would block landing detection indefinitely.  If every
+        // other criterion has held for LAND_DETECTOR_RNGFND_TIMEOUT_SEC, override the
+        // rangefinder check and declare the landing.
+        if (inertial_landed && !ap.land_complete) {
+            if (land_detector_rngfnd_timeout_count < ((float)LAND_DETECTOR_RNGFND_TIMEOUT_SEC)*scheduler.get_loop_rate_hz()) {
+                land_detector_rngfnd_timeout_count++;
+            } else {
+                gcs().send_text(MAV_SEVERITY_WARNING, "Land detect: rangefinder overridden");
+                set_land_complete(true);
+            }
+        } else {
+            land_detector_rngfnd_timeout_count = 0;
         }
     }
 
@@ -119,6 +141,7 @@ void Copter::set_land_complete(bool b)
         return;
 
     land_detector_count = 0;
+    land_detector_rngfnd_timeout_count = 0;
 
     if(b){
         Log_Write_Event(DATA_LAND_COMPLETE);

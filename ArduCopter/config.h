@@ -478,6 +478,9 @@
 #ifndef LAND_DETECTOR_ACCEL_MAX
 # define LAND_DETECTOR_ACCEL_MAX            1.0f    // vehicle acceleration must be under 1m/s/s
 #endif
+#ifndef LAND_DETECTOR_RNGFND_TIMEOUT_SEC
+# define LAND_DETECTOR_RNGFND_TIMEOUT_SEC   15.0f   // number of seconds the non-rangefinder landing criteria must hold before a healthy-but-wrong rangefinder is overridden
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // CAMERA TRIGGER AND CONTROL
